@@ -12,8 +12,8 @@ import scikit_posthocs as sp
 
 import bokeh.plotting as bk
 
-from plotting.utils.bokeh_boxplot import make_boxplot
-from plotting.utils.seaborn_bar_plot import get_show_samples_per_group
+from medplot.utils.bokeh_boxplot import make_boxplot
+from medplot.utils.seaborn_bar_plot import get_show_samples_per_group
 from pd_extras.utils.dataframe_with_info import DataFrameWithInfo
 
 logger = logging.getLogger(__name__)
