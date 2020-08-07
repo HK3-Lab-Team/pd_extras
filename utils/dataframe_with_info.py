@@ -1,14 +1,14 @@
-import os
-import copy
-from dataclasses import dataclass
-from typing import List, Tuple, Union, Set, Any, DefaultDict, Dict, Iterable
-import logging
 import collections
+import copy
+import logging
+import os
 import shelve
+from dataclasses import dataclass
+from typing import Any, DefaultDict, Dict, Iterable, List, Set, Tuple, Union
 
 import pandas as pd
 
-from pd_extras.utils.refactoring.feature_enum import OperationTypeEnum, EncodingFunctions
+from pd_extras.utils.refactoring.feature_enum import EncodingFunctions, OperationTypeEnum
 from pd_extras.utils.refactoring.settings import CATEG_COL_THRESHOLD
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def _to_tuple(x: Union[str, Iterable]) -> Tuple:
     elif isinstance(x, list) or isinstance(x, set):
         return tuple(x)
     else:
-        return tuple([x, ])
+        return tuple([x])
 
 
 class FeatureOperation:
@@ -40,12 +40,15 @@ class FeatureOperation:
     This is a Class to store the operations executed on df.
     """
 
-    def __init__(self, operation_type: OperationTypeEnum,
-                 original_columns: Union[Tuple[str], str, None] = None,
-                 derived_columns: Union[Tuple[str], str, None] = None,
-                 encoded_values_map: Union[Dict[int, Any], None] = None,
-                 encoder=None,
-                 details: Union[Dict, None] = None):
+    def __init__(
+        self,
+        operation_type: OperationTypeEnum,
+        original_columns: Union[Tuple[str], str, None] = None,
+        derived_columns: Union[Tuple[str], str, None] = None,
+        encoded_values_map: Union[Dict[int, Any], None] = None,
+        encoder=None,
+        details: Union[Dict, None] = None,
+    ):
         """
         This is a Model to store the operations executed on df.
         @param details: It contains details about the operation, like the map between encoded
@@ -80,7 +83,7 @@ class FeatureOperation:
             encoded_string_values_map = {}
             for key, value in self.encoded_values_map.items():
                 if not isinstance(value, str):
-                    encoded_string_values_map[key] = '-'.join(str(x) for x in value)
+                    encoded_string_values_map[key] = "-".join(str(x) for x in value)
                 else:
                     encoded_string_values_map[key] = value
             return encoded_string_values_map
@@ -105,22 +108,35 @@ class FeatureOperation:
         bool: True if all the conditions above are fulfilled and False otherwise
         """
         if isinstance(other, self.__class__):
-            if self.operation_type == other.operation_type and \
-                    (self.original_columns is None or other.original_columns is None or
-                     set(self.original_columns) == set(other.original_columns)) and \
-                    (self.derived_columns is None or other.derived_columns is None or
-                     set(self.derived_columns) == set(other.derived_columns)) and \
-                    (self.encoder is None or other.encoder is None or
-                     self.encoder == other.encoder):
+            if (
+                self.operation_type == other.operation_type
+                and (
+                    self.original_columns is None
+                    or other.original_columns is None
+                    or set(self.original_columns) == set(other.original_columns)
+                )
+                and (
+                    self.derived_columns is None
+                    or other.derived_columns is None
+                    or set(self.derived_columns) == set(other.derived_columns)
+                )
+                and (
+                    self.encoder is None
+                    or other.encoder is None
+                    or self.encoder == other.encoder
+                )
+            ):
                 return True
         return False
 
     def __str__(self):
-        return f"Columns that have been used to produce the result: {self.original_columns}" \
-               f"\nThe type of the operation that has been applied is: {self.operation_type}" \
-               f"\nThe columns that have been created after the operation are: {self.derived_columns}" \
-               f"\nThe map between the original values and the encoded ones is: \n{self.encoded_values_map}" \
-               f"\nThe encoding function that has been used is: {self.encoding_function}"
+        return (
+            f"Columns that have been used to produce the result: {self.original_columns}"
+            f"\nThe type of the operation that has been applied is: {self.operation_type}"
+            f"\nThe columns that have been created after the operation are: {self.derived_columns}"
+            f"\nThe map between the original values and the encoded ones is: \n{self.encoded_values_map}"
+            f"\nThe encoding function that has been used is: {self.encoding_function}"
+        )
 
 
 @dataclass
@@ -129,6 +145,7 @@ class ColumnListByType:
     This dataclass is to gather the different column types inside a pd.DataFrame.
     The columns are split according to the type of their values.
     """
+
     same_value_cols: Set
     mixed_type_cols: Set
     numerical_cols: Set
@@ -140,24 +157,33 @@ class ColumnListByType:
     bool_cols: Set
 
     def __str__(self):
-        return f"Columns with:" \
-               f"\n\t1.\tMixed types: \t\t{len(self.mixed_type_cols)}" \
-               f"\n\t2.\tNumerical types (float/int): \t{len(self.numerical_cols)}" \
-               f"\n\t3.\tString types: \t\t{len(self.str_cols)}" \
-               f"\n\t4.\tBool types: \t\t{len(self.bool_cols)}" \
-               f"\n\t5.\tOther types: \t\t{len(self.other_cols)}" \
-               f"\nAmong these categories:" \
-               f"\n\t1.\tString categorical columns: {len(self.str_categorical_cols)}" \
-               f"\n\t2.\tNumeric categorical columns: {len(self.num_categorical_cols)}" \
-               f"\n\t3.\tMedical Exam columns (numerical, no metadata): {len(self.med_exam_col_list)}" \
-               f"\n\t4.\tOne repeated value: {len(self.same_value_cols)}"
+        return (
+            f"Columns with:"
+            f"\n\t1.\tMixed types: \t\t{len(self.mixed_type_cols)}"
+            f"\n\t2.\tNumerical types (float/int): \t{len(self.numerical_cols)}"
+            f"\n\t3.\tString types: \t\t{len(self.str_cols)}"
+            f"\n\t4.\tBool types: \t\t{len(self.bool_cols)}"
+            f"\n\t5.\tOther types: \t\t{len(self.other_cols)}"
+            f"\nAmong these categories:"
+            f"\n\t1.\tString categorical columns: {len(self.str_categorical_cols)}"
+            f"\n\t2.\tNumeric categorical columns: {len(self.num_categorical_cols)}"
+            f"\n\t3.\tMedical Exam columns (numerical, no metadata): {len(self.med_exam_col_list)}"
+            f"\n\t4.\tOne repeated value: {len(self.same_value_cols)}"
+        )
 
 
 class DataFrameWithInfo:
-
-    def __init__(self, metadata_cols: Tuple = (), data_file: str = None, df_object: pd.DataFrame = None,
-                 nan_percentage_threshold: float = 0.999, metadata_as_features: bool = False,
-                 new_columns_encoding_maps: Union[DefaultDict[str, List[FeatureOperation]], None] = None):
+    def __init__(
+        self,
+        metadata_cols: Tuple = (),
+        data_file: str = None,
+        df_object: pd.DataFrame = None,
+        nan_percentage_threshold: float = 0.999,
+        metadata_as_features: bool = False,
+        new_columns_encoding_maps: Union[
+            DefaultDict[str, List[FeatureOperation]], None
+        ] = None,
+    ):
         """
         This class contains some useful methods and attributes mostly related to features/columns.
         It helps in keeping track of the operations on DataFrame, and returns subgroups of columns split by type
@@ -171,7 +197,7 @@ class DataFrameWithInfo:
         """
         if df_object is None:
             if data_file is None:
-                logging.error('Provide either data_file or df_object as argument')
+                logging.error("Provide either data_file or df_object as argument")
             else:
                 self.df = get_df_from_csv(data_file)
         else:
@@ -206,7 +232,10 @@ class DataFrameWithInfo:
         many_nan_columns = set()
         for c in self.df.columns:
             # Check number of NaN
-            if sum(self.df[c].isna()) > self.nan_percentage_threshold * self.df.shape[0]:
+            if (
+                sum(self.df[c].isna())
+                > self.nan_percentage_threshold * self.df.shape[0]
+            ):
                 many_nan_columns.add(c)
 
         return many_nan_columns
@@ -265,16 +294,17 @@ class DataFrameWithInfo:
                 # Check the type of the first element
                 col_type = col_types[0]
                 unique_values = notna_col_df[col].unique()
-                if 'bool' in col_type or \
-                        (len(unique_values) == 2 and
-                         unique_values[0] in [0, 1] and
-                         unique_values[1] in [0, 1]):
+                if "bool" in col_type or (
+                    len(unique_values) == 2
+                    and unique_values[0] in [0, 1]
+                    and unique_values[1] in [0, 1]
+                ):
                     # True/False are considered as [0,1]
                     bool_cols.add(col)
-                elif 'str' in col_type:
+                elif "str" in col_type:
                     # String columns
                     str_cols.add(col)
-                elif 'float' in col_type or 'int' in col_type:
+                elif "float" in col_type or "int" in col_type:
                     # look if the col_type contains 'int' or 'float' keywords
                     numerical_cols.add(col)
                 else:
@@ -284,17 +314,21 @@ class DataFrameWithInfo:
 
         str_categorical_cols = self._get_categorical_cols(str_cols)
         num_categorical_cols = self._get_categorical_cols(numerical_cols)
-        med_exam_col_list = numerical_cols | bool_cols - same_value_cols - self.metadata_cols
+        med_exam_col_list = (
+            numerical_cols | bool_cols - same_value_cols - self.metadata_cols
+        )
 
-        return ColumnListByType(mixed_type_cols=mixed_type_cols,
-                                same_value_cols=same_value_cols,
-                                numerical_cols=numerical_cols | bool_cols,
-                                med_exam_col_list=med_exam_col_list,
-                                str_cols=str_cols,
-                                str_categorical_cols=str_categorical_cols,
-                                num_categorical_cols=num_categorical_cols,
-                                bool_cols=bool_cols,
-                                other_cols=other_cols)
+        return ColumnListByType(
+            mixed_type_cols=mixed_type_cols,
+            same_value_cols=same_value_cols,
+            numerical_cols=numerical_cols | bool_cols,
+            med_exam_col_list=med_exam_col_list,
+            str_cols=str_cols,
+            str_categorical_cols=str_categorical_cols,
+            num_categorical_cols=num_categorical_cols,
+            bool_cols=bool_cols,
+            other_cols=other_cols,
+        )
 
     def _get_categorical_cols(self, str_cols):
         """
@@ -316,7 +350,9 @@ class DataFrameWithInfo:
             unique_val_nb = len(self.df[col].unique())
             # To avoid considering features like 'PatientID' (or every string column) as categorical,
             # we only select the columns with few unique values
-            if unique_val_nb < 7 or (unique_val_nb < self.df[col].count() // CATEG_COL_THRESHOLD):
+            if unique_val_nb < 7 or (
+                unique_val_nb < self.df[col].count() // CATEG_COL_THRESHOLD
+            ):
                 categorical_cols.add(col)
 
         return categorical_cols
@@ -333,7 +369,9 @@ class DataFrameWithInfo:
         """
         to_be_encoded_categorical_cols = set()
         cols_by_type = self.column_list_by_type
-        categorical_cols = cols_by_type.str_categorical_cols | cols_by_type.num_categorical_cols
+        categorical_cols = (
+            cols_by_type.str_categorical_cols | cols_by_type.num_categorical_cols
+        )
         for categ_col in categorical_cols:
             if self.get_enc_column_from_original(categ_col) is None:
                 to_be_encoded_categorical_cols.add(categ_col)
@@ -349,7 +387,9 @@ class DataFrameWithInfo:
     # =    METHODS        =
     # =====================
 
-    def get_encoded_string_values_map(self, column_name: str) -> Union[Dict[int, str], None]:
+    def get_encoded_string_values_map(
+        self, column_name: str
+    ) -> Union[Dict[int, str], None]:
         """
         This method returns the encoded values map of the column named 'column_name'.
         Selecting the first operation of column_name because it will be the operation that created it (whether
@@ -359,10 +399,12 @@ class DataFrameWithInfo:
                                    values are the values of the encoded column
         """
         try:
-            encoded_map = self.feature_elaborations[column_name][0].encoded_string_values_map
+            encoded_map = self.feature_elaborations[column_name][
+                0
+            ].encoded_string_values_map
             return encoded_map
-        except (KeyError, IndexError) as e:
-            logging.info(f'The column {column_name} was not among the operations.')
+        except (KeyError, IndexError):
+            logging.info(f"The column {column_name} was not among the operations.")
             return None
 
     def convert_column_id_to_name(self, col_id_list) -> Set:
@@ -376,7 +418,7 @@ class DataFrameWithInfo:
         logger.info("Checking duplicated columns")
         # Check if there are duplicates in the df columns
         if len(self.df.columns) != len(set(self.df.columns)):
-            logger.error('There are duplicated columns')
+            logger.error("There are duplicated columns")
             return False
         else:
             return True
@@ -413,11 +455,17 @@ class DataFrameWithInfo:
             # If every original_column is in the list of metadata_cols, the derived_columns is also
             # derived by metadata_cols only and therefore must be inserted in metadata_cols set, too
             if is_metadata_cols:
-                self.metadata_cols = self.metadata_cols.union(set(feature_operation.derived_columns))
+                self.metadata_cols = self.metadata_cols.union(
+                    set(feature_operation.derived_columns)
+                )
             # Add the derived columns to the list of the instance
-            self.derived_columns = self.derived_columns.union(set(feature_operation.derived_columns))
+            self.derived_columns = self.derived_columns.union(
+                set(feature_operation.derived_columns)
+            )
 
-    def find_operation_in_column(self, feat_operation: FeatureOperation) -> Union[FeatureOperation, None]:
+    def find_operation_in_column(
+        self, feat_operation: FeatureOperation
+    ) -> Union[FeatureOperation, None]:
         """
         This method retrieves a specific "feat_operation", instance of FeatureOperation, using its attributes.
         It may be used to check if an operation has already been performed
@@ -426,13 +474,19 @@ class DataFrameWithInfo:
         # to an operation) and check if the 'feat_operation' argument is among the operations linked to
         # that column.
         if feat_operation.original_columns is not None:
-            selected_column_operations = self.feature_elaborations[feat_operation.original_columns[0]]
+            selected_column_operations = self.feature_elaborations[
+                feat_operation.original_columns[0]
+            ]
         else:
             if feat_operation.derived_columns is not None:
-                selected_column_operations = self.feature_elaborations[feat_operation.derived_columns[0]]
+                selected_column_operations = self.feature_elaborations[
+                    feat_operation.derived_columns[0]
+                ]
             else:
-                logging.warning("It is not possible to look for an operation if neither "
-                                "original columns nor derived columns attributes are provided")
+                logging.warning(
+                    "It is not possible to look for an operation if neither "
+                    "original columns nor derived columns attributes are provided"
+                )
                 return None
 
         for f in selected_column_operations:
@@ -441,8 +495,9 @@ class DataFrameWithInfo:
 
         return None
 
-    def get_enc_column_from_original(self, column_name, encoder: EncodingFunctions = None,
-                                     ) -> Union[Tuple[str, ...], None]:
+    def get_enc_column_from_original(
+        self, column_name, encoder: EncodingFunctions = None,
+    ) -> Union[Tuple[str, ...], None]:
         """
         This checks if the column is already encoded. In case it is, it will return the name of the
         column with encoded values, otherwise None.
@@ -460,9 +515,11 @@ class DataFrameWithInfo:
         Tuple[str, ...] -> Returns name of the column with encoded values. Returns None if the column
                            has not been encoded
         """
-        feat_operation = FeatureOperation(operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
-                                          original_columns=column_name,
-                                          encoder=encoder)
+        feat_operation = FeatureOperation(
+            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
+            original_columns=column_name,
+            encoder=encoder,
+        )
         found_operat = self.find_operation_in_column(feat_operation)
         # If no operation is found, or the column is the derived column (i.e. the input of encoding function),
         # we return None
@@ -471,8 +528,9 @@ class DataFrameWithInfo:
         else:
             return found_operat.derived_columns
 
-    def get_original_from_enc_column(self, column_name, encoder: EncodingFunctions = None,
-                                     ) -> Union[Tuple[str, ...], None]:
+    def get_original_from_enc_column(
+        self, column_name, encoder: EncodingFunctions = None,
+    ) -> Union[Tuple[str, ...], None]:
         """
         This checks if the column you provide is the encoded version of a original one.
         In case it is, it will return the name of the column with original values, otherwise None.
@@ -491,9 +549,11 @@ class DataFrameWithInfo:
         Tuple[str, ...] -> Returns name of the column with encoded values. Returns None if the column
                            has not been encoded
         """
-        feat_operation = FeatureOperation(operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
-                                          original_columns=column_name,
-                                          encoder=encoder)
+        feat_operation = FeatureOperation(
+            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
+            original_columns=column_name,
+            encoder=encoder,
+        )
         found_operat = self.find_operation_in_column(feat_operation)
         # If no operation is found, or the column is the derived column (i.e. the input of encoding function),
         # we return None
@@ -515,14 +575,18 @@ class DataFrameWithInfo:
 
     def __str__(self):
         """ Returns text of the number of features for every variable type """
-        return f"{self.column_list_by_type}" \
-               f"\nColumns with many NaN: {len(self.many_nan_columns)}"
+        return (
+            f"{self.column_list_by_type}"
+            f"\nColumns with many NaN: {len(self.many_nan_columns)}"
+        )
 
     def __call__(self):
         return self.df
 
 
-def copy_df_info_with_new_df(df_info: DataFrameWithInfo, new_pandas_df: pd.DataFrame) -> DataFrameWithInfo:
+def copy_df_info_with_new_df(
+    df_info: DataFrameWithInfo, new_pandas_df: pd.DataFrame
+) -> DataFrameWithInfo:
     """
     This function is to copy a DataFrameWithInfo instance as "shallow_copy"
     @param df_info: DataFrameWithInfo instance that will be copied
@@ -545,17 +609,23 @@ def import_df_with_info_from_file(filename) -> DataFrameWithInfo:
     # We leave the error management to the function (FileNotFoundError)
     my_shelf = shelve.open(str(filename))
     # Check how many objects have been stored
-    assert len(my_shelf.keys()) == 1, f'There are {len(my_shelf.keys())} objects in file {filename}. Expected 1.'
+    assert (
+        len(my_shelf.keys()) == 1
+    ), f"There are {len(my_shelf.keys())} objects in file {filename}. Expected 1."
     # Retrieve the single object
     df_info = list(my_shelf.values())[0]
     # Check if the object is a DataFrameWithInfo instance
-    assert 'DataFrameWithInfo' in str(df_info.__class__), f"The object is not a DataFrameWithInfo " \
-                                                          f"instance, but it is {df_info.__class__}"
+    assert "DataFrameWithInfo" in str(df_info.__class__), (
+        f"The object is not a DataFrameWithInfo "
+        f"instance, but it is {df_info.__class__}"
+    )
     my_shelf.close()
     return df_info
 
 
-def export_df_with_info_to_file(df_info: DataFrameWithInfo, filename: str, overwrite: bool = False):
+def export_df_with_info_to_file(
+    df_info: DataFrameWithInfo, filename: str, overwrite: bool = False
+):
     """
     This uses 'shelve' module to export the data of a previous DataFrameWithInfo instance
     to 'filename'
@@ -564,13 +634,15 @@ def export_df_with_info_to_file(df_info: DataFrameWithInfo, filename: str, overw
     """
     if not overwrite:
         if os.path.exists(filename):
-            raise FileExistsError(f"File {filename} already exists. If overwriting is not a problem, "
-                                  f"set the 'overwrite' argument to True")
-    my_shelf = shelve.open(filename, 'n')  # 'n' for new
+            raise FileExistsError(
+                f"File {filename} already exists. If overwriting is not a problem, "
+                f"set the 'overwrite' argument to True"
+            )
+    my_shelf = shelve.open(filename, "n")  # 'n' for new
     try:
-        my_shelf['df_info'] = df_info
+        my_shelf["df_info"] = df_info
     except TypeError as e:
-        logging.error(f'ERROR shelving: \n{e}')
+        logging.error(f"ERROR shelving: \n{e}")
     except KeyError as e:
         logging.error(f"Exporting data unsuccessful: \n{e}")
 
@@ -578,31 +650,35 @@ def export_df_with_info_to_file(df_info: DataFrameWithInfo, filename: str, overw
 
 
 if __name__ == "__main__":
-    df_sani_dir = os.path.join("/home/lorenzo-hk3lab/WorkspaceHK3Lab/", "Partitioning", "data", 'Sani_15300_anonym.csv')
+    df_sani_dir = os.path.join(
+        "/home/lorenzo-hk3lab/WorkspaceHK3Lab/",
+        "Partitioning",
+        "data",
+        "Sani_15300_anonym.csv",
+    )
 
-    metadata_cols = "GROUPS	TAG	DATA_SCHEDA	NOME	ID_SCHEDA	COMUNE	PROV	MONTH	YEAR	BREED	SEX	AGE	" \
-                    "SEXUAL STATUS	BODYWEIGHT	PULSE RATE	RESPIRATORY RATE	TEMP	BLOOD PRESS MAX	BLOOD " \
-                    "PRESS MIN	BLOOD PRESS MEAN	BODY CONDITION SCORE	HT	H	DEATH	TIME OF DEATH	" \
-                    "PROFILO_PAZIENTE	ANAMNESI_AMBIENTALE	ANAMNESI_ALIMENTARE	VACCINAZIONI	FILARIOSI	GC_SEQ"
-    metadata_cols = tuple(metadata_cols.replace('\t', ',').split(','))
+    metadata_cols = (
+        "GROUPS	TAG	DATA_SCHEDA	NOME	ID_SCHEDA	COMUNE	PROV	MONTH	YEAR	BREED	SEX	AGE	"
+        "SEXUAL STATUS	BODYWEIGHT	PULSE RATE	RESPIRATORY RATE	TEMP	BLOOD PRESS MAX	BLOOD "
+        "PRESS MIN	BLOOD PRESS MEAN	BODY CONDITION SCORE	HT	H	DEATH	TIME OF DEATH	"
+        "PROFILO_PAZIENTE	ANAMNESI_AMBIENTALE	ANAMNESI_ALIMENTARE	VACCINAZIONI	FILARIOSI	GC_SEQ"
+    )
+    metadata_cols = tuple(metadata_cols.replace("\t", ",").split(","))
 
     df_sani = DataFrameWithInfo(metadata_cols=metadata_cols, data_file=df_sani_dir)
 
     whole_word_replace_dict = {
-        '---': None,
-        '.': None,
-        'ASSENTI': '0',
-        'non disponibile': None,
-        'NV': None,
-        '-': None,
-        'Error': None,
+        "---": None,
+        ".": None,
+        "ASSENTI": "0",
+        "non disponibile": None,
+        "NV": None,
+        "-": None,
+        "Error": None,
         #     '0%': '0'
     }
 
-    char_replace_dict = {
-        "°": "",
-        ",": "."
-    }
+    char_replace_dict = {"°": "", ",": "."}
 
     # df_feat_analysis = DfFeatureAnalysis(df_sani, metadata_cols=metadata_cols)
     # # mixed_type_cols, numerical_col_list, str_col_list, other_col_list = df_feat_analysis.get_column_list_by_type()
