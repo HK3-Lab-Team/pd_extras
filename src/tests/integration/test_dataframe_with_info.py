@@ -40,3 +40,17 @@ class Describe_DataFrameWithInfo:
         assert len(many_nan_columns) == len(expected_many_nan_columns)
         assert isinstance(many_nan_columns, set)
         assert many_nan_columns == expected_many_nan_columns
+
+    @pytest.mark.parametrize(
+        "n_columns, expected_same_value_columns",
+        [(2, {"same_0", "same_1"}), (1, {"same_0"}), (0, set()),],
+    )
+    def test_same_value_columns(self, request, n_columns, expected_same_value_columns):
+        df = DataFrameMock.df_same_value(n_columns)
+        df_info = DataFrameWithInfo(df_object=df)
+
+        same_value_columns = df_info.same_value_cols
+
+        assert len(same_value_columns) == len(expected_same_value_columns)
+        assert isinstance(same_value_columns, set)
+        assert same_value_columns == expected_same_value_columns

@@ -2,6 +2,8 @@
 
 """Functions that make mocking with pytest easier and more readable."""
 
+import random
+
 import pandas as pd
 
 from unittest.mock import ANY, call  # noqa # isort:skip
@@ -117,3 +119,36 @@ class DataFrameMock:
                 100 - nan_sample_count
             )
         return pd.DataFrame(many_nan_dict)
+
+    @staticmethod
+    def df_same_value(n_columns: int) -> pd.DataFrame:
+        """
+        Create pandas DataFrame with ``n_columns`` containing the same repeated value.
+
+        DataFrame has 100 rows and ``n_columns``+5 columns. The additional 5 columns
+        contain different valid values.
+
+        Parameters
+        ----------
+        n_columns : int
+            Number of columns that will contain the same repeated value.
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas DataFrame with ``n_columns`` containing the same repeated value
+            and 5 columns with some different values.
+        """
+        same_value_dict = {}
+        sample_count = 100
+        # Create n_columns columns with NaN
+        for i in range(n_columns):
+            same_value_dict[f"same_{i}"] = [4] * sample_count
+        # Create not_nan_columns with less than nan_ratio ratio of NaNs
+        not_same_value_columns = 5
+        for j in range(not_same_value_columns):
+            same_value_sample_count = int(100 * (1 - 0.1 * (j + 1)))
+            same_value_dict[f"not_same_{j}"] = [4] * same_value_sample_count + [
+                random.random() for _ in range(sample_count - same_value_sample_count)
+            ]
+        return pd.DataFrame(same_value_dict)
