@@ -4,12 +4,8 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from pd_extras.utils.dataframe_with_info import (
-    DataFrameWithInfo,
-    FeatureOperation,
-    copy_df_info_with_new_df,
-)
-from pd_extras.utils.refactoring.feature_enum import OperationTypeEnum
+from .dataframe_with_info import DataFrameWithInfo, FeatureOperation, copy_df_info_with_new_df
+from .feature_enum import OperationTypeEnum
 
 BREED_SPECIFIC_BIN_COLUMN_SUFFIX = "_bin_breed_specific"
 

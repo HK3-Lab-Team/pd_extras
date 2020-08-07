@@ -13,7 +13,7 @@ import scipy.stats as ss
 from medplot.utils.bokeh_boxplot import make_boxplot
 from medplot.utils.seaborn_bar_plot import get_show_samples_per_group
 
-from pd_extras.utils.dataframe_with_info import DataFrameWithInfo
+from .dataframe_with_info import DataFrameWithInfo
 
 logger = logging.getLogger(__name__)
 NA_VALUE = 0
@@ -482,10 +482,7 @@ if __name__ == "__main__":
 
     sys.path.append("..")
     # try:
-    from pd_extras.utils.dataframe_with_info import (
-        DataFrameWithInfo,
-        import_df_with_info_from_file,
-    )
+    from pd_extras.utils.dataframe_with_info import DataFrameWithInfo, import_df_with_info_from_file
 
     # except ImportError:
     #     from bwplot.smvet_utils.utils.dataframe_with_info import DataFrameWithInfo

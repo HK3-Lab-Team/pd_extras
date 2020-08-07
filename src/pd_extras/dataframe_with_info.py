@@ -8,8 +8,8 @@ from typing import Any, DefaultDict, Dict, Iterable, List, Set, Tuple, Union
 
 import pandas as pd
 
-from pd_extras.utils.refactoring.feature_enum import EncodingFunctions, OperationTypeEnum
-from pd_extras.utils.refactoring.settings import CATEG_COL_THRESHOLD
+from .feature_enum import EncodingFunctions, OperationTypeEnum
+from .settings import CATEG_COL_THRESHOLD
 
 logger = logging.getLogger(__name__)
 

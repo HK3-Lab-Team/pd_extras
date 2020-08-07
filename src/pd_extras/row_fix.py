@@ -5,17 +5,10 @@ from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 
-from pd_extras.utils.dataframe_with_info import (
-    DataFrameWithInfo,
-    copy_df_info_with_new_df,
-)
-from pd_extras.utils.refactoring.settings import (
-    CHAR_REPLACE_DICT,
-    NAN_VALUE,
-    NOT_NA_STRING_COL_THRESHOLD,
-    PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
-    WHOLE_WORD_REPLACE_DICT,
-)
+from .dataframe_with_info import DataFrameWithInfo, copy_df_info_with_new_df
+from .settings import (
+    CHAR_REPLACE_DICT, NAN_VALUE, NOT_NA_STRING_COL_THRESHOLD, PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
+    WHOLE_WORD_REPLACE_DICT)
 
 logger = logging.getLogger(__name__)
 
