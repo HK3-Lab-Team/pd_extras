@@ -2,9 +2,6 @@
 
 """Functions that make mocking with pytest easier and more readable."""
 
-import os
-import sys
-
 import pandas as pd
 
 from unittest.mock import ANY, call  # noqa # isort:skip
