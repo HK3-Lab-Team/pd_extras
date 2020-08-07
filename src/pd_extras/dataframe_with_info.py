@@ -333,7 +333,8 @@ class DataFrameWithInfo:
     def _get_categorical_cols(self, str_cols):
         """
         This method is to identify every categorical column in df_info.
-        It will also set those column's types to "category"
+        It will also set those column's types to "category".
+
         Parameters
         ----------
         str_cols
