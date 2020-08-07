@@ -1,13 +1,21 @@
 import copy
-from typing import Dict, Tuple
 import logging
+from typing import Dict, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-from pd_extras.utils.refactoring.settings import NOT_NA_STRING_COL_THRESHOLD, \
-    PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES, NAN_VALUE, WHOLE_WORD_REPLACE_DICT, CHAR_REPLACE_DICT
-from pd_extras.utils.dataframe_with_info import DataFrameWithInfo, copy_df_info_with_new_df
+from pd_extras.utils.dataframe_with_info import (
+    DataFrameWithInfo,
+    copy_df_info_with_new_df,
+)
+from pd_extras.utils.refactoring.settings import (
+    CHAR_REPLACE_DICT,
+    NAN_VALUE,
+    NOT_NA_STRING_COL_THRESHOLD,
+    PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
+    WHOLE_WORD_REPLACE_DICT,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +35,18 @@ def _check_numeric_cols(df_info: DataFrameWithInfo, col_list: Tuple):
     """
     numeric_cols = []
     for col in col_list:
-        numeric_col_serie = pd.to_numeric(df_info.df[col], errors='coerce')
+        numeric_col_serie = pd.to_numeric(df_info.df[col], errors="coerce")
         notna_num_count = numeric_col_serie.count()
         num_valuecount_ratio = notna_num_count / df_info.df[col].count()
         if num_valuecount_ratio > NOT_NA_STRING_COL_THRESHOLD:
             # Find values that are NaN after conversion (and that were not NaN before)
-            lost_values = set(df_info.df[col][df_info.df[col].notna() & numeric_col_serie.isna()])
-            logger.info(f"{col} can be converted from String to Numeric. "
-                        f"Lost values would be {1- num_valuecount_ratio}: \n{lost_values}")
+            lost_values = set(
+                df_info.df[col][df_info.df[col].notna() & numeric_col_serie.isna()]
+            )
+            logger.info(
+                f"{col} can be converted from String to Numeric. "
+                f"Lost values would be {1- num_valuecount_ratio}: \n{lost_values}"
+            )
             numeric_cols.append(col)
 
     return numeric_cols
@@ -58,9 +70,12 @@ class RowFix:
     It contains the methods to fix the errors and to show the results_rf
     """
 
-    def __init__(self, char_replace_dict: Dict[str, str] = CHAR_REPLACE_DICT,
-                 whole_word_replace_dict: Dict[str, str] = WHOLE_WORD_REPLACE_DICT,
-                 percentage_to_add_out_of_scale: float = PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES):
+    def __init__(
+        self,
+        char_replace_dict: Dict[str, str] = CHAR_REPLACE_DICT,
+        whole_word_replace_dict: Dict[str, str] = WHOLE_WORD_REPLACE_DICT,
+        percentage_to_add_out_of_scale: float = PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
+    ):
         """
         This class is to fix common errors like mixed types, or little typos defined as argument,
         that prevent the column conversion to float.
@@ -78,7 +93,9 @@ class RowFix:
         self.ids_rows_with_remaining_mistakes = set()
         self.ids_rows_with_initial_mistakes = set()
 
-    def _populate_non_float_convertible_errors_dict(self, full_row: pd.Series, column: str):
+    def _populate_non_float_convertible_errors_dict(
+        self, full_row: pd.Series, column: str
+    ):
         """
         This function is meant to be used with .apply(). So for each row it does the following.
         It will fill up the two arguments:
@@ -88,19 +105,23 @@ class RowFix:
         try:
             # Try casting to float
             _ = float(full_row[column])
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError):
             self.ids_rows_with_initial_mistakes.add(full_row.name)
             self.errors_before_correction_dict[column].append(full_row[column])
 
     def _convert_out_of_scale_values(self, elem, symbol):
         """ Converts '>' and '<' to appropriate value based on 'PERCENTAGE_TO_BE_ADDED' """
-        result = str(elem).replace(symbol, '')
+        result = str(elem).replace(symbol, "")
         try:
             result = float(result)
-            if symbol == '>':
-                return _convert_to_float_or_int(result + self.percentage_to_add_out_of_scale * result)
-            elif symbol == '<':
-                return _convert_to_float_or_int(result - self.percentage_to_add_out_of_scale * result)
+            if symbol == ">":
+                return _convert_to_float_or_int(
+                    result + self.percentage_to_add_out_of_scale * result
+                )
+            elif symbol == "<":
+                return _convert_to_float_or_int(
+                    result - self.percentage_to_add_out_of_scale * result
+                )
             else:
                 logger.error(f"You end up using the wrong function to convert {elem}")
         except (ValueError, TypeError):
@@ -123,24 +144,30 @@ class RowFix:
             try:
                 # Retry replacing some common mistakes in small parts of the values --> if the only thing
                 # remaining is '' or the string can still not be cast to float, ValueError will be raised
-                elem = ''.join(self.char_replace_dict.get(char, char) for char in str(elem))
+                elem = "".join(
+                    self.char_replace_dict.get(char, char) for char in str(elem)
+                )
                 str_to_float = float(elem)
                 return _convert_to_float_or_int(str_to_float)
             except ValueError:
-                if '%' in str(elem):
+                if "%" in str(elem):
                     # If the value is a percentage, it means that no absolute value can be measured -> None
                     return NAN_VALUE
-                elif '>' in str(elem):
+                elif ">" in str(elem):
                     # Check if the value was out of scale
-                    return self._convert_out_of_scale_values(elem, symbol='>')
-                elif '<' in str(elem):
-                    return self._convert_out_of_scale_values(elem, symbol='<')
+                    return self._convert_out_of_scale_values(elem, symbol=">")
+                elif "<" in str(elem):
+                    return self._convert_out_of_scale_values(elem, symbol="<")
 
                 try:
                     # Try replacing the whole value with the keys in the dict
                     result = self.whole_word_replace_dict[str(elem).strip()]
                     # If None value should be returned, return NAN_VALUE
-                    return NAN_VALUE if result in [None, ''] else _convert_to_float_or_int(result)
+                    return (
+                        NAN_VALUE
+                        if result in [None, ""]
+                        else _convert_to_float_or_int(result)
+                    )
                 except KeyError:
                     # The whole word could not be replaced by the dict and nothing else worked
                     self.ids_rows_with_remaining_mistakes.add(full_row.name)
@@ -150,8 +177,9 @@ class RowFix:
             # NaN value was found, so return NaN
             return NAN_VALUE
 
-    def fix_typos(self, df_info: DataFrameWithInfo, column_list: Tuple = (),
-                  verbose: int = 0) -> DataFrameWithInfo:
+    def fix_typos(
+        self, df_info: DataFrameWithInfo, column_list: Tuple = (), verbose: int = 0
+    ) -> DataFrameWithInfo:
         """ This function is to fix the common errors in the columns "column_list"
         of the pd.DataFrame 'df'
 
@@ -174,13 +202,15 @@ class RowFix:
             self.errors_before_correction_dict[c] = []
             self.errors_after_correction_dict[c] = []
             # Analyze how many errors are in DF
-            df_info.df.apply(self._populate_non_float_convertible_errors_dict,
-                             column=c, axis=1)
+            df_info.df.apply(
+                self._populate_non_float_convertible_errors_dict, column=c, axis=1
+            )
             # Fix the errors
-            df_converted[c] = df_info.df.apply(self._convert_to_float_value,
-                                               column=c, axis=1)
+            df_converted[c] = df_info.df.apply(
+                self._convert_to_float_value, column=c, axis=1
+            )
             # Progress bar
-            print('=', end='')
+            print("=", end="")
         print()
 
         if verbose:
@@ -188,8 +218,9 @@ class RowFix:
 
         return copy_df_info_with_new_df(df_info=df_info, new_pandas_df=df_converted)
 
-    def cols_to_correct_dtype(self, df_info: DataFrameWithInfo,
-                              verbose: int = 0) -> DataFrameWithInfo:
+    def cols_to_correct_dtype(
+        self, df_info: DataFrameWithInfo, verbose: int = 0
+    ) -> DataFrameWithInfo:
         cols_by_type = df_info.column_list_by_type
 
         float_cols = set()
@@ -199,29 +230,36 @@ class RowFix:
         for col in cols_by_type.numerical_cols:
             col_type = str(type(df_info.df[col].iloc[0]))
             unique_values = df_info.df[col].unique()
-            if 'bool' in col_type or \
-                    (len(unique_values) == 2 and
-                     unique_values[0] in [0, 1] and unique_values[1] in [0, 1]):
+            if "bool" in col_type or (
+                len(unique_values) == 2
+                and unique_values[0] in [0, 1]
+                and unique_values[1] in [0, 1]
+            ):
                 df_info.df[col] = df_info.df[col].astype(np.bool)
                 bool_cols.add(col)
 
-            if 'float' in col_type:
+            if "float" in col_type:
                 df_info.df[col] = df_info.df[col].astype(np.float64)
                 float_cols.add(col)
-            elif 'int' in col_type:
-                df_info.df[col] = df_info.df[col].astype('Int32')
+            elif "int" in col_type:
+                df_info.df[col] = df_info.df[col].astype("Int32")
                 int_cols.add(col)
 
         bool_cols = bool_cols.union(cols_by_type.bool_cols)
         df_info.df[list(bool_cols)] = df_info.df[list(bool_cols)].astype(np.bool)
         if verbose:
-            logger.info(f"Casted to INT32: {int_cols}\n Casted to FLOAT64: {float_cols}\n"
-                        f"Casted to BOOL: {bool_cols}")
+            logger.info(
+                f"Casted to INT32: {int_cols}\n Casted to FLOAT64: {float_cols}\n"
+                f"Casted to BOOL: {bool_cols}"
+            )
         return df_info
 
-    def fix_common_errors(self, df_info: DataFrameWithInfo,
-                          set_to_correct_dtype: bool = True,
-                          verbose: int = 0) -> DataFrameWithInfo:
+    def fix_common_errors(
+        self,
+        df_info: DataFrameWithInfo,
+        set_to_correct_dtype: bool = True,
+        verbose: int = 0,
+    ) -> DataFrameWithInfo:
         """ This function is to fix the common errors in the columns "column_list"
         of the pd.DataFrame 'df'.
         We try to fix:
@@ -244,9 +282,11 @@ class RowFix:
         # Get the columns that contain strings, but are actually numerical
         num_cols = _check_numeric_cols(df_info, col_list=cols_by_type.str_cols)
         # Fix the convertible values
-        df_output = self.fix_typos(df_info,
-                                   column_list=cols_by_type.mixed_type_cols | set(num_cols),
-                                   verbose=verbose)
+        df_output = self.fix_typos(
+            df_info,
+            column_list=cols_by_type.mixed_type_cols | set(num_cols),
+            verbose=verbose,
+        )
 
         if set_to_correct_dtype:
             df_output = self.cols_to_correct_dtype(df_output, verbose=verbose)
@@ -255,11 +295,12 @@ class RowFix:
 
     def print_errors_per_column(self):
         """ This is to print the actual error values, to check the fixes"""
-        print('The errors per feature are:')
+        print("The errors per feature are:")
         for c in self.errors_before_correction_dict.keys():
             print(
                 f"{c}: {len(self.errors_before_correction_dict[c])} : {set(self.errors_before_correction_dict[c])}"
-                f" ---> {len(self.errors_after_correction_dict[c])} : {set(self.errors_after_correction_dict[c])}")
+                f" ---> {len(self.errors_after_correction_dict[c])} : {set(self.errors_after_correction_dict[c])}"
+            )
 
     def count_errors(self):
         """ This is to count errors before and after fixes"""
@@ -267,12 +308,17 @@ class RowFix:
         after_errors = 0
 
         for c in self.errors_before_correction_dict.keys():
-            before_errors += (len(self.errors_before_correction_dict[c]))
-            after_errors += (len(self.errors_after_correction_dict[c]))
+            before_errors += len(self.errors_before_correction_dict[c])
+            after_errors += len(self.errors_after_correction_dict[c])
 
-        print(f'\n Rows with initial mistakes: {len(self.ids_rows_with_initial_mistakes)}')
+        print(
+            f"\n Rows with initial mistakes: {len(self.ids_rows_with_initial_mistakes)}"
+        )
 
-        print(f"\n Total:  BEFORE: {before_errors} errors  -->  AFTER: {after_errors} errors")
+        print(
+            f"\n Total:  BEFORE: {before_errors} errors  -->  AFTER: {after_errors} errors"
+        )
+
 
 # =============================================================================================
 

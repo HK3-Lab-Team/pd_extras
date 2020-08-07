@@ -18,21 +18,18 @@ NAN_VALUE = np.nan
 # ===== Mappings to correct some typos in data =====
 # Map that replaces these words (keys) with their values when a datum is exactly identical to that key
 WHOLE_WORD_REPLACE_DICT = {
-    '---': None,
-    '.': None,
-    'ASSENTI': None,
-    'PRESENTI': None,
-    'non disponibile': None,
-    'NV': None,
-    '-': None,
-    'Error': None,
-    'None': None,
-    'NAN': None
+    "---": None,
+    ".": None,
+    "ASSENTI": None,
+    "PRESENTI": None,
+    "non disponibile": None,
+    "NV": None,
+    "-": None,
+    "Error": None,
+    "None": None,
+    "NAN": None
     #     '0%': '0'
 }
 # Map that replaces these characters (keys) with their values in order to
 # correct some small typos in the single datum
-CHAR_REPLACE_DICT = {
-    "°": "",
-    ",": "."
-}
+CHAR_REPLACE_DICT = {"°": "", ",": "."}

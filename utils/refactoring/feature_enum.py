@@ -1,4 +1,5 @@
 from enum import Enum
+
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
 
@@ -8,7 +9,7 @@ class OperationTypeEnum(Enum):
     FEAT_COMBOS_ENCODING = "feature_combination_encoding"
 
 
-ENCODED_COLUMN_SUFFIX = '_enc'
+ENCODED_COLUMN_SUFFIX = "_enc"
 
 
 class EncodingFunctions(Enum):

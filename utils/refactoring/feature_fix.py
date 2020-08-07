@@ -1,18 +1,28 @@
 import itertools
 import logging
-from typing import Tuple
 import sys
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-from pd_extras.utils.dataframe_with_info import DataFrameWithInfo, FeatureOperation, copy_df_info_with_new_df
-from pd_extras.utils.refactoring.feature_enum import EncodingFunctions, ENCODED_COLUMN_SUFFIX, OperationTypeEnum
+from pd_extras.utils.dataframe_with_info import (
+    DataFrameWithInfo,
+    FeatureOperation,
+    copy_df_info_with_new_df,
+)
+from pd_extras.utils.refactoring.feature_enum import (
+    ENCODED_COLUMN_SUFFIX,
+    EncodingFunctions,
+    OperationTypeEnum,
+)
 
 logger = logging.getLogger(__name__)
 
-NAN_CATEGORY = 'Nan'
-BIN_SPLIT_COL_SUFFIX = '_bin_id'
+NAN_CATEGORY = "Nan"
+BIN_SPLIT_COL_SUFFIX = "_bin_id"
+
 
 def convert_maps_from_tuple_to_str(group_id_to_tuple_map):
     """
@@ -22,11 +32,15 @@ def convert_maps_from_tuple_to_str(group_id_to_tuple_map):
     gr_id_to_string_map = {}
     for gr_id in group_id_to_tuple_map.keys():
         # Turn the group tuple into a string
-        gr_id_to_string_map[gr_id] = '-'.join(str(el) for el in group_id_to_tuple_map[gr_id])
+        gr_id_to_string_map[gr_id] = "-".join(
+            str(el) for el in group_id_to_tuple_map[gr_id]
+        )
     return gr_id_to_string_map
 
 
-def split_continuous_column_into_bins(df_info: DataFrameWithInfo, col_name, bin_threshold):
+def split_continuous_column_into_bins(
+    df_info: DataFrameWithInfo, col_name, bin_threshold
+):
     """
     This function adds a column to DataFrame df_info called "[col_name]_bin_id" where we split the "col_name" into bins
     :param df_info: DataFrameWithInfo -> DataFrameWithInfo instance containing the 'col_name' column to split
@@ -64,27 +78,33 @@ def split_continuous_column_into_bins(df_info: DataFrameWithInfo, col_name, bin_
 
         # Identify the values in the range [lower_value, upper_value] in every row,
         # and assign them "i" as the value of the new column "_bin_id"
-        df_info.df.loc[(df_info.df[col_name] >= lower_value) &
-                       (df_info.df[col_name] <= upper_value), new_col_name] = i
+        df_info.df.loc[
+            (df_info.df[col_name] >= lower_value)
+            & (df_info.df[col_name] <= upper_value),
+            new_col_name,
+        ] = i
 
         # Set the upper_value as the lower_value for the next higher bin
         lower_value = upper_value
 
     # Cast the new column to int8
-    df_info.df.loc[:, new_col_name] = df_info.df[new_col_name].astype('Int16')
+    df_info.df.loc[:, new_col_name] = df_info.df[new_col_name].astype("Int16")
 
     df_info.add_operation(
-        FeatureOperation(original_columns=col_name,
-                         operation_type=OperationTypeEnum.BIN_SPLITTING,
-                         encoded_values_map=bin_id_range_map,
-                         derived_columns=new_col_name)
+        FeatureOperation(
+            original_columns=col_name,
+            operation_type=OperationTypeEnum.BIN_SPLITTING,
+            encoded_values_map=bin_id_range_map,
+            derived_columns=new_col_name,
+        )
     )
 
     return df_info
 
 
-def combine_categorical_columns_to_one(df_info: DataFrameWithInfo, columns_list: Tuple[str],
-                                       include_nan: bool = False) -> Tuple[DataFrameWithInfo, str]:
+def combine_categorical_columns_to_one(
+    df_info: DataFrameWithInfo, columns_list: Tuple[str], include_nan: bool = False
+) -> Tuple[DataFrameWithInfo, str]:
     """
     This function generates and indexes the possible permutations of the unique values
     of the column list "col_names".
@@ -112,9 +132,11 @@ def combine_categorical_columns_to_one(df_info: DataFrameWithInfo, columns_list:
 
     # If the column has already been created, return the df_info
     if new_column_name in df_info.df.columns:
-        logging.warning(f'The column {new_column_name} is already present in df_info argument. Maybe '
-                        f'a similar operation has already been performed. No new column has been '
-                        f'created to avoid overwriting.')
+        logging.warning(
+            f"The column {new_column_name} is already present in df_info argument. Maybe "
+            f"a similar operation has already been performed. No new column has been "
+            f"created to avoid overwriting."
+        )
         return df_info, new_column_name
 
     # Get the unique values for every column in "col_names"
@@ -124,7 +146,9 @@ def combine_categorical_columns_to_one(df_info: DataFrameWithInfo, columns_list:
             unique_values_in_column = list(df_info.df[c].unique())
         else:
             # Remove NaN
-            unique_values_in_column = [i for i in list(df_info.df[c].unique()) if str(i) != 'nan']
+            unique_values_in_column = [
+                i for i in list(df_info.df[c].unique()) if str(i) != "nan"
+            ]
         unique_values_in_column.sort()
         col_unique_values.append(unique_values_in_column)
 
@@ -136,23 +160,37 @@ def combine_categorical_columns_to_one(df_info: DataFrameWithInfo, columns_list:
         # Fill the encoding map to keep track of the link between the combination and the encoded value
         new_columns_encoding_maps[partit_id] = combo
         # Combine the boolean arrays to describe whether the row has the same values as the combination "combo"
-        is_row_in_group_combo = \
-            np.logical_and.reduce(([df_info.df[columns_list[i]] == combo[i] for i in range(len(columns_list))]))
+        is_row_in_group_combo = np.logical_and.reduce(
+            (
+                [
+                    df_info.df[columns_list[i]] == combo[i]
+                    for i in range(len(columns_list))
+                ]
+            )
+        )
         # Assign "i" to every row that has that specific combination of values in columns "col_names"
         df_info.df.loc[is_row_in_group_combo, new_column_name] = partit_id
 
     # Cast the ids from float64 to Int16 (capital 'I' to include NaN values)
-    df_info.df.loc[:, new_column_name] = df_info.df[new_column_name].astype('Int16')
+    df_info.df.loc[:, new_column_name] = df_info.df[new_column_name].astype("Int16")
     # Track this operation in df_info
-    df_info.add_operation(FeatureOperation(original_columns=columns_list,
-                                           operation_type=OperationTypeEnum.FEAT_COMBOS_ENCODING,
-                                           encoded_values_map=new_columns_encoding_maps,
-                                           derived_columns=new_column_name))
+    df_info.add_operation(
+        FeatureOperation(
+            original_columns=columns_list,
+            operation_type=OperationTypeEnum.FEAT_COMBOS_ENCODING,
+            encoded_values_map=new_columns_encoding_maps,
+            derived_columns=new_column_name,
+        )
+    )
     return df_info, new_column_name
 
 
-def _one_hot_encode_column(df:pd.DataFrame, column:str, drop_one_new_column: bool = True,
-                           drop_old_column: bool = False):
+def _one_hot_encode_column(
+    df: pd.DataFrame,
+    column: str,
+    drop_one_new_column: bool = True,
+    drop_old_column: bool = False,
+):
     """
     OneHotEncoding of 'column' in df
 
@@ -173,7 +211,7 @@ def _one_hot_encode_column(df:pd.DataFrame, column:str, drop_one_new_column: boo
     # We choose to drop the first category of the feature (it can be deduced by the others ->
     #   it is just a combination of 0 of the other categories)
     if drop_one_new_column:
-        encoder = OneHotEncoder(drop='first')
+        encoder = OneHotEncoder(drop="first")
     else:
         encoder = OneHotEncoder()
     encoder_fitted = encoder.fit(series)
@@ -184,7 +222,9 @@ def _one_hot_encode_column(df:pd.DataFrame, column:str, drop_one_new_column: boo
     except ValueError:
         logger.debug(f"No NaN values were found in column {column}")
     # Name the new columns after the categories (adding a suffix). Exclude the first which was dropped
-    new_column_names = [f"{column}_{col}{ENCODED_COLUMN_SUFFIX}" for col in encoded_categories[1:]]
+    new_column_names = [
+        f"{column}_{col}{ENCODED_COLUMN_SUFFIX}" for col in encoded_categories[1:]
+    ]
     # Add the new encoded columns to the df_new
     for i, col in enumerate(new_column_names):
         df_new[col] = transformed_cols[:, i]
@@ -217,20 +257,25 @@ def _ordinal_encode_column(df, column, drop_old_column: bool = False):
     encoder = OrdinalEncoder()
     encoder_fitted = encoder.fit(series)  # Encoder object (for reverse transformation)
     series_enc = encoder_fitted.transform(series)
-    new_column = f'{column}{ENCODED_COLUMN_SUFFIX}'
+    new_column = f"{column}{ENCODED_COLUMN_SUFFIX}"
     # Convert the encoded columns to Integer type (this pandas Dtype is for handling NaN values)
     df_new[new_column] = series_enc
     df_new[new_column] = df_new[new_column].astype(pd.Int16Dtype())
 
     if drop_old_column:
         df_new = df_new.drop(column, axis=1)
-    return df_new, encoder_fitted, [new_column, ]
+    return df_new, encoder_fitted, [new_column]
 
 
-def encode_single_categorical_column(df_info: DataFrameWithInfo, col_name: str,
-                                     encoding: EncodingFunctions = EncodingFunctions.ORDINAL,
-                                     drop_one_new_column: bool = True, drop_old_column: bool = False,
-                                     force: bool = False, case_sensitive: bool = False):
+def encode_single_categorical_column(
+    df_info: DataFrameWithInfo,
+    col_name: str,
+    encoding: EncodingFunctions = EncodingFunctions.ORDINAL,
+    drop_one_new_column: bool = True,
+    drop_old_column: bool = False,
+    force: bool = False,
+    case_sensitive: bool = False,
+):
     """
     This function will encode the categorical column with the specified 'encoding' technique.
     If the column has already been encoded or it contains numerical values already,
@@ -264,11 +309,15 @@ def encode_single_categorical_column(df_info: DataFrameWithInfo, col_name: str,
     # Check if encoding operation is required
     if not force:
         if enc_column is not None:
-            logging.warning(f'The column {col_name} has already been encoded '
-                            f'as \"{enc_column}\". No further operations are performed ')
+            logging.warning(
+                f"The column {col_name} has already been encoded "
+                f'as "{enc_column}". No further operations are performed '
+            )
             return df_info
-        elif df_info.df[col_name].dtype.kind in 'biufc':
-            logging.warning(f'The column {col_name} is already numeric. No further operations are performed ')
+        elif df_info.df[col_name].dtype.kind in "biufc":
+            logging.warning(
+                f"The column {col_name} is already numeric. No further operations are performed "
+            )
             return df_info
 
     df_to_encode = df_info.df.copy()
@@ -282,17 +331,21 @@ def encode_single_categorical_column(df_info: DataFrameWithInfo, col_name: str,
 
     # Encoding using the selected function
     if encoding == EncodingFunctions.ORDINAL:
-        df_encoded, encoder, new_columns = _ordinal_encode_column(df_to_encode,
-                                                                  column=col_name,
-                                                                  drop_old_column=drop_old_column)
+        df_encoded, encoder, new_columns = _ordinal_encode_column(
+            df_to_encode, column=col_name, drop_old_column=drop_old_column
+        )
     elif encoding == EncodingFunctions.ONEHOT:
-        df_encoded, encoder, new_columns = _one_hot_encode_column(df_to_encode,
-                                                                  column=col_name,
-                                                                  drop_one_new_column=drop_one_new_column,
-                                                                  drop_old_column=drop_old_column)
+        df_encoded, encoder, new_columns = _one_hot_encode_column(
+            df_to_encode,
+            column=col_name,
+            drop_one_new_column=drop_one_new_column,
+            drop_old_column=drop_old_column,
+        )
     else:
-        logging.error(f"No valid encoding_func argument. Possible "
-                      f"values are: {[e.name for e in EncodingFunctions]}")
+        logging.error(
+            f"No valid encoding_func argument. Possible "
+            f"values are: {[e.name for e in EncodingFunctions]}"
+        )
         return None
 
     # Set the rows with missing values originally to NaN
@@ -306,20 +359,26 @@ def encode_single_categorical_column(df_info: DataFrameWithInfo, col_name: str,
 
     df_info_encoded = copy_df_info_with_new_df(df_info, df_encoded)
 
-    df_info_encoded.add_operation(FeatureOperation(
-        original_columns=col_name,
-        operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
-        encoder=encoder,
-        encoded_values_map=encoded_values_map,
-        derived_columns=tuple(new_columns),
-    ))
+    df_info_encoded.add_operation(
+        FeatureOperation(
+            original_columns=col_name,
+            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
+            encoder=encoder,
+            encoded_values_map=encoded_values_map,
+            derived_columns=tuple(new_columns),
+        )
+    )
 
     return df_info_encoded
 
 
-def encode_multi_categorical_columns(df_info: DataFrameWithInfo, columns: Tuple = None,
-                                     encoding: EncodingFunctions = EncodingFunctions.ORDINAL,
-                                     drop_one_new_column: bool = True, drop_old_column: bool = False):
+def encode_multi_categorical_columns(
+    df_info: DataFrameWithInfo,
+    columns: Tuple = None,
+    encoding: EncodingFunctions = EncodingFunctions.ORDINAL,
+    drop_one_new_column: bool = True,
+    drop_old_column: bool = False,
+):
     """
     Encoding every categorical column in 'columns' argument into separate features by
     using 'encode_single_categorical_column'.
@@ -343,19 +402,27 @@ def encode_multi_categorical_columns(df_info: DataFrameWithInfo, columns: Tuple 
         columns = set(columns)
         df_categ_cols = df_info.column_list_by_type.categorical_cols
         if columns.intersection(df_categ_cols) != columns:
-            logging.error(f'The columns from \"col_names\" argument are not all categorical. '
-                          f'Non-categorical columns are: {columns - df_categ_cols}')
+            logging.error(
+                f'The columns from "col_names" argument are not all categorical. '
+                f"Non-categorical columns are: {columns - df_categ_cols}"
+            )
 
     # Converting categorical cols
     for col in columns:
-        df_info = encode_single_categorical_column(df_info=df_info, encoding=encoding,
-                                                   col_name=col, drop_old_column=drop_old_column,
-                                                   drop_one_new_column=drop_one_new_column)
+        df_info = encode_single_categorical_column(
+            df_info=df_info,
+            encoding=encoding,
+            col_name=col,
+            drop_old_column=drop_old_column,
+            drop_one_new_column=drop_one_new_column,
+        )
 
     return df_info
 
 
-def convert_features_from_bool_to_binary(df_info: DataFrameWithInfo, col_names: Tuple = None):
+def convert_features_from_bool_to_binary(
+    df_info: DataFrameWithInfo, col_names: Tuple = None
+):
     """
     Converting the boolean features from col_names argument
     @param df_info:
@@ -370,15 +437,19 @@ def convert_features_from_bool_to_binary(df_info: DataFrameWithInfo, col_names: 
         col_names = set(col_names)
         df_bool_cols = df_info.column_list_by_type.bool_cols
         if col_names.intersection(df_bool_cols) != col_names:
-            logging.error(f'The columns from \"col_names\" argument are not all bool. Non-bool columns are:'
-                          f'{col_names - df_bool_cols}')
+            logging.error(
+                f'The columns from "col_names" argument are not all bool. Non-bool columns are:'
+                f"{col_names - df_bool_cols}"
+            )
     # Converting from bool to binary
     for col in col_names:
         df_info.df[col] = df_info.df[col] * 1
     return df_info
 
 
-def make_categorical_columns_multiple_combinations(df_info: DataFrameWithInfo, col_names):
+def make_categorical_columns_multiple_combinations(
+    df_info: DataFrameWithInfo, col_names
+):
     """
     This function selects a number N of column from 1 to len(col_names).
     Then it combines the unique values of the first N columns from col_names in order to
@@ -401,7 +472,9 @@ def make_categorical_columns_multiple_combinations(df_info: DataFrameWithInfo, c
     """
     combination_columns = []
     for i in range(len(col_names)):
-        df_info, new_column = combine_categorical_columns_to_one(df_info, col_names[:i + 1])
+        df_info, new_column = combine_categorical_columns_to_one(
+            df_info, col_names[: i + 1]
+        )
         combination_columns.append(new_column)
 
     return df_info, combination_columns
@@ -411,16 +484,18 @@ def make_categorical_columns_multiple_combinations(df_info: DataFrameWithInfo, c
 #     pass
 
 
-if __name__ == '__main__':
-    sys.path.append('../..')
+if __name__ == "__main__":
+    sys.path.append("../..")
     import os
 
-    CWD = os.path.abspath(os.path.dirname('__file__'))
+    CWD = os.path.abspath(os.path.dirname("__file__"))
     # DB_SMVET = os.path.join('/home/lorenzo-hk3lab/WorkspaceHK3Lab', 'smvet','data', 'Sani_15300_anonym.csv')
     # SEGMENTATION_DATA = os.path.join(CWD, '..', 'segmentation', 'resources', 'dense_areas_percentage.csv')
-    DB_CORRECT = os.path.join(CWD, '..', '..', 'data', 'Sani_15300_anonym.csv')
+    DB_CORRECT = os.path.join(CWD, "..", "..", "data", "Sani_15300_anonym.csv")
     df_info = DataFrameWithInfo(metadata_cols=(), data_file=DB_CORRECT)
     print(df_info.df.columns)
-    col = 'SEX'
-    df_info = encode_single_categorical_column(df_info, col_name=col, encoding=EncodingFunctions.ONEHOT)
-    print('end')
+    col = "SEX"
+    df_info = encode_single_categorical_column(
+        df_info, col_name=col, encoding=EncodingFunctions.ONEHOT
+    )
+    print("end")
