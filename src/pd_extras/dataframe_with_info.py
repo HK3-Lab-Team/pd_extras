@@ -35,6 +35,10 @@ def _to_tuple(x: Union[str, Iterable]) -> Tuple:
         return tuple([x])
 
 
+class MultipleOperationsFoundError(Exception):
+    pass
+
+
 class FeatureOperation:
     """
     This is a Class to store the operations executed on df.
@@ -43,17 +47,22 @@ class FeatureOperation:
     def __init__(
         self,
         operation_type: OperationTypeEnum,
-        original_columns: Union[Tuple[str], str, None] = None,
-        derived_columns: Union[Tuple[str], str, None] = None,
+        original_columns: Union[Tuple[str], str, None] = (),
+        derived_columns: Union[Tuple[str], str, None] = (),
         encoded_values_map: Union[Dict[int, Any], None] = None,
         encoder=None,
         details: Union[Dict, None] = None,
     ):
         """
         This is a Model to store the operations executed on df.
-        @param details: It contains details about the operation, like the map between encoded
+
+        Parameters
+        ----------
+        details: Dict
+            Dict containing details about the operation, like the map between encoded
             value and original value. It may be set to None
-        @param derived_columns: if it is equal to original_columns, it will be reassigned to None
+        derived_columns: Tuple[str]
+            If this tuple is equal to original_columns, it will be reassigned to None
         """
         # This is to avoid that a single column (i.e. a string) is interpreted as a tuple of single chars
         original_columns = _to_tuple(original_columns)
@@ -63,11 +72,14 @@ class FeatureOperation:
         self.operation_type = operation_type
         self.details = details
         self.encoder = encoder
-        self.encoded_values_map = encoded_values_map
+        if encoded_values_map is None:
+            self.encoded_values_map = encoded_values_map
+        else:
+            self.encoded_values_map = {}
         self.encoding_function = encoder
 
         if derived_columns == original_columns:
-            self.derived_columns = None
+            self.derived_columns = ()
         else:
             self.derived_columns = derived_columns
 
@@ -105,7 +117,8 @@ class FeatureOperation:
 
         Returns
         -------
-        bool: True if all the conditions above are fulfilled and False otherwise
+        bool:
+            True if all the conditions above are fulfilled and False otherwise
         """
         if isinstance(other, self.__class__):
             if (
@@ -180,20 +193,30 @@ class DataFrameWithInfo:
         df_object: pd.DataFrame = None,
         nan_percentage_threshold: float = 0.999,
         metadata_as_features: bool = False,
-        new_columns_encoding_maps: Union[
+        executed_feat_operations: Union[
             DefaultDict[str, List[FeatureOperation]], None
         ] = None,
     ):
         """
-        This class contains some useful methods and attributes mostly related to features/columns.
-        It helps in keeping track of the operations on DataFrame, and returns subgroups of columns split by type
+        This class contains useful methods and attributes related to the DataFrame.
 
-        @param new_columns_encoding_maps: Union[DefaultDict[str, List[FeatureOperation]], None]
-        @param metadata_cols: Tuple of the names of the columns that have infos related to the patient
+        It also keep track of the operations performed on DataFrame, and returns
+        subgroups of columns split by type.
+
+        Parameters
+        ----------
+        metadata_cols: Tuple[str]
+            Tuple with the name of the columns that have info related to the patient
             and that are not from medical exams
-        @param data_file:
-        @param nan_percentage_threshold: Float value for the threshold of NaN values count to decide
-        if the column is relevant or not
+        data_file: str
+            Path to the csv file containing data
+        nan_percentage_threshold: float
+            Float value for the threshold of NaN values count to decide
+            if the column is relevant or not
+        executed_feat_operations: Union[DefaultDict[str, List[FeatureOperation]], None]
+            Dict where the keys are the column name and the values are the related
+            operations that created the column or that were performed on them.
+            This is to keep track of the operations performed on dataframe features.
         """
         if df_object is None:
             if data_file is None:
@@ -209,9 +232,10 @@ class DataFrameWithInfo:
         # Dict of Lists ->
         #         key: column_name,
         #         value: List of FeatureOperation instances
-        if new_columns_encoding_maps is None:
-            new_columns_encoding_maps = collections.defaultdict(list)
-        self.feature_elaborations = new_columns_encoding_maps
+        if executed_feat_operations is None:
+            # Create a Dict with values initialized to lists
+            executed_feat_operations = collections.defaultdict(list)
+        self.feature_operations = executed_feat_operations
 
         # Columns generated by Feature Refactoring (e.g.: encoding, bin_splitting)
         self.derived_columns = set()
@@ -388,6 +412,17 @@ class DataFrameWithInfo:
     # =    METHODS        =
     # =====================
 
+    def least_nan_cols(self, threshold: int) -> Set:
+        """
+        This is to get the features with a NaN count lower than the "threshold" argument
+        """
+        best_feature_list = set()
+        for c in self.med_exam_col_list:
+            if sum(self.df[c].isna()) < threshold:
+                best_feature_list.add(c)
+
+        return best_feature_list
+
     def get_encoded_string_values_map(
         self, column_name: str
     ) -> Union[Dict[int, str], None]:
@@ -400,7 +435,7 @@ class DataFrameWithInfo:
                                    values are the values of the encoded column
         """
         try:
-            encoded_map = self.feature_elaborations[column_name][
+            encoded_map = self.feature_operations[column_name][
                 0
             ].encoded_string_values_map
             return encoded_map
@@ -435,16 +470,17 @@ class DataFrameWithInfo:
         """
         This method adds a new operation corresponding to the key:'original_columns' (and eventually
         to 'derived_columns' if generated by the operation).
-        It will also update the df with the "df_new" argument and it will automatically update every other argument
-        accordingly.
+        It will also update the df with the "df_new" argument and it will automatically
+        update every other argument accordingly.
         It also checks if at least one of original_columns is not in the list of metadata_cols
         (in that case it does not contain only metadata information)
         """
-        # This is used to identify the type of columns produced (it will be tested and changed in the loop)
+        # This is used to identify the type of columns produced (it will be tested
+        # and changed in the loop)
         is_metadata_cols = True
         # Loop for every original column name, so we append this operation to every column_name
         for o in feature_operation.original_columns:
-            self.feature_elaborations[o].append(feature_operation)
+            self.feature_operations[o].append(feature_operation)
             # Check if at least one of original_columns is not in the list of metadata_cols
             # (in that case it does not contain only metadata information)
             if o not in self.metadata_cols:
@@ -452,7 +488,7 @@ class DataFrameWithInfo:
         if feature_operation.derived_columns is not None:
             # Add the same operation for each derived column
             for d in feature_operation.derived_columns:
-                self.feature_elaborations[d].append(feature_operation)
+                self.feature_operations[d].append(feature_operation)
             # If every original_column is in the list of metadata_cols, the derived_columns is also
             # derived by metadata_cols only and therefore must be inserted in metadata_cols set, too
             if is_metadata_cols:
@@ -468,53 +504,94 @@ class DataFrameWithInfo:
         self, feat_operation: FeatureOperation
     ) -> Union[FeatureOperation, None]:
         """
-        This method retrieves a specific "feat_operation", instance of FeatureOperation, using its attributes.
-        It may be used to check if an operation has already been performed
+        This method search an operation previously executed on this object.
+
+        This checks if an operation similar to ``feat_operation`` has already been
+        performed on the instance. Therefore, the unknown attributes of the operation
+        can be set to None and, if the operation is found, it will
+        contain full information and it will be returned.
+
+        Parameters
+        ----------
+        feat_operation: FeatureOperation
+            FeatureOperation instance containing some informations about the operation the
+            user is looking for. It must contain either ``original_columns`` or
+            ``derived_columns`` attribute, otherwise no operation is returned.
+            If some attributes are unknown and the user wants to leave them unspecified,
+            they can be set to None.
+
+        Returns
+        -------
+        FeatureOperation
+            FeatureOperation instance that has been performed on the DataFrameWithInfo
+            instance, and that has the same specified attributes of ``feat_operation``.
+            If no operation similar to ``feat_operation`` is found, None is returned.
+            If more than one operation similar to ``feat_operation`` is found,
+            MultipleOperationsFoundError is raised.
+
+        Raises
+        ------
+        MultipleOperationsFoundError:
+            Exception raised when more than one operation similar to ``feat_operation``
+            is found.
+
         """
         # Select only the first element of the original_columns (since each of the columns is linked
         # to an operation) and check if the 'feat_operation' argument is among the operations linked to
         # that column.
         if feat_operation.original_columns is not None:
-            selected_column_operations = self.feature_elaborations[
+            selected_column_operations = self.feature_operations[
                 feat_operation.original_columns[0]
             ]
+        elif feat_operation.derived_columns is not None:
+            selected_column_operations = self.feature_operations[
+                feat_operation.derived_columns[0]
+            ]
         else:
-            if feat_operation.derived_columns is not None:
-                selected_column_operations = self.feature_elaborations[
-                    feat_operation.derived_columns[0]
-                ]
-            else:
-                logging.warning(
-                    "It is not possible to look for an operation if neither "
-                    "original columns nor derived columns attributes are provided"
-                )
-                return None
+            logging.warning(
+                "It is not possible to look for an operation if neither "
+                "original columns nor derived columns attributes are provided"
+            )
+            return None
 
+        similar_operations = []
         for f in selected_column_operations:
             if f == feat_operation:
-                return f
+                similar_operations.append(f)
 
-        return None
+        if len(similar_operations) == 0:
+            return None
+        elif len(similar_operations) == 1:
+            return similar_operations[0]
+        else:
+            raise MultipleOperationsFoundError(
+                "Multiple operations were found. Please provide additional information"
+            )
 
     def get_enc_column_from_original(
         self, column_name, encoder: EncodingFunctions = None,
     ) -> Union[Tuple[str, ...], None]:
         """
-        This checks if the column is already encoded. In case it is, it will return the name of the
-        column with encoded values, otherwise None.
-        WARNING: If you also want to check the operation used for Encoding, you should use
-        'find_operation_in_column' method
+        Return the name of the column with encoded values, derived from ``column_name``.
+
+        This method checks if an operation of type OperationTypeEnum.CATEGORICAL_ENCODING
+        has been performed on the ``column_name`` column. In case it is, it will return
+        the name of the column with encoded values, otherwise None.
+        Note: If the user wants to check the columns derived with operations of different
+        type, 'find_operation_in_column' method should be employed.
 
         Parameters
         ----------
-        column_name: Column to be checked
+        column_name: str
+            Name of the original column that has been encoded
         encoder: EncodingFunctions
-            Select the type of encoder used
+            Type of encoder used to encode ``column_name`` column
 
         Returns
         -------
-        Tuple[str, ...] -> Returns name of the column with encoded values. Returns None if the column
-                           has not been encoded
+        Tuple[str]
+            Tuple of names of one (or more) columns with encoded values. None if the column
+            has not been encoded
         """
         feat_operation = FeatureOperation(
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
@@ -522,8 +599,8 @@ class DataFrameWithInfo:
             encoder=encoder,
         )
         found_operat = self.find_operation_in_column(feat_operation)
-        # If no operation is found, or the column is the derived column (i.e. the input of encoding function),
-        # we return None
+        # If no operation is found, or the column is the derived column
+        # (i.e. the input of encoding function), we return None
         if found_operat is None or column_name in found_operat.derived_columns:
             return None
         else:
@@ -533,22 +610,27 @@ class DataFrameWithInfo:
         self, column_name, encoder: EncodingFunctions = None,
     ) -> Union[Tuple[str, ...], None]:
         """
-        This checks if the column you provide is the encoded version of a original one.
-        In case it is, it will return the name of the column with original values, otherwise None.
-        WARNING: This is to check among OperationTypeEnum.CATEGORICAL_ENCODING operations.
-        If you also want to check other operation types used for Encoding, you should use
-        'find_operation_in_column' method
+        Return the name of the column with original values, used to generate ``column_name``.
+
+        This method checks if an operation of type OperationTypeEnum.CATEGORICAL_ENCODING
+        has been performed and generated ``column_name`` column. In case it exists, it
+        will return the name of the column with original values, otherwise None.
+        Note: If the user wants to check the operations of different type,
+        'find_operation_in_column' method should be employed.
 
         Parameters
         ----------
-        column_name: Column to be checked
+        column_name: str
+            Name of the column that has been encoded.
         encoder: EncodingFunctions
-            Select the type of encoder used
+            Type of encoder used to generate ``column_name`` column.
 
         Returns
         -------
-        Tuple[str, ...] -> Returns name of the column with encoded values. Returns None if the column
-                           has not been encoded
+        Tuple[str]
+            Tuple of names of one (or more) column name(s) with original values. None
+            if the column is not generated by a OperationTypeEnum.CATEGORICAL_ENCODING
+            operation.
         """
         feat_operation = FeatureOperation(
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
@@ -556,23 +638,12 @@ class DataFrameWithInfo:
             encoder=encoder,
         )
         found_operat = self.find_operation_in_column(feat_operation)
-        # If no operation is found, or the column is the derived column (i.e. the input of encoding function),
-        # we return None
+        # If no operation is found, or the column is the derived column
+        # (i.e. the input of encoding function), we return None
         if found_operat is None or column_name in found_operat.original_columns:
             return None
         else:
             return found_operat.original_columns
-
-    def least_nan_cols(self, threshold: int) -> Set:
-        """
-        This is to get the features with a NaN count lower than the "threshold" argument
-        """
-        best_feature_list = set()
-        for c in self.med_exam_col_list:
-            if sum(self.df[c].isna()) < threshold:
-                best_feature_list.add(c)
-
-        return best_feature_list
 
     def __str__(self):
         """ Returns text of the number of features for every variable type """
