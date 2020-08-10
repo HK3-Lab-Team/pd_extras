@@ -1,7 +1,8 @@
 import pytest
 
-from ...pd_extras.dataframe_with_info import DataFrameWithInfo
+from ...pd_extras.dataframe_with_info import DataFrameWithInfo, FeatureOperation
 from ..unitutil import DataFrameMock
+from .featureoperation_combos import prepare_featureoperation_combos
 
 
 class Describe_DataFrameWithInfo:
@@ -54,3 +55,45 @@ class Describe_DataFrameWithInfo:
         assert len(same_value_columns) == len(expected_same_value_columns)
         assert isinstance(same_value_columns, set)
         assert same_value_columns == expected_same_value_columns
+
+    @pytest.mark.parametrize(
+        "n_columns, expected_trivial_columns",
+        [
+            (4, {"nan_0", "nan_1", "same_0", "same_1"}),
+            (2, {"nan_0", "same_0"}),
+            (0, set()),
+        ],
+    )
+    def test_trivial_columns(self, request, n_columns, expected_trivial_columns):
+        df = DataFrameMock.df_trivial(n_columns)
+        df_info = DataFrameWithInfo(df_object=df)
+
+        trivial_columns = df_info.trivial_columns
+
+        assert len(trivial_columns) == len(expected_trivial_columns)
+        assert isinstance(trivial_columns, set)
+        assert trivial_columns == expected_trivial_columns
+
+    @pytest.mark.parametrize(
+        "feat_op_1_dict, feat_op_2_dict, is_equal_label",
+        prepare_featureoperation_combos(),
+    )
+    def test_featureoperation_equals(
+        self, request, feat_op_1_dict, feat_op_2_dict, is_equal_label
+    ):
+        feat_op_1 = FeatureOperation(
+            operation_type=feat_op_1_dict["operation_type"],
+            original_columns=feat_op_1_dict["original_columns"],
+            derived_columns=feat_op_1_dict["derived_columns"],
+            encoder=feat_op_1_dict["encoder"],
+        )
+        feat_op_2 = FeatureOperation(
+            operation_type=feat_op_2_dict["operation_type"],
+            original_columns=feat_op_2_dict["original_columns"],
+            derived_columns=feat_op_2_dict["derived_columns"],
+            encoder=feat_op_2_dict["encoder"],
+        )
+
+        are_feat_ops_equal = feat_op_1 == feat_op_2
+
+        assert are_feat_ops_equal == is_equal_label
