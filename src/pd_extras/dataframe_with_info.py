@@ -145,7 +145,8 @@ class FeatureOperation:
         derived_columns: Tuple[str]
             If this tuple is equal to original_columns, it will be reassigned to None
         """
-        # This is to avoid that a single column (i.e. a string) is interpreted as a tuple of single chars
+        # This is to avoid that a single column (i.e. a string) is interpreted as a
+        # tuple of single chars
         original_columns = _to_tuple(original_columns)
         derived_columns = _to_tuple(derived_columns)
 
@@ -183,11 +184,11 @@ class FeatureOperation:
 
     def __eq__(self, other):
         """
-        This is useful when we want to compare two FeatureOperation instances (used in method
-        'find_operation_in_column'). The conditions to identify an equality are:
+        This is useful when we want to compare two FeatureOperation instances (used in
+        method 'find_operation_in_column'). The conditions to identify an equality are:
         1. Same operation_type (one of the values of OperationTypeEnum)
-        2. Original columns OR derived columns are the same (not both required so that I can input one list
-        of columns and find the other
+        2. Original columns OR derived columns are the same (not both required so that
+        I can input one list of columns and find the other
         3. If the encoder is provided for both instances, it must be the same (it could
         be OneHotEncoder/OrdinalEncoder,...)
 
@@ -332,7 +333,10 @@ class DataFrameWithInfo:
     @property
     def many_nan_columns(self) -> Set:
         """
-        :return: Set[str] -> List of column names with 99.9% (or nan_percentage_threshold) of NaN
+        Returns
+        -------
+        Set[str]
+            List of column names with 99.9% (or nan_percentage_threshold) of NaN
         """
         many_nan_columns = set()
         for c in self.df.columns:
@@ -348,7 +352,10 @@ class DataFrameWithInfo:
     @property
     def same_value_cols(self) -> Set:
         """
-        :return: Set[str] -> List of column names with the same repeated value
+        Returns
+        -------
+        Set[str]
+            List of column names with the same repeated value
         """
         same_value_columns = set()
         for c in self.df.columns:
@@ -363,7 +370,8 @@ class DataFrameWithInfo:
         """
         Returns
         -------
-            Set -> Combination of the columns with many NaNs and with the same repeated value
+        Set[str]
+            Combination of the columns with many NaNs and with the same repeated value
         """
         return self.many_nan_columns.union(self.same_value_cols)
 
@@ -420,7 +428,8 @@ class DataFrameWithInfo:
 
         Returns
         -------
-
+        Set[str]
+            Set of categorical columns
         """
         categorical_cols = set()
 
@@ -437,16 +446,31 @@ class DataFrameWithInfo:
 
     @property
     def to_be_fixed_cols(self) -> Set:
+        """
+        Returns
+        -------
+        Set
+            Set of columns with values of different types
+        """
         return self.column_list_by_type.mixed_type_cols
 
     @property
     def to_be_encoded_cat_cols(self):
         """
-        This property is to find categorical columns that needs encoding, so it also checks
-        if they are already encoded.
+        Find categorical columns that needs encoding.
+
+        It also checks if they are already encoded.
+
+        Returns
+        -------
+        Set
+            Set of categorical column names that need encoding
+
         """
         to_be_encoded_categorical_cols = set()
         cols_by_type = self.column_list_by_type
+        # TODO: Check this because maybe categorical columns that are numerical, do
+        #  not need encoding probably!
         categorical_cols = (
             cols_by_type.str_categorical_cols | cols_by_type.num_categorical_cols
         )
