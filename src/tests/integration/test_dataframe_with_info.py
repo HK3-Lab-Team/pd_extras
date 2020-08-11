@@ -3,8 +3,8 @@ from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import DataFrameWithInfo, FeatureOperation
 from ...pd_extras.feature_enum import OperationTypeEnum
-from ..unitutil import DataFrameMock
-from .featureoperation_combos import eq_featureoperation_fixture
+from ..dataframewithinfo_util import DataFrameMock
+from ..featureoperation_util import eq_featureoperation_combs
 
 
 class Describe_DataFrameWithInfo:
@@ -77,7 +77,7 @@ class Describe_DataFrameWithInfo:
         assert trivial_columns == expected_trivial_columns
 
     @pytest.mark.parametrize(
-        "feat_op_1_dict, feat_op_2_dict, is_equal_label", eq_featureoperation_fixture(),
+        "feat_op_1_dict, feat_op_2_dict, is_equal_label", eq_featureoperation_combs()
     )
     def test_featureoperation_equals(
         self, request, feat_op_1_dict, feat_op_2_dict, is_equal_label
