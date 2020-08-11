@@ -130,3 +130,23 @@ class DataFrameMock:
                 + random_samples
             )
         return pd.DataFrame(trivial_dict)
+
+
+class SeriesMock:
+    @staticmethod
+    def series_by_type(series_type: str):
+        col_name = "column_name"
+        if "bool" in series_type:
+            return pd.Series([True, False, True, True, False], name=col_name)
+        elif "str" in series_type:
+            return pd.Series(
+                ["value_0", "value_1", "value_2", "value_3", "value_4"], name=col_name
+            )
+        elif "float" in series_type:
+            return pd.Series([0.05 * i for i in range(5)], name=col_name)
+        elif "int" in series_type:
+            return pd.Series(range(5), name=col_name)
+        elif "date" in series_type:
+            return pd.Series([date.today() for i in range(5)], name=col_name)
+        elif "mixed" in series_type:
+            return pd.Series([1, 2, 3, 4, "value_0"], name=col_name)

@@ -1,10 +1,14 @@
 import pytest
 from sklearn.preprocessing import OneHotEncoder
 
-from ...pd_extras.dataframe_with_info import DataFrameWithInfo, FeatureOperation
 from ...pd_extras.feature_enum import OperationTypeEnum
-from ..dataframewithinfo_util import DataFrameMock
+from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
+from ...pd_extras.dataframe_with_info import (
+    DataFrameWithInfo,
+    FeatureOperation,
+    _find_single_column_type,
+)
 
 
 class Describe_DataFrameWithInfo:
@@ -116,3 +120,22 @@ class Describe_DataFrameWithInfo:
         are_feat_ops_equal = feat_op_1 == feat_op_2
 
         assert are_feat_ops_equal is False
+
+
+@pytest.mark.parametrize(
+    "series_type, expected_col_type_dict",
+    [
+        ("bool", {"col_name": "column_name", "col_type": "bool_col"}),
+        ("string", {"col_name": "column_name", "col_type": "string_col"}),
+        ("float", {"col_name": "column_name", "col_type": "numerical_col"}),
+        ("int", {"col_name": "column_name", "col_type": "numerical_col"}),
+        ("date", {"col_name": "column_name", "col_type": "other_col"}),
+        ("mixed", {"col_name": "column_name", "col_type": "mixed_type_col"}),
+    ],
+)
+def test_find_single_column_type(request, series_type, expected_col_type_dict):
+    serie = SeriesMock.series_by_type(series_type)
+
+    col_type_dict = _find_single_column_type(serie)
+
+    assert col_type_dict == expected_col_type_dict
