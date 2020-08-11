@@ -142,7 +142,7 @@ class DataFrameMock:
         """
         same_value_dict = {}
         sample_count = 100
-        # Create n_columns columns with NaN
+        # Create n_columns columns with same repeated value
         for i in range(n_columns):
             same_value_dict[f"same_{i}"] = [4] * sample_count
         # Create not_same_value_columns with repeated values and random values
@@ -164,7 +164,6 @@ class DataFrameMock:
         DataFrame has 100 rows and ``n_columns``+5 columns. The additional 5 columns
         contain random values and a variable count of a repeated value and NaNs.
 
-
         Parameters
         ----------
         n_columns : int
@@ -178,12 +177,12 @@ class DataFrameMock:
         """
         trivial_dict = {}
         sample_count = 100
-        nan_columns = int(n_columns / 2)
+        nan_columns = n_columns // 2
         same_value_columns = n_columns - nan_columns
-        # Create half columns with NaN
+        # Create half of n_columns columns with NaN
         for i in range(nan_columns):
             trivial_dict[f"nan_{i}"] = [pd.NA] * sample_count
-        # Create half columns with NaN
+        # Create half of n_columns columns with repeated value
         for j in range(same_value_columns):
             trivial_dict[f"same_{j}"] = [4] * sample_count
         # Create 5 more columns with valid values (with NaN, repeated and random values)
