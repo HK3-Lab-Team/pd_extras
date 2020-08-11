@@ -3,11 +3,10 @@ import itertools
 
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-from ...pd_extras.dataframe_with_info import FeatureOperation
-from ...pd_extras.feature_enum import OperationTypeEnum
+from ..pd_extras.feature_enum import OperationTypeEnum
 
 
-def eq_featureoperation_fixture():
+def eq_featureoperation_combs():
     """
     Create pairs of FeatureOperation instances to be compared for tests.
 
