@@ -35,6 +35,38 @@ def _to_tuple(x: Union[str, Iterable]) -> Tuple:
         return tuple([x])
 
 
+def _split_columns_by_type(
+    df_col, bool_cols, str_cols, numerical_cols, other_cols, mixed_type_cols
+):
+    col = df_col.name
+    # Select not-NaN only
+    notna_column = df_col[df_col.notna()]
+    # Compare the first_row type with every other row of the same column
+    col_types = notna_column.apply(lambda r: str(type(r))).values
+    has_same_values = all(col_types == col_types[0])
+    if has_same_values:
+        # Check the type of the first element
+        col_type = col_types[0]
+        unique_values = notna_column.unique()
+        if "bool" in col_type or (
+            len(unique_values) == 2
+            and unique_values[0] in [0, 1]
+            and unique_values[1] in [0, 1]
+        ):
+            # True/False are considered as [0,1]
+            bool_cols.add(col)
+        elif "str" in col_type:
+            # String columns
+            str_cols.add(col)
+        elif "float" in col_type or "int" in col_type:
+            # look if the col_type contains 'int' or 'float' keywords
+            numerical_cols.add(col)
+        else:
+            other_cols.add(col)
+    else:
+        mixed_type_cols.add(col)
+
+
 class MultipleOperationsFoundError(Exception):
     pass
 
@@ -198,9 +230,9 @@ class DataFrameWithInfo:
         ] = None,
     ):
         """
-        This class contains useful methods and attributes related to the DataFrame.
+        Class containing useful methods and attributes related to the DataFrame.
 
-        It also keep track of the operations performed on DataFrame, and returns
+        It also keeps track of the operations performed on DataFrame, and returns
         subgroups of columns split by type.
 
         Parameters
@@ -308,33 +340,15 @@ class DataFrameWithInfo:
             col_list = set(self.df.columns) - same_value_cols - self.metadata_cols
 
         # TODO: Change to .apply(axis=0)  on columns!
-        for col in col_list:
-            # Select not-NaN only
-            notna_col_df = self.df[self.df[col].notna()]
-            # Compare the first_row type with every other row of the same column
-            col_types = notna_col_df[col].apply(lambda r: str(type(r))).values
-            has_same_values = all(col_types == col_types[0])
-            if has_same_values:
-                # Check the type of the first element
-                col_type = col_types[0]
-                unique_values = notna_col_df[col].unique()
-                if "bool" in col_type or (
-                    len(unique_values) == 2
-                    and unique_values[0] in [0, 1]
-                    and unique_values[1] in [0, 1]
-                ):
-                    # True/False are considered as [0,1]
-                    bool_cols.add(col)
-                elif "str" in col_type:
-                    # String columns
-                    str_cols.add(col)
-                elif "float" in col_type or "int" in col_type:
-                    # look if the col_type contains 'int' or 'float' keywords
-                    numerical_cols.add(col)
-                else:
-                    other_cols.add(col)
-            else:
-                mixed_type_cols.add(col)
+        self.df[col_list].apply(
+            _split_columns_by_type,
+            axis=0,
+            bool_cols=bool_cols,
+            str_cols=str_cols,
+            numerical_cols=numerical_cols,
+            other_cols=other_cols,
+            mixed_type_cols=mixed_type_cols,
+        )
 
         str_categorical_cols = self._get_categorical_cols(str_cols)
         num_categorical_cols = self._get_categorical_cols(numerical_cols)
@@ -724,7 +738,7 @@ def export_df_with_info_to_file(
 if __name__ == "__main__":
     df_sani_dir = os.path.join(
         "/home/lorenzo-hk3lab/WorkspaceHK3Lab/",
-        "Partitioning",
+        "smvet",
         "data",
         "Sani_15300_anonym.csv",
     )
@@ -738,7 +752,11 @@ if __name__ == "__main__":
     metadata_cols = tuple(metadata_cols.replace("\t", ",").split(","))
 
     df_sani = DataFrameWithInfo(metadata_cols=metadata_cols, data_file=df_sani_dir)
+    import time
 
+    time0 = time.time()
+    print(df_sani.column_list_by_type)
+    print(time.time() - time0)
     whole_word_replace_dict = {
         "---": None,
         ".": None,
