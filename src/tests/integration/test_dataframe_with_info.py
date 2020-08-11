@@ -1,8 +1,10 @@
 import pytest
+from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import DataFrameWithInfo, FeatureOperation
+from ...pd_extras.feature_enum import OperationTypeEnum
 from ..unitutil import DataFrameMock
-from .featureoperation_combos import prepare_featureoperation_combos
+from .featureoperation_combos import eq_featureoperation_fixture
 
 
 class Describe_DataFrameWithInfo:
@@ -75,8 +77,7 @@ class Describe_DataFrameWithInfo:
         assert trivial_columns == expected_trivial_columns
 
     @pytest.mark.parametrize(
-        "feat_op_1_dict, feat_op_2_dict, is_equal_label",
-        prepare_featureoperation_combos(),
+        "feat_op_1_dict, feat_op_2_dict, is_equal_label", eq_featureoperation_fixture(),
     )
     def test_featureoperation_equals(
         self, request, feat_op_1_dict, feat_op_2_dict, is_equal_label
@@ -97,3 +98,21 @@ class Describe_DataFrameWithInfo:
         are_feat_ops_equal = feat_op_1 == feat_op_2
 
         assert are_feat_ops_equal == is_equal_label
+
+    def test_featureoperation_equals_with_different_instance_types(self):
+        feat_op_1 = FeatureOperation(
+            operation_type=OperationTypeEnum.BIN_SPLITTING,
+            original_columns=("original_column_2",),
+            derived_columns=("derived_column_1", "derived_column_2"),
+            encoder=OneHotEncoder,
+        )
+        feat_op_2 = dict(
+            operation_type=OperationTypeEnum.BIN_SPLITTING,
+            original_columns=("original_column_2",),
+            derived_columns=("derived_column_1", "derived_column_2"),
+            encoder=OneHotEncoder,
+        )
+
+        are_feat_ops_equal = feat_op_1 == feat_op_2
+
+        assert are_feat_ops_equal is False
