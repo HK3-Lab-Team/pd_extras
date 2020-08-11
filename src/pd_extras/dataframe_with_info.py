@@ -54,17 +54,11 @@ def _find_single_column_type(df_col):
     notna_column = df_col[df_col.notna()]
     # Compare the first_row type with every other row of the same column
     col_types = notna_column.apply(lambda r: str(type(r))).values
-    has_same_values = all(col_types == col_types[0])
-    if has_same_values:
+    has_same_types = all(col_types == col_types[0])
+    if has_same_types:
         # Check the type of the first element
         col_type = col_types[0]
-        unique_values = notna_column.unique()
-        if "bool" in col_type or (
-            len(unique_values) == 2
-            and unique_values[0] in [0, 1]
-            and unique_values[1] in [0, 1]
-        ):
-            # True/False are considered as [0,1]
+        if "bool" in col_type or set(notna_column) == {0, 1}:
             return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "bool_col"}
         elif "str" in col_type:
             # String columns
@@ -417,14 +411,14 @@ class DataFrameWithInfo:
             other_cols=other_cols,
         )
 
-    def _get_categorical_cols(self, str_cols):
+    def _get_categorical_cols(self, col_list):
         """
         This method is to identify every categorical column in df_info.
         It will also set those column's types to "category".
 
         Parameters
         ----------
-        str_cols
+        col_list
 
         Returns
         -------
@@ -433,10 +427,11 @@ class DataFrameWithInfo:
         """
         categorical_cols = set()
 
-        for col in str_cols:
+        for col in col_list:
             unique_val_nb = len(self.df[col].unique())
-            # To avoid considering features like 'PatientID' (or every string column) as categorical,
-            # we only select the columns with few unique values
+            # To avoid considering features like 'PatientID' (or every string column) as
+            # categorical, we only select the columns with few unique values
+            # TODO: Explain!
             if unique_val_nb < 7 or (
                 unique_val_nb < self.df[col].count() // CATEG_COL_THRESHOLD
             ):
