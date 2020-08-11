@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any, DefaultDict, Dict, Iterable, List, Set, Tuple, Union
 
 import pandas as pd
+from joblib import Parallel, delayed
 
 from .feature_enum import EncodingFunctions, OperationTypeEnum
 from .settings import CATEG_COL_THRESHOLD
@@ -35,9 +36,19 @@ def _to_tuple(x: Union[str, Iterable]) -> Tuple:
         return tuple([x])
 
 
-def _split_columns_by_type(
-    df_col, bool_cols, str_cols, numerical_cols, other_cols, mixed_type_cols
-):
+_COL_NAME_COLUMN = "col_name"
+_COL_TYPE_COLUMN = "col_type"
+
+
+def _find_columns_by_type(column_type_df: pd.DataFrame, col_type: str):
+    return set(
+        column_type_df[column_type_df[_COL_TYPE_COLUMN] == col_type][
+            _COL_NAME_COLUMN
+        ].values
+    )
+
+
+def _find_single_column_type(df_col):
     col = df_col.name
     # Select not-NaN only
     notna_column = df_col[df_col.notna()]
@@ -54,17 +65,55 @@ def _split_columns_by_type(
             and unique_values[1] in [0, 1]
         ):
             # True/False are considered as [0,1]
-            bool_cols.add(col)
+            return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "bool_col"}
         elif "str" in col_type:
             # String columns
-            str_cols.add(col)
+            return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "string_col"}
         elif "float" in col_type or "int" in col_type:
             # look if the col_type contains 'int' or 'float' keywords
-            numerical_cols.add(col)
+            return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "numerical_col"}
         else:
-            other_cols.add(col)
+            return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "other_col"}
     else:
-        mixed_type_cols.add(col)
+        return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "mixed_type_col"}
+
+
+def _split_columns_by_type_parallel(df, col_list):
+    """
+    Find column types of DataFrame ``df``
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        DataFrame containing columns to be analyzed
+    col_list: List[str]
+        List of the column names that will be analyzed
+
+    Returns
+    -------
+    set:
+        Set of columns containing values of different types
+    set:
+        Set of columns containing numerical values
+    set:
+        Set of columns containing string values
+    set:
+        Set of columns containing boolean values
+    set:
+        Set of the remaining columns that are in col_list but do not belong to any other set
+    """
+    column_type_dict = Parallel(n_jobs=-1)(
+        delayed(_find_single_column_type)(df_col=df[col]) for col in col_list
+    )
+    column_type_df = pd.DataFrame(column_type_dict)
+
+    mixed_type_cols = _find_columns_by_type(column_type_df, "mixed_type_col")
+    numerical_cols = _find_columns_by_type(column_type_df, "numerical_col")
+    str_cols = _find_columns_by_type(column_type_df, "string_col")
+    other_cols = _find_columns_by_type(column_type_df, "other_col")
+    bool_cols = _find_columns_by_type(column_type_df, "bool_col")
+
+    return mixed_type_cols, numerical_cols, str_cols, bool_cols, other_cols
 
 
 class MultipleOperationsFoundError(Exception):
@@ -327,11 +376,6 @@ class DataFrameWithInfo:
         when we need two (or more) of them (and we do not waste much time if we only need one).
         :return:  ColumnListByType: NamedTuple with the column list split by type
         """
-        mixed_type_cols = set()
-        numerical_cols = set()
-        str_cols = set()
-        other_cols = set()
-        bool_cols = set()
         same_value_cols = self.same_value_cols
 
         if self.metadata_as_features:
@@ -339,16 +383,13 @@ class DataFrameWithInfo:
         else:
             col_list = set(self.df.columns) - same_value_cols - self.metadata_cols
 
-        # TODO: Change to .apply(axis=0)  on columns!
-        self.df[col_list].apply(
-            _split_columns_by_type,
-            axis=0,
-            bool_cols=bool_cols,
-            str_cols=str_cols,
-            numerical_cols=numerical_cols,
-            other_cols=other_cols,
-            mixed_type_cols=mixed_type_cols,
-        )
+        (
+            mixed_type_cols,
+            numerical_cols,
+            str_cols,
+            bool_cols,
+            other_cols,
+        ) = _split_columns_by_type_parallel(self.df, col_list)
 
         str_categorical_cols = self._get_categorical_cols(str_cols)
         num_categorical_cols = self._get_categorical_cols(numerical_cols)
@@ -382,9 +423,7 @@ class DataFrameWithInfo:
 
         """
         categorical_cols = set()
-        # OLD_WAY:
-        # Select the columns with dtype != 'bool','int','unsigned int', 'float', 'complex'
-        # non_numeric_cols = set(filter(lambda c: self.df[c].dtype.kind not in 'biufc', col_list))
+
         for col in str_cols:
             unique_val_nb = len(self.df[col].unique())
             # To avoid considering features like 'PatientID' (or every string column) as categorical,
