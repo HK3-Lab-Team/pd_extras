@@ -1,6 +1,3 @@
-from datetime import date
-
-import pandas as pd
 import pytest
 from sklearn.preprocessing import OneHotEncoder
 
