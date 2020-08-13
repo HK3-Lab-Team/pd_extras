@@ -131,22 +131,128 @@ class DataFrameMock:
             )
         return pd.DataFrame(trivial_dict)
 
+    @staticmethod
+    def df_multi_type() -> pd.DataFrame:
+        """
+        Create pandas DataFrame with columns containing values of different types.
+
+        DataFrame has 5 rows and columns as follows:
+        1. One column containing boolean values
+        2. One column containing string values
+        3. One column containing numerical values
+        4. One column containing 'category' typed values
+        5. One column containing datetime values
+        6. One column containing 'interval' typed values
+        7. One column containing values of mixed types
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas DataFrame with 5 columns containing values of different types
+        """
+        return pd.DataFrame(
+            {
+                "bool_col_0": [True, False, True, True, False],
+                "string_col_0": ["value_0", "value_1", "value_2", "value_3", "value_4"],
+                "categorical_col_0": pd.Series(
+                    [
+                        "category_1",
+                        "category_1",
+                        "category_0",
+                        "category_1",
+                        "category_0",
+                    ],
+                    dtype="category",
+                ),
+                "numerical_col_0": [0.05 * i for i in range(5)],
+                "datetime_col_0": [date.today() for i in range(5)],
+                "interval_col_0": pd.arrays.IntervalArray(
+                    [
+                        pd.Interval(0, 1),
+                        pd.Interval(1, 5),
+                        pd.Interval(2, 5),
+                        pd.Interval(1, 4),
+                        None,
+                    ]
+                ),
+                "mixed_type_col_0": [1, 2, 3, 4, "value_0"],
+            }
+        )
+
+    @staticmethod
+    def df_column_names_by_type() -> pd.DataFrame:
+        """
+        Create pandas DataFrame with string (column names) and corresponding types.
+
+        DataFrame has 11 rows and 2 columns. One column contains strings (usually
+        corresponding to column names) and the other contains:
+        2 x 'bool_col', 3 x 'string_col', 1 x 'numerical_col', 1 x 'other_col' and
+        4 x 'mixed_type_col' (usually describing the type of values contained in the
+        column).
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas DataFrame with 2 columns containing strings and types respectively.
+        """
+        return pd.DataFrame(
+            [
+                {"col_name": "bool_col_0", "col_type": "bool_col"},
+                {"col_name": "bool_col_1", "col_type": "bool_col"},
+                {"col_name": "string_col_0", "col_type": "string_col"},
+                {"col_name": "string_col_1", "col_type": "string_col"},
+                {"col_name": "string_col_2", "col_type": "string_col"},
+                {"col_name": "numerical_col_0", "col_type": "numerical_col"},
+                {"col_name": "other_col_0", "col_type": "other_col"},
+                {"col_name": "mixed_type_col_0", "col_type": "mixed_type_col"},
+                {"col_name": "mixed_type_col_1", "col_type": "mixed_type_col"},
+                {"col_name": "mixed_type_col_2", "col_type": "mixed_type_col"},
+                {"col_name": "mixed_type_col_3", "col_type": "mixed_type_col"},
+            ]
+        )
+
 
 class SeriesMock:
     @staticmethod
     def series_by_type(series_type: str):
         col_name = "column_name"
         if "bool" in series_type:
-            return pd.Series([True, False, True, True, False], name=col_name)
+            return pd.Series([True, False, True, pd.NA, False], name=col_name)
         elif "str" in series_type:
             return pd.Series(
-                ["value_0", "value_1", "value_2", "value_3", "value_4"], name=col_name
+                ["value_0", "value_1", "value_2", pd.NA, "value_4"], name=col_name
             )
         elif "float" in series_type:
-            return pd.Series([0.05 * i for i in range(5)], name=col_name)
+            return pd.Series([0.05 * i for i in range(4)] + [pd.NA], name=col_name)
         elif "int" in series_type:
-            return pd.Series(range(5), name=col_name)
+            return pd.Series(list(range(4)) + [pd.NA], name=col_name)
+        elif "float_int" in series_type:
+            return pd.Series([2, 3, 0.1, 4, 5], name=col_name)
         elif "date" in series_type:
-            return pd.Series([date.today() for i in range(5)], name=col_name)
-        elif "mixed" in series_type:
-            return pd.Series([1, 2, 3, 4, "value_0"], name=col_name)
+            return pd.Series([date.today() for i in range(4)] + [pd.NA], name=col_name)
+        elif "category" in series_type:
+            return pd.Series(
+                ["category_1", "category_1", "category_0", "category_1", "category_0"],
+                name=col_name,
+                dtype="category",
+            )
+        elif "interval" in series_type:
+            return pd.Series(
+                pd.arrays.IntervalArray(
+                    [
+                        pd.Interval(0, 1),
+                        pd.Interval(1, 5),
+                        pd.Interval(2, 5),
+                        pd.Interval(1, 4),
+                        pd.NA,
+                    ]
+                ),
+                name=col_name,
+                dtype="Interval",
+            )
+        elif "mixed_0" in series_type:
+            return pd.Series([1, 2, 4, "value_0"] + [pd.NA], name=col_name)
+        elif "mixed_1" in series_type:
+            return pd.Series([1, 2, False, 4, 5], name=col_name)
+        elif "mixed_2" in series_type:
+            return pd.Series(["0", 2, 3, 4] + [pd.NA], name=col_name)
