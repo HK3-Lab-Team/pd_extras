@@ -1,14 +1,15 @@
+from datetime import date
+
+import pandas as pd
 import pytest
 from sklearn.preprocessing import OneHotEncoder
 
+from ...pd_extras.dataframe_with_info import (
+    DataFrameWithInfo, FeatureOperation, _find_columns_by_type, _find_single_column_type,
+    _split_columns_by_type_parallel)
 from ...pd_extras.feature_enum import OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
-from ...pd_extras.dataframe_with_info import (
-    DataFrameWithInfo,
-    FeatureOperation,
-    _find_single_column_type,
-)
 
 
 class Describe_DataFrameWithInfo:
@@ -127,10 +128,15 @@ class Describe_DataFrameWithInfo:
     [
         ("bool", {"col_name": "column_name", "col_type": "bool_col"}),
         ("string", {"col_name": "column_name", "col_type": "string_col"}),
+        ("category", {"col_name": "column_name", "col_type": "string_col"}),
         ("float", {"col_name": "column_name", "col_type": "numerical_col"}),
         ("int", {"col_name": "column_name", "col_type": "numerical_col"}),
+        ("float_int", {"col_name": "column_name", "col_type": "numerical_col"}),
+        ("interval", {"col_name": "column_name", "col_type": "numerical_col"}),
         ("date", {"col_name": "column_name", "col_type": "other_col"}),
-        ("mixed", {"col_name": "column_name", "col_type": "mixed_type_col"}),
+        ("mixed_0", {"col_name": "column_name", "col_type": "mixed_type_col"}),
+        ("mixed_1", {"col_name": "column_name", "col_type": "mixed_type_col"}),
+        ("mixed_2", {"col_name": "column_name", "col_type": "mixed_type_col"}),
     ],
 )
 def test_find_single_column_type(request, series_type, expected_col_type_dict):
@@ -138,4 +144,45 @@ def test_find_single_column_type(request, series_type, expected_col_type_dict):
 
     col_type_dict = _find_single_column_type(serie)
 
-    assert col_type_dict == expected_col_type_dict
+    assert col_type_dict == expected_col_type_dict, series_type
+
+
+@pytest.mark.parametrize(
+    "col_type, expected_column_single_type_set",
+    [
+        ("bool_col", {"bool_col_0", "bool_col_1"}),
+        ("string_col", {"string_col_0", "string_col_1", "string_col_2"}),
+        ("numerical_col", {"numerical_col_0"}),
+        ("other_col", {"other_col_0"}),
+        (
+            "mixed_type_col",
+            {
+                "mixed_type_col_0",
+                "mixed_type_col_1",
+                "mixed_type_col_2",
+                "mixed_type_col_3",
+            },
+        ),
+    ],
+)
+def test_find_columns_by_type(request, col_type, expected_column_single_type_set):
+    df_col_names_by_type = DataFrameMock.df_column_names_by_type()
+
+    column_single_type_set = _find_columns_by_type(df_col_names_by_type, col_type)
+
+    assert column_single_type_set == expected_column_single_type_set
+
+
+def test_split_columns_by_type_parallel(request):
+    df_by_type = DataFrameMock.df_multi_type()
+    col_list = df_by_type.columns
+
+    cols_by_type_tuple = _split_columns_by_type_parallel(df_by_type, col_list)
+
+    assert cols_by_type_tuple == (
+        {"mixed_type_col_0"},
+        {"numerical_col_0", "interval_col_0"},
+        {"string_col_0", "categorical_col_0"},
+        {"bool_col_0"},
+        {"datetime_col_0"},
+    )
