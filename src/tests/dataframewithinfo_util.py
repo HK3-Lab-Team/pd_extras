@@ -183,13 +183,13 @@ class DataFrameMock:
     @staticmethod
     def df_column_names_by_type() -> pd.DataFrame:
         """
-        Create pandas DataFrame with string (column names) and corresponding types.
+        Create DataFrame sample that contains column name and types of a generic DataFrame.
 
-        DataFrame has 11 rows and 2 columns. One column contains strings (usually
-        corresponding to column names) and the other contains:
-        2 x 'bool_col', 3 x 'string_col', 1 x 'numerical_col', 1 x 'other_col' and
-        4 x 'mixed_type_col' (usually describing the type of values contained in the
-        column).
+        DataFrame has 11 rows and 2 columns. One column called "col_name" contains
+        some strings (that represent the column names of another DataFrame sample "df2").
+        Another column called "col_type" contains some possible outputs from
+        ``src.pd_extras.dataframe_with_info._find_single_column_type`` function
+        that describe the type of values contained in the column of "df2".
 
         Returns
         -------

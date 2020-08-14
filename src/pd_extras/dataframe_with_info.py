@@ -261,13 +261,20 @@ class FeatureOperation:
 
     def __eq__(self, other):
         """
+        Compare two FeatureOperation instances to check if they are equal.
+
         This is useful when we want to compare two FeatureOperation instances (used in
-        method 'find_operation_in_column'). The conditions to identify an equality are:
-        1. Same operation_type (one of the values of OperationTypeEnum)
-        2. Original columns OR derived columns are the same (not both required so that
-        I can input one list of columns and find the other
-        3. If the encoder is provided for both instances, it must be the same (it could
-        be OneHotEncoder/OrdinalEncoder,...)
+        method 'find_operation_in_column').
+        This allows some attributes not to be explicit, if they are set to None.
+        In that case the attribute is considered "not specified" and it is not
+        considered in the equality check.
+        Therefore the conditions for the two instances to be considered equal are:
+        1. Same ``operation_type`` attribute
+        2. Each of the attributes ``original_columns``, ``derived_columns``
+        and ``encoder`` is compared between the two instances and it is considered
+        equal when:
+            a. In at least one of the two instance is None,
+            b. Or has the same value
 
         Parameters
         ----------
@@ -568,10 +575,7 @@ class DataFrameWithInfo:
             if unique_val_nb < 7 or (
                 unique_val_nb < self.df[col].count() // CATEG_COL_THRESHOLD
             ):
-                # TODO: Insert a new property (or ColumnListByType attribute for
-                #  column_list_by_type property) considering the columns of type
-                #  'category', then UNCOMMENT this line:
-                #  self.df[col] = self.df[col].astype('category')
+                self.df[col] = self.df[col].astype("category")
                 categorical_cols.add(col)
 
         return categorical_cols
@@ -636,7 +640,14 @@ class DataFrameWithInfo:
 
     def least_nan_cols(self, threshold: int) -> Set:
         """
-        Get the features with a NaN count lower than the ``threshold`` argument
+        Get the features with a count of NaN values lower than the ``threshold`` argument.
+
+        Parameters
+        ----------
+        threshold: int
+            Count of samples that have a NaN value. If the count of NaN values
+            from a column is lower than ``threshold`` value, the name of the column
+            will be in the returned set
 
         Returns
         -------
@@ -722,13 +733,14 @@ class DataFrameWithInfo:
 
         Parameters
         ----------
-        col_list: Tuple[str]
+        col_list: Tuple[str], optional
             Tuple of the name of columns that should be considered.
             If set to None, every column of ``df`` attribute will be considered.
         """
-        # TODO: Remove this method(already done by ``column_list_by_type`` property ???)
+        # TODO: If we want to find the type of a particular list of columns, we
+        #  should use something similar to the first part of the function
+        #  ``_split_columns_by_type_parallel``
         col_list = self.df.columns if col_list is None else col_list
-        # TODO: Use column_list_by_type so we also recognize mixed_type_cols
         for col in col_list:
             print(type(self.df[col].iloc[0]))
 
@@ -752,9 +764,6 @@ class DataFrameWithInfo:
             ``self.feature_operation`` attribute corresponding to ``original_columns``
             or ``derived_columns`` feature_operation attributes
         """
-        # TODO: Maybe it is more reasonable if we create a new class FeatureOperations
-        #  and we insert there this method. So that class handles everything and this
-        #  is just a method that calls it ???
         # This is used to identify the type of columns produced (it will be tested
         # and changed in the loop)
         is_metadata_cols = True
@@ -863,7 +872,7 @@ class DataFrameWithInfo:
         ----------
         column_name: str
             Name of the original column that has been encoded
-        encoder: EncodingFunctions
+        encoder: EncodingFunctions, optional
             Type of encoder used to encode ``column_name`` column
 
         Returns
@@ -904,7 +913,7 @@ class DataFrameWithInfo:
         ----------
         column_name: str
             Name of the column that has been encoded.
-        encoder: EncodingFunctions
+        encoder: EncodingFunctions, optional
             Type of encoder used to generate ``column_name`` column.
 
         Returns
@@ -934,7 +943,7 @@ class DataFrameWithInfo:
 
     def __str__(self) -> str:
         """
-        Return text of the number of features for every variable type
+        Return text with the number of columns for every variable type
 
         Returns
         -------
@@ -963,20 +972,33 @@ def copy_df_info_with_new_df(
     df_info: DataFrameWithInfo, new_pandas_df: pd.DataFrame
 ) -> DataFrameWithInfo:
     """
-    This function is to copy a DataFrameWithInfo instance as "shallow_copy"
+    Copy a DataFrameWithInfo instance using "shallow_copy"
+
+    Every attribute of the DataFrameWithInfo instance will be kept, except for ``df``
+    attribute that is replaced by ``new_pandas_df``.
+    Use this carefully to avoid keeping information of previous operation
+    associated with columns that are no longer present.
 
     Parameters
     ----------
-    df_info: DataFrameWithInfo instance that will be copied
-    new_pandas_df: pd.DataFrame instance that contains the new values of 'df' attribute
+    df_info: DataFrameWithInfo
+        DataFrameWithInfo instance that will be copied
+    new_pandas_df: pd.DataFrame
+        Pandas DataFrame instance that contains the new values of ``df`` attribute
         of the new DataFrameWithInfo instance
 
     Returns
     -------
-    DataFrameWithInfo:
-        DataFrameWithInfo instance with same attributes as 'df_info' argument, except
-        for 'df' attribute that is replaced by new_pandas_df
+    DataFrameWithInfo
+        DataFrameWithInfo instance with same attribute values as ``df_info`` argument,
+        but with ``new_pandas_df`` used as ``df`` attribute value.
     """
+    if not set(df_info.df.columns).issubset(new_pandas_df.columns):
+        logging.warning(
+            "Some columns of the previous DataFrameWithInfo instance "
+            "are being lost, but information about operation on them "
+            "is still present"
+        )
     new_df_info = copy.copy(df_info)
     new_df_info.df = new_pandas_df
     return new_df_info
@@ -1026,7 +1048,7 @@ def export_df_with_info_to_file(
         DataFrameWithInfo instance that needs to be exported
     filename: str
         Name/Path of the file where the data dump will be exported
-    overwrite: bool
+    overwrite: bool, optional
         Option to overwrite the file if it already exists as ``filename``.
         Default set to False
     """
