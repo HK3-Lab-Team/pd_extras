@@ -237,7 +237,7 @@ class FeatureOperation:
             self.encoded_values_map = {}
         self.encoding_function = encoder
 
-        if derived_columns == original_columns:
+        if derived_columns == original_columns and original_columns is not None:
             self.derived_columns = ()
         else:
             self.derived_columns = derived_columns
