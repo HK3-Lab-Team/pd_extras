@@ -131,6 +131,7 @@ class DataFrameMock:
             )
         return pd.DataFrame(trivial_dict)
 
+
     @staticmethod
     def df_multi_type() -> pd.DataFrame:
         """
@@ -152,9 +153,9 @@ class DataFrameMock:
         """
         return pd.DataFrame(
             {
-                "bool_col_0": [True, False, True, True, False],
-                "string_col_0": ["value_0", "value_1", "value_2", "value_3", "value_4"],
-                "categorical_col_0": pd.Series(
+                "bool_col": [True, False, True, True, False],
+                "string_col": ["value_0", "value_1", "value_2", "value_3", "value_4"],
+                "categorical_col": pd.Series(
                     [
                         "category_1",
                         "category_1",
@@ -164,9 +165,9 @@ class DataFrameMock:
                     ],
                     dtype="category",
                 ),
-                "numerical_col_0": [0.05 * i for i in range(5)],
-                "datetime_col_0": [date.today() for i in range(5)],
-                "interval_col_0": pd.arrays.IntervalArray(
+                "numerical_col": [0.05 * i for i in range(5)],
+                "datetime_col": [date.today() for i in range(5)],
+                "interval_col": pd.arrays.IntervalArray(
                     [
                         pd.Interval(0, 1),
                         pd.Interval(1, 5),
@@ -175,7 +176,7 @@ class DataFrameMock:
                         None,
                     ]
                 ),
-                "mixed_type_col_0": [1, 2, 3, 4, "value_0"],
+                "mixed_type_col": [1, 2, 3, 4, "value_0"],
             }
         )
 
