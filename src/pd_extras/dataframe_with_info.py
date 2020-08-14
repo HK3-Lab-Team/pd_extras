@@ -468,6 +468,11 @@ class DataFrameWithInfo:
     @property
     def trivial_columns(self):
         """
+        Return name of the columns containing many NaN or only one repeated value.
+
+        This function return the name of the column that were included in
+        ``same_value_cols`` or ``many_nan_cols`` attributes
+
         Returns
         -------
         Set[str]
