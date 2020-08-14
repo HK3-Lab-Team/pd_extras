@@ -1,4 +1,5 @@
 import random
+from datetime import date
 
 import pandas as pd
 
@@ -130,7 +131,6 @@ class DataFrameMock:
                 + random_samples
             )
         return pd.DataFrame(trivial_dict)
-
 
     @staticmethod
     def df_multi_type() -> pd.DataFrame:
