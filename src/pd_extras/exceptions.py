@@ -1,0 +1,2 @@
+class MultipleOperationsFoundError(Exception):
+    pass
