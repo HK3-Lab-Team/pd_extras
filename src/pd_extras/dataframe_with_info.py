@@ -850,7 +850,7 @@ class DataFrameWithInfo:
             )
 
     def get_enc_column_from_original(
-        self, column_name, encoder: EncodingFunctions = None,
+        self, column_name: str, encoder: EncodingFunctions = None,
     ) -> Union[Tuple[str, ...], None]:
         """
         Return the name of the column with encoded values, derived from ``column_name``.
@@ -891,7 +891,7 @@ class DataFrameWithInfo:
             return found_operat.derived_columns
 
     def get_original_from_enc_column(
-        self, column_name, encoder: EncodingFunctions = None,
+        self, column_name: str, encoder: EncodingFunctions = None,
     ) -> Union[Tuple[str, ...], None]:
         """
         Return the name of the column with original values, used to generate ``column_name``.
@@ -982,7 +982,7 @@ def copy_df_info_with_new_df(
     return new_df_info
 
 
-def import_df_with_info_from_file(filename) -> DataFrameWithInfo:
+def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
     """
     Use 'shelve' module to import the data of a stored DataFrameWithInfo instance
 
