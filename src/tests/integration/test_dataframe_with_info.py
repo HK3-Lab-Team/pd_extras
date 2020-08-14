@@ -177,9 +177,9 @@ def test_split_columns_by_type_parallel(request):
     cols_by_type_tuple = _split_columns_by_type_parallel(df_by_type, col_list)
 
     assert cols_by_type_tuple == (
-        {"mixed_type_col_0"},
-        {"numerical_col_0", "interval_col_0"},
-        {"string_col_0", "categorical_col_0"},
-        {"bool_col_0"},
-        {"datetime_col_0"},
+        {"mixed_type_col"},
+        {"numerical_col", "interval_col"},
+        {"string_col", "categorical_col"},
+        {"bool_col"},
+        {"datetime_col"},
     )
