@@ -2,7 +2,7 @@ import pytest
 from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import (
-    DataFrameWithInfo, FeatureOperation, _find_columns_by_type, _find_single_column_type,
+    DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
     _split_columns_by_type_parallel)
 from ...pd_extras.feature_enum import OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
@@ -165,7 +165,7 @@ def test_find_single_column_type(request, series_type, expected_col_type_dict):
 def test_find_columns_by_type(request, col_type, expected_column_single_type_set):
     df_col_names_by_type = DataFrameMock.df_column_names_by_type()
 
-    column_single_type_set = _find_columns_by_type(df_col_names_by_type, col_type)
+    column_single_type_set = _find_samples_by_type(df_col_names_by_type, col_type)
 
     assert column_single_type_set == expected_column_single_type_set
 
