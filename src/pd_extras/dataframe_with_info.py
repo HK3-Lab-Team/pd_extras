@@ -8,14 +8,16 @@ from typing import Any, DefaultDict, Dict, Iterable, List, Set, Tuple, Union
 
 import pandas as pd
 from joblib import Parallel, delayed
+from sklearn.preprocessing._encoders import _BaseEncoder
 
+from .exceptions import MultipleOperationsFoundError
 from .feature_enum import EncodingFunctions, OperationTypeEnum
 from .settings import CATEG_COL_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
 
-def get_df_from_csv(df_filename):
+def get_df_from_csv(df_filename: str):
     try:
         df = pd.read_csv(df_filename)
         logger.info("Data imported from file successfully")
@@ -26,12 +28,30 @@ def get_df_from_csv(df_filename):
 
 
 def _to_tuple(x: Union[str, Iterable]) -> Tuple:
-    if x is None:
-        return None
-    elif isinstance(x, tuple):
+    """
+    Transform input into a tuple.
+
+    This function transforms the input ``x`` into a tuple avoiding to interpret a
+    string as a tuple of characters.
+    In case ``x`` is None, the function returns None.
+
+    Parameters
+    ----------
+    x: Union[str, Iterable]
+        The variable that needs to be transformed to tuple
+
+    Returns
+    -------
+    Tuple
+        If the input ``x`` is list/set, ``x`` is cast to tuple and returned. Otherwise
+        a tuple containing ``x`` element only is returned.
+    """
+    if isinstance(x, tuple):
         return x
     elif isinstance(x, list) or isinstance(x, set):
         return tuple(x)
+    elif x is None:
+        return None
     else:
         return tuple([x])
 
@@ -40,15 +60,56 @@ _COL_NAME_COLUMN = "col_name"
 _COL_TYPE_COLUMN = "col_type"
 
 
-def _find_columns_by_type(column_type_df: pd.DataFrame, col_type: str):
-    return set(
-        column_type_df[column_type_df[_COL_TYPE_COLUMN] == col_type][
-            _COL_NAME_COLUMN
-        ].values
-    )
+def _find_samples_by_type(df: pd.DataFrame, samples_type: str):
+    """
+    Return names of the sample that share the same value ``samples_type``
+
+    This function accepts a pandas DataFrame ``df`` with two columns: "col_name",
+    "col_type". Then it finds the rows with "col_type" value == ``samples_type`` and
+    returns a set with the "col_name" values of those rows.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Pandas DataFrame with 2 columns: "col_name" and "col_type"
+    samples_type: str
+        Value of "col_type" column of ``df``. The "col_name" of the samples with
+        this value will be included in the returned set
+
+    Returns
+    -------
+    set
+        Set with "col_name" value of the rows that have "col_type"
+        value == ``samples_type``
+    """
+    return set(df[df[_COL_TYPE_COLUMN] == samples_type][_COL_NAME_COLUMN].values)
 
 
-def _find_single_column_type(df_col):
+def _find_single_column_type(df_col: pd.Series):
+    """
+    Analyze the ``df_col`` to find the type of its values.
+
+    After computing the type of each value, the function compares them to check if they
+    are different (in this case the column type is "mixed_type_col"). If not, the
+    based on the type of the column first element, the function returns a column type
+    as follows:
+    - float/int -> "numerical_col"
+    - bool -> "bool_col"
+    - str -> "string_col"
+    - other types -> "other_col"
+
+    Parameters
+    ----------
+    df_col: pd.Series
+        Pandas Series, i.e. column, that the function will analyze and assign a type to
+
+    Returns
+    -------
+    Dict
+        Dictionary with:
+        - "col_name": Name of the column analyzed
+        - "col_type": Type identified for the column
+    """
     col = df_col.name
     # Select not-NaN only
     notna_column = df_col[df_col.notna()]
@@ -72,9 +133,20 @@ def _find_single_column_type(df_col):
         return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "mixed_type_col"}
 
 
-def _split_columns_by_type_parallel(df, col_list):
+def _split_columns_by_type_parallel(df: pd.DataFrame, col_list: List[str]):
     """
     Find column types of DataFrame ``df``
+
+    For performance reasons, joblib is employed to analyze columns in parallel
+    processes.
+    For each column, after computing each value type, the function compares
+    them to check if they are different (in this case the column type is
+    "mixed_type_col"). If not, the based on the type of the column first element,
+    the function returns a column type as follows:
+    - float/int -> "numerical_col"
+    - bool -> "bool_col"
+    - str -> "string_col"
+    - other types -> "other_col"
 
     Parameters
     ----------
@@ -94,7 +166,7 @@ def _split_columns_by_type_parallel(df, col_list):
     set:
         Set of columns containing boolean values
     set:
-        Set of the remaining columns that are in col_list but do not belong to any
+        Set of the remaining columns that are in ``col_list`` but do not belong to any
         other set
     """
     column_type_dict = Parallel(n_jobs=-1)(
@@ -102,17 +174,13 @@ def _split_columns_by_type_parallel(df, col_list):
     )
     column_type_df = pd.DataFrame(column_type_dict)
 
-    mixed_type_cols = _find_columns_by_type(column_type_df, "mixed_type_col")
-    numerical_cols = _find_columns_by_type(column_type_df, "numerical_col")
-    str_cols = _find_columns_by_type(column_type_df, "string_col")
-    other_cols = _find_columns_by_type(column_type_df, "other_col")
-    bool_cols = _find_columns_by_type(column_type_df, "bool_col")
+    mixed_type_cols = _find_samples_by_type(column_type_df, "mixed_type_col")
+    numerical_cols = _find_samples_by_type(column_type_df, "numerical_col")
+    str_cols = _find_samples_by_type(column_type_df, "string_col")
+    other_cols = _find_samples_by_type(column_type_df, "other_col")
+    bool_cols = _find_samples_by_type(column_type_df, "bool_col")
 
     return mixed_type_cols, numerical_cols, str_cols, bool_cols, other_cols
-
-
-class MultipleOperationsFoundError(Exception):
-    pass
 
 
 class FeatureOperation:
@@ -126,19 +194,33 @@ class FeatureOperation:
         original_columns: Union[Tuple[str], str, None] = (),
         derived_columns: Union[Tuple[str], str, None] = (),
         encoded_values_map: Union[Dict[int, Any], None] = None,
-        encoder=None,
+        encoder: _BaseEncoder = None,
         details: Union[Dict, None] = None,
     ):
         """
-        This is a Model to store the operations executed on df.
+        Model to store the operations executed on a DataFrameWithInfo instance
 
         Parameters
         ----------
-        details: Dict
+        operation_type: OperationTypeEnum
+            OperationTypeEnum value that describes the type of the operation performed.
+        original_columns: Union[Tuple[str], str, None], optional
+            Tuple of the columns that were used as input for the operation performed.
+            Default set to ().
+        derived_columns: Union[Tuple[str], str, None], optional
+            Tuple of the columns that were generated as output after performing the
+            operation. If this tuple is equal to original_columns, it will be
+            reassigned to (). Default set to ().
+        encoded_values_map: Union[Dict[int, Any], None], optional
+            Map that connects the ``derived_columns`` values, generated by an
+            encoding operation, to the represented values (of the
+            ``original_columns``). Default set to None
+        encoder: _BaseEncoder, optional
+            Encoder instance that has been used for encoding. It can be useful to
+            reverse the encoding.
+        details: Dict, optional
             Dict containing details about the operation, like the map between encoded
             value and original value. It may be set to None
-        derived_columns: Tuple[str]
-            If this tuple is equal to original_columns, it will be reassigned to None
         """
         # This is to avoid that a single column (i.e. a string) is interpreted as a
         # tuple of single chars
@@ -190,7 +272,7 @@ class FeatureOperation:
         Parameters
         ----------
         other: FeatureOperation
-            The instance that has to be compared with self
+            The instance that is compared with self
 
         Returns
         -------
@@ -282,15 +364,29 @@ class DataFrameWithInfo:
 
         Parameters
         ----------
-        metadata_cols: Tuple[str]
-            Tuple with the name of the columns that have info related to the patient
-            and that are not from medical exams
-        data_file: str
-            Path to the csv file containing data
-        nan_percentage_threshold: float
-            Float value for the threshold of NaN values count to decide
-            if the column is relevant or not
-        new_columns_encoding_maps: Union[DefaultDict[str, List[FeatureOperation]], None]
+        metadata_cols: Tuple[str], optional
+            Tuple with the name of the columns that have metadata information related to
+            the sample. If ``metadata_as_features`` is set to False, these will not
+            be considered in following analysis or by "med_exam_col_list" property.
+            Default set to ()
+        data_file: str, optional
+            Path to the csv file containing data. Either this or ``df_object`` must be
+            provided. In case ``df_object`` is provided, this will not be considered.
+            Default set to None.
+        df_object: pd.DataFrame, optional
+            Pandas DataFrame instance containing the data. Either this or data_file
+            must be provided. In case ``data_file`` is provided, only this will
+            be considered as data. Default set to None.
+        nan_percentage_threshold: float, optional
+            Float value in the range [0,1] describing the threshold of
+            NaN values count to decide if the column is relevant or not.
+        metadata_as_features: bool
+            When set to ``True``, ``metadata_cols`` will be considered in following
+            analysis and among the features for preprocessing, otherwise they
+            will not.  Default set to False.
+        new_columns_encoding_maps: Union[
+            DefaultDict[str, List[FeatureOperation]], None
+        ], optional
             Dict where the keys are the column name and the values are the related
             operations that created the column or that were performed on them.
             This is to keep track of the operations performed on dataframe features.
@@ -310,7 +406,7 @@ class DataFrameWithInfo:
         #         key: column_name,
         #         value: List of FeatureOperation instances
         if new_columns_encoding_maps is None:
-            # Create a Dict with values initialized to lists
+            # Dict already initialized to lists for every "column_name"
             new_columns_encoding_maps = collections.defaultdict(list)
         self.feature_elaborations = new_columns_encoding_maps
 
@@ -328,10 +424,17 @@ class DataFrameWithInfo:
     @property
     def many_nan_columns(self) -> Set:
         """
+        Return name of the columns containing many NaN.
+
+        This property selects the columns where the ratio of NaN values over the
+        sample count is higher than ``nan_percentage_threshold`` attribute
+        (in range [0,1]).
+
         Returns
         -------
         Set[str]
-            List of column names with 99.9% (or nan_percentage_threshold) of NaN
+            Set of column names with NaN ratio higher than
+            ``nan_percentage_threshold`` attribute.
         """
         many_nan_columns = set()
         for c in self.df.columns:
@@ -347,10 +450,12 @@ class DataFrameWithInfo:
     @property
     def same_value_cols(self) -> Set:
         """
+        Return name of the columns containing only one repeated value.
+
         Returns
         -------
         Set[str]
-            List of column names with the same repeated value
+            Set of column names with only one repeated value
         """
         same_value_columns = set()
         for c in self.df.columns:
@@ -366,7 +471,8 @@ class DataFrameWithInfo:
         Returns
         -------
         Set[str]
-            Combination of the columns with many NaNs and with the same repeated value
+            Set containing the name of the columns with many NaNs or with only
+            one repeated value
         """
         return self.many_nan_columns.union(self.same_value_cols)
 
@@ -382,7 +488,7 @@ class DataFrameWithInfo:
 
         Returns
         -------
-        ColumnListByType:
+        ColumnListByType
             ColumnListByType instance containing the column list split by type
         """
         same_value_cols = self.same_value_cols
@@ -418,16 +524,17 @@ class DataFrameWithInfo:
             other_cols=other_cols,
         )
 
-    def _get_categorical_cols(self, col_list):
+    def _get_categorical_cols(self, col_list: Tuple[str]):
         """
         Identify every categorical column in df_info.
 
         It will also set those column's types to "category".
         To avoid considering every string column as categorical, it selects the
         columns with few unique values. Therefore:
-            1. If ``self.df`` attribute contains few samples (more than 50), it is
-                reasonable to expect less than 7 values repeated
-            2. If ``self.df`` attribute contains many samples, it is
+            1. If ``df`` attribute contains few samples (less than 50), it is
+                reasonable to expect less than 7 values repeated for the column to
+                be considered as categorical.
+            2. If ``df`` attribute contains many samples, it is
                 reasonable to expect more than 7 possible values in a categorical
                 column (variability increases). So the method will recognize the
                 column as categorical if the unique values are less than
@@ -441,7 +548,8 @@ class DataFrameWithInfo:
 
         Parameters
         ----------
-        col_list
+        col_list: Tuple[str]
+            Tuple of the name of the columns that will be analyzed
 
         Returns
         -------
@@ -470,7 +578,7 @@ class DataFrameWithInfo:
 
         Returns
         -------
-        Set
+        Set[str]
             Set of columns with values of different types
         """
         return self.column_list_by_type.mixed_type_cols
@@ -484,7 +592,7 @@ class DataFrameWithInfo:
 
         Returns
         -------
-        Set
+        Set[str]
             Set of categorical column names that need encoding
 
         """
@@ -511,7 +619,7 @@ class DataFrameWithInfo:
 
         Returns
         -------
-        Set:
+        Set
             Set containing ``numerical_cols`` without ``metadata_cols`` and
             ``same_value_cols``
         """
@@ -527,7 +635,7 @@ class DataFrameWithInfo:
 
         Returns
         -------
-        Set:
+        Set
             Set of column names with a NaN count lower than the ``threshold`` argument
         """
         best_feature_list = set()
@@ -542,6 +650,7 @@ class DataFrameWithInfo:
     ) -> Union[Dict[int, str], None]:
         """
         Return the encoded values map of the column named ``column_name``.
+
         Selecting the first operation of column_name because it will be the operation
         that created it (whether it is the encoded of one or multiple columns)
 
@@ -565,13 +674,34 @@ class DataFrameWithInfo:
             logging.info(f"The column {column_name} was not among the operations.")
             return None
 
-    def convert_column_id_to_name(self, col_id_list) -> Set:
+    def convert_column_id_to_name(self, col_id_list: Tuple[int]) -> Set:
+        """
+        Convert the column IDs to column names
+
+        Parameters
+        ----------
+        col_id_list: List of column IDs to be converted to actual names
+
+        Returns
+        -------
+        Set[str]
+            Set of column names corresponding to ``col_id_list``
+
+        """
         col_names = set()
         for c in col_id_list:
             col_names.add(self.df.columns[c])
         return col_names
 
     def check_duplicated_features(self) -> bool:
+        """
+        Check if there are columns with the same name (presumably duplicated).
+
+        Returns
+        -------
+        bool
+            Boolean that indicates if there are columns with the same name
+        """
         # TODO: Rename to "contains_duplicated_features"
         logger.info("Checking duplicated columns")
         # Check if there are duplicates in the df columns
@@ -581,10 +711,17 @@ class DataFrameWithInfo:
         else:
             return True
 
-    def show_columns_type(self, col_list=None):
+    def show_columns_type(self, col_list: Tuple[str] = None) -> None:
         """
         Print the type of the first element of the columns.
+
+        Parameters
+        ----------
+        col_list: Tuple[str]
+            Tuple of the name of columns that should be considered.
+            If set to None, every column of ``df`` attribute will be considered.
         """
+        # TODO: Remove this method(already done by ``column_list_by_type`` property ???)
         col_list = self.df.columns if col_list is None else col_list
         # TODO: Use column_list_by_type so we also recognize mixed_type_cols
         for col in col_list:
@@ -670,14 +807,14 @@ class DataFrameWithInfo:
 
         Raises
         ------
-        MultipleOperationsFoundError:
+        MultipleOperationsFoundError
             Exception raised when more than one operation similar to ``feat_operation``
             is found.
 
         """
-        # Select only the first element of the original_columns (since each of the columns is linked
-        # to an operation) and check if the 'feat_operation' argument is among the operations linked to
-        # that column.
+        # Select only the first element of the original_columns (since each of the
+        # columns is linked to an operation) and check if the 'feat_operation'
+        # argument is among the operations linked to that column.
         if feat_operation.original_columns is not None:
             selected_column_operations = self.feature_elaborations[
                 feat_operation.original_columns[0]
@@ -716,8 +853,6 @@ class DataFrameWithInfo:
         This method checks if an operation of type OperationTypeEnum.CATEGORICAL_ENCODING
         has been performed on the ``column_name`` column. In case it is, it will return
         the name of the column with encoded values, otherwise None.
-        Note: If the user wants to check the columns derived with operations of different
-        type, 'find_operation_in_column' method should be employed.
 
         Parameters
         ----------
@@ -731,6 +866,11 @@ class DataFrameWithInfo:
         Tuple[str]
             Tuple of names of one (or more) columns with encoded values. None if the column
             has not been encoded
+
+        See Also
+        --------
+        If the user wants to check the columns generated by operations of different
+        type, 'find_operation_in_column' method should be employed.
         """
         feat_operation = FeatureOperation(
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
@@ -754,8 +894,6 @@ class DataFrameWithInfo:
         This method checks if an operation of type OperationTypeEnum.CATEGORICAL_ENCODING
         has been performed and generated ``column_name`` column. In case it exists, it
         will return the name of the column with original values, otherwise None.
-        Note: If the user wants to check the operations of different type,
-        'find_operation_in_column' method should be employed.
 
         Parameters
         ----------
@@ -770,6 +908,11 @@ class DataFrameWithInfo:
             Tuple of names of one (or more) column name(s) with original values. None
             if the column is not generated by a OperationTypeEnum.CATEGORICAL_ENCODING
             operation.
+
+        See Also
+        --------
+        If the user wants to check the columns generated by operations of different
+        type, 'find_operation_in_column' method should be employed.
         """
         feat_operation = FeatureOperation(
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
@@ -784,14 +927,30 @@ class DataFrameWithInfo:
         else:
             return found_operat.original_columns
 
-    def __str__(self):
-        """ Return text of the number of features for every variable type """
+    def __str__(self) -> str:
+        """
+        Return text of the number of features for every variable type
+
+        Returns
+        -------
+        str
+            String that describes the info and types of the columns of the
+            ``df`` attribute.
+        """
         return (
             f"{self.column_list_by_type}"
             f"\nColumns with many NaN: {len(self.many_nan_columns)}"
         )
 
-    def __call__(self):
+    def __call__(self) -> pd.DataFrame:
+        """
+        Return pandas DataFrame ``df`` attribute
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas DataFrame ``df`` attribute of this instance
+        """
         return self.df
 
 
@@ -829,7 +988,8 @@ def import_df_with_info_from_file(filename) -> DataFrameWithInfo:
 
     Returns
     -------
-    None
+    DataFrameWithInfo
+        DataFrameWithInfo instance that was saved in ``filename`` path.
     """
     # We leave the error management to the function (FileNotFoundError)
     my_shelf = shelve.open(str(filename))
