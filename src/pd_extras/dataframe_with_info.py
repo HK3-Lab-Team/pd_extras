@@ -17,7 +17,21 @@ from .settings import CATEG_COL_THRESHOLD
 logger = logging.getLogger(__name__)
 
 
-def get_df_from_csv(df_filename: str):
+def get_df_from_csv(df_filename: str) -> pd.DataFrame:
+    """
+    Read csv file ``df_filename`` and return pandas DataFrame
+
+    Parameters
+    ----------
+    df_filename: str
+        Path to csv file that contains data for pandas DataFrame
+
+    Returns
+    -------
+    pd.DataFrame
+        Pandas DataFrame containing data from csv file ``df_filename``
+
+    """
     try:
         df = pd.read_csv(df_filename)
         logger.info("Data imported from file successfully")
@@ -60,7 +74,7 @@ _COL_NAME_COLUMN = "col_name"
 _COL_TYPE_COLUMN = "col_type"
 
 
-def _find_samples_by_type(df: pd.DataFrame, samples_type: str):
+def _find_samples_by_type(df: pd.DataFrame, samples_type: str) -> Set[str]:
     """
     Return names of the sample that share the same value ``samples_type``
 
@@ -85,7 +99,7 @@ def _find_samples_by_type(df: pd.DataFrame, samples_type: str):
     return set(df[df[_COL_TYPE_COLUMN] == samples_type][_COL_NAME_COLUMN].values)
 
 
-def _find_single_column_type(df_col: pd.Series):
+def _find_single_column_type(df_col: pd.Series) -> Dict[str, str]:
     """
     Analyze the ``df_col`` to find the type of its values.
 
@@ -133,7 +147,9 @@ def _find_single_column_type(df_col: pd.Series):
         return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "mixed_type_col"}
 
 
-def _split_columns_by_type_parallel(df: pd.DataFrame, col_list: List[str]):
+def _split_columns_by_type_parallel(
+    df: pd.DataFrame, col_list: List[str]
+) -> Tuple[Set[str]]:
     """
     Find column types of DataFrame ``df``
 
@@ -259,7 +275,7 @@ class FeatureOperation:
                     encoded_string_values_map[key] = value
             return encoded_string_values_map
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """
         Compare two FeatureOperation instances to check if they are equal.
 
@@ -283,7 +299,7 @@ class FeatureOperation:
 
         Returns
         -------
-        bool:
+        bool
             True if all the conditions above are fulfilled and False otherwise
         """
         if isinstance(other, self.__class__):
@@ -429,7 +445,7 @@ class DataFrameWithInfo:
     # =====================
 
     @property
-    def many_nan_columns(self) -> Set:
+    def many_nan_columns(self) -> Set[str]:
         """
         Return name of the columns containing many NaN.
 
@@ -455,7 +471,7 @@ class DataFrameWithInfo:
         return many_nan_columns
 
     @property
-    def same_value_cols(self) -> Set:
+    def same_value_cols(self) -> Set[str]:
         """
         Return name of the columns containing only one repeated value.
 
@@ -473,7 +489,7 @@ class DataFrameWithInfo:
         return same_value_columns
 
     @property
-    def trivial_columns(self):
+    def trivial_columns(self) -> Set[str]:
         """
         Return name of the columns containing many NaN or only one repeated value.
 
@@ -536,7 +552,7 @@ class DataFrameWithInfo:
             other_cols=other_cols,
         )
 
-    def _get_categorical_cols(self, col_list: Tuple[str]):
+    def _get_categorical_cols(self, col_list: Tuple[str]) -> Set[str]:
         """
         Identify every categorical column in df_info.
 
@@ -581,7 +597,7 @@ class DataFrameWithInfo:
         return categorical_cols
 
     @property
-    def to_be_fixed_cols(self) -> Set:
+    def to_be_fixed_cols(self) -> Set[str]:
         """
         Return name of the columns containing values of mixed types.
 
