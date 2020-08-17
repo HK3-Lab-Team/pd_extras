@@ -42,9 +42,9 @@ def add_id_owner_col(private_df, cols_to_hash):
     private_df["HASH_NONCES"] = add_nonce_func(rows_into_strings)
 
     # Use "sha256" to hash the "HASH_NONCES" column
-    hash_lambda = lambda x: hashlib.sha256(
-        str.encode(str(x["HASH_NONCES"]))
-    ).hexdigest()
+    def hash_lambda(owner_name):
+        return hashlib.sha256(str.encode(str(owner_name["HASH_NONCES"]))).hexdigest()
+
     private_df["ID_OWNER"] = private_df.apply(hash_lambda, axis=1)
 
     # Delete "HASH_NONCES" column

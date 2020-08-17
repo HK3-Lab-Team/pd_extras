@@ -46,7 +46,7 @@ class Describe_DataFrameWithInfo:
 
     @pytest.mark.parametrize(
         "n_columns, expected_same_value_columns",
-        [(2, {"same_0", "same_1"}), (1, {"same_0"}), (0, set()),],
+        [(2, {"same_0", "same_1"}), (1, {"same_0"}), (0, set())],
     )
     def test_same_value_columns(self, request, n_columns, expected_same_value_columns):
         df = DataFrameMock.df_same_value(n_columns)
