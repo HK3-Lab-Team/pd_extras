@@ -2,8 +2,12 @@ import pytest
 from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import (
-    DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
-    _split_columns_by_type_parallel)
+    DataFrameWithInfo,
+    FeatureOperation,
+    _find_samples_by_type,
+    _find_single_column_type,
+    _split_columns_by_type_parallel,
+)
 from ...pd_extras.feature_enum import OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs

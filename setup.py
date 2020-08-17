@@ -31,6 +31,7 @@ install_requires = [
     "numpy",
     "pandas",
     "scikit-learn",
+    "joblib",
 ]
 
 test_requires = ["pytest"]
