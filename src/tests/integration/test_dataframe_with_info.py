@@ -2,13 +2,8 @@ import pytest
 from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType,
-    DataFrameWithInfo,
-    FeatureOperation,
-    _find_samples_by_type,
-    _find_single_column_type,
-    _split_columns_by_type_parallel,
-)
+    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
+    _split_columns_by_type_parallel)
 from ...pd_extras.feature_enum import OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
@@ -336,3 +331,81 @@ def test_column_list_by_type(request, metadata_as_features, expected_column_list
 
     assert isinstance(col_list_by_type, ColumnListByType)
     assert col_list_by_type == expected_column_list_type
+
+
+@pytest.mark.parametrize("metadata_as_features", [True, False])
+def test_med_exam_col_list(request, metadata_as_features):
+    df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
+    df_info = DataFrameWithInfo(
+        df_object=df_multi_type,
+        metadata_cols=("metadata_num_col",),
+        metadata_as_features=metadata_as_features,
+    )
+    metadata_col_set = {"metadata_num_col"} if metadata_as_features else set()
+    expected_med_exam_col_list = {
+        "numerical_col",
+        "num_categorical_col",
+        "bool_col",
+        "interval_col",
+        "nan_col",
+    } | metadata_col_set
+
+    med_exam_col_list = df_info.med_exam_col_list
+
+    assert isinstance(med_exam_col_list, set)
+    assert med_exam_col_list == expected_med_exam_col_list
+
+
+@pytest.mark.parametrize(
+    "nan_threshold, expected_least_nan_cols",
+    [
+        (10, {"0nan_col"}),
+        (101, {"0nan_col", "50nan_col"}),
+        (199, {"0nan_col", "50nan_col"}),
+        (200, {"0nan_col", "50nan_col", "99nan_col"}),
+    ],
+)
+def test_least_nan_cols(request, nan_threshold, expected_least_nan_cols):
+    df_multi_type = DataFrameMock.df_least_nan(sample_size=200)
+    df_info = DataFrameWithInfo(df_object=df_multi_type)
+
+    least_nan_cols = df_info.least_nan_cols(nan_threshold)
+
+    assert isinstance(least_nan_cols, set)
+    assert least_nan_cols == expected_least_nan_cols
+
+
+@pytest.mark.parametrize(
+    "duplicated_cols_count, expected_contains_duplicated_cols_bool",
+    [(0, False), (4, True), (2, True),],
+)
+def test_contains_duplicated_features(
+    request, duplicated_cols_count, expected_contains_dupl_cols_bool
+):
+    df_duplicated_cols = DataFrameMock.df_duplicated_columns(duplicated_cols_count)
+    df_info = DataFrameWithInfo(df_object=df_duplicated_cols)
+
+    contains_duplicated_features = df_info.check_duplicated_features()
+
+    assert isinstance(contains_duplicated_features, bool)
+    assert contains_duplicated_features is expected_contains_dupl_cols_bool
+
+
+def test_show_columns_type(request):
+    df_col_names_by_type = DataFrameMock.df_column_names_by_type()
+    expected_cols_to_type_map = {
+        "bool_col_0": "bool_col",
+        "bool_col_1": "bool_col",
+        "string_col_0": "string_col",
+        "string_col_1": "string_col",
+        "string_col_2": "string_col",
+        "numerical_col_0": "numerical_col",
+        "other_col_0": "other_col",
+        "mixed_type_col_0": "mixed_type_col",
+        "mixed_type_col_1": "mixed_type_col",
+        "mixed_type_col_2": "mixed_type_col",
+        "mixed_type_col_3": "mixed_type_col",
+    }
+
+    # TODO: Check "print" output or make the method easy to test
+    pass
