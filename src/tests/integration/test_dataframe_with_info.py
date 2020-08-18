@@ -1,13 +1,8 @@
 import pytest
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType,
-    DataFrameWithInfo,
-    FeatureOperation,
-    _find_samples_by_type,
-    _find_single_column_type,
-    _split_columns_by_type_parallel,
-)
+    HEAD, ColumnListByType, DataFrameWithInfo, FeatureOperation, <<<<<<<, _find_samples_by_type,
+    _find_single_column_type, _split_columns_by_type_parallel)
 from ...pd_extras.exceptions import MultipleOperationsFoundError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
