@@ -429,5 +429,5 @@ def test_show_columns_type(request):
     #     "mixed_type_col_3": "mixed_type_col",
     # }
 
-    # TODO: Check "print" output or make the method easy to test. Then complete test
+    # TODO: Check "print" output or make the method easy to test and then complete test
     pass
