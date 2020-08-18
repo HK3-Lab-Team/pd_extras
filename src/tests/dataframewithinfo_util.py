@@ -172,7 +172,7 @@ class DataFrameMock:
             "bool_col": bool_col,
             "string_col": [f"value_{i}" for i in range(sample_size)],
             "str_categorical_col": pd.Series(
-                ["category_0", "category_1", "category_2", "category_3", "category_4",]
+                ["category_0", "category_1", "category_2", "category_3", "category_4"]
                 * (sample_size // 5),
                 dtype="category",
             ),
