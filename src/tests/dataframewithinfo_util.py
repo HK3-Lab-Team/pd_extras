@@ -1,3 +1,4 @@
+import itertools
 import random
 from datetime import date
 
@@ -133,52 +134,62 @@ class DataFrameMock:
         return pd.DataFrame(trivial_dict)
 
     @staticmethod
-    def df_multi_type() -> pd.DataFrame:
+    def df_multi_type(sample_size: int) -> pd.DataFrame:
         """
         Create pandas DataFrame with columns containing values of different types.
 
-        DataFrame has 5 rows and columns as follows:
+        The returned DataFrame has ``sample_size`` rows and columns as follows:
         1. One column containing boolean values
         2. One column containing string values
-        3. One column containing numerical values
-        4. One column containing 'category' typed values
-        5. One column containing datetime values
-        6. One column containing 'interval' typed values
-        7. One column containing values of mixed types
+        3. One column containing string repeated values ("category" dtype)
+        4. One column containing string values (it is meant to simulate metadata)
+        5. One column containing numerical values
+        6. One column containing numerical repeated values ("category" dtype)
+        7. One column containing datetime values
+        8. One column containing 'interval' typed values
+        9. One column containing values of mixed types
+        10. One column containing repeated values
+        11. One column containing NaN values (+ 1 numerical value)
+
+        Parameters
+        ----------
+        sample_size: int
+            Number of samples that the returned DataFrame will contain
 
         Returns
         -------
         pd.DataFrame
-            Pandas DataFrame with 5 columns containing values of different types
+            Pandas DataFrame with ``sample_size`` samples and 5 columns
+            containing values of different types.
         """
-        return pd.DataFrame(
-            {
-                "bool_col": [True, False, True, True, False],
-                "string_col": ["value_0", "value_1", "value_2", "value_3", "value_4"],
-                "categorical_col": pd.Series(
-                    [
-                        "category_1",
-                        "category_1",
-                        "category_0",
-                        "category_1",
-                        "category_0",
-                    ],
-                    dtype="category",
-                ),
-                "numerical_col": [0.05 * i for i in range(5)],
-                "datetime_col": [date.today() for i in range(5)],
-                "interval_col": pd.arrays.IntervalArray(
-                    [
-                        pd.Interval(0, 1),
-                        pd.Interval(1, 5),
-                        pd.Interval(2, 5),
-                        pd.Interval(1, 4),
-                        None,
-                    ]
-                ),
-                "mixed_type_col": [1, 2, 3, 4, "value_0"],
-            }
-        )
+        # Get only the part that is divisible by 2 and 5
+        sample_size = sample_size // 10 * 10
+        bool_col = [True, False, True, True, False] * (sample_size // 5)
+        random.shuffle(bool_col)
+
+        df_multi_type_dict = {
+            "metadata_num_col": [i for i in range(sample_size)],
+            "bool_col": bool_col,
+            "string_col": [f"value_{i}" for i in range(sample_size)],
+            "str_categorical_col": pd.Series(
+                ["category_0", "category_1", "category_2", "category_3", "category_4",]
+                * (sample_size // 5),
+                dtype="category",
+            ),
+            "num_categorical_col": pd.Series(
+                [0, 1, 2, 3, 4] * (sample_size // 5), dtype="category",
+            ),
+            "numerical_col": [0.05 * i for i in range(sample_size)],
+            "datetime_col": [date(2000 + i, 8, 1) for i in range(sample_size)],
+            "interval_col": pd.arrays.IntervalArray(
+                [pd.Interval(0, i) for i in range(sample_size)],
+            ),
+            "mixed_type_col": [i for i in range(sample_size // 2)]
+            + [f"value_{i}" for i in range(sample_size // 2)],
+            "same_col": [2] * sample_size,
+            "nan_col": [pd.NA] * (sample_size - 1) + [3],
+        }
+        return pd.DataFrame(df_multi_type_dict)
 
     @staticmethod
     def df_column_names_by_type() -> pd.DataFrame:
@@ -211,6 +222,65 @@ class DataFrameMock:
                 {"col_name": "mixed_type_col_3", "col_type": "mixed_type_col"},
             ]
         )
+
+    @staticmethod
+    def df_categorical_cols(sample_size: int) -> pd.DataFrame:
+        """
+        Create pandas DataFrame with columns containing categorical values
+
+        The returned DataFrame will contain ``sample_size`` samples and 12 columns.
+        The columns will be distinguished based on value types (sample_type) and
+        number of unique values (unique_value_count).
+
+        Parameters
+        ----------
+        sample_size: int
+            Number of samples in the returned DataFrame
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas DataFrame containing ``sample_size`` samples and 12 columns with
+            various sample types and number of unique values
+
+        """
+        unique_value_counts = (3, 5, 8, 40)
+        categ_cols_dict = {}
+        mixed_list = [f"string_{i}" for i in range(20)] + [i * 20 for i in range(21)]
+        random.shuffle(mixed_list)
+        value_per_sample_type = {
+            "numerical": [i * 20 for i in range(41)],
+            "string": [f"string_{i}" for i in range(41)],
+            "mixed": mixed_list,
+        }
+
+        for unique_value_count, sample_type in itertools.product(
+            unique_value_counts, value_per_sample_type.keys()
+        ):
+            if sample_size < unique_value_count:
+                # Cannot have more unique values than samples
+                unique_value_count = sample_size
+            # how many times every value will be repeated to fill up the column
+            repetitions_per_value = sample_size // unique_value_count
+            # This is to always have the same sample_size
+            last_value_repetitions = sample_size - repetitions_per_value * (
+                unique_value_count - 1
+            )
+            # Create list of lists containing the same repeated values (category)
+            repeated_categories_list = []
+            for i in range(unique_value_count - 1):
+                repeated_categories_list.append(
+                    [value_per_sample_type[sample_type][i]] * repetitions_per_value
+                )
+            repeated_categories_list.append(
+                [value_per_sample_type[sample_type][unique_value_count]]
+                * last_value_repetitions
+            )
+            # Combine lists into one column of the DataFrame
+            categ_cols_dict[f"{sample_type}_{unique_value_count}"] = list(
+                itertools.chain.from_iterable(repeated_categories_list)
+            )
+        return pd.DataFrame(categ_cols_dict)
 
 
 class SeriesMock:
