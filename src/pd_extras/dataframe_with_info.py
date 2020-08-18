@@ -521,6 +521,8 @@ class DataFrameWithInfo:
         """
         same_value_cols = self.same_value_cols
 
+        # TODO: Exclude NaN columns (self.nan_cols) from `col_list` too (so they will
+        #  not be included in num_categorical_cols just for one not-Nan value)
         if self.metadata_as_features:
             col_list = set(self.df.columns) - same_value_cols
         else:
@@ -543,7 +545,7 @@ class DataFrameWithInfo:
         return ColumnListByType(
             mixed_type_cols=mixed_type_cols,
             same_value_cols=same_value_cols,
-            numerical_cols=numerical_cols | bool_cols,
+            numerical_cols=numerical_cols | bool_cols,  # TODO: Remove bool_cols
             med_exam_col_list=med_exam_col_list,
             str_cols=str_cols,
             str_categorical_cols=str_categorical_cols,
@@ -640,7 +642,8 @@ class DataFrameWithInfo:
         Get the name of the columns containing numerical values (metadata excluded).
 
         The method will exclude from numerical columns the ones that have the same
-        repeated value, and the ones that contain metadata
+        repeated value, and the ones that contain metadata, but it will include columns
+        with many NaN
 
         Returns
         -------
