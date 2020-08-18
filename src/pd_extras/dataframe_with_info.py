@@ -671,7 +671,7 @@ class DataFrameWithInfo:
         Parameters
         ----------
         threshold: int
-            Count of samples that have a NaN value. If the count of NaN values
+            Number of samples that have a NaN value. If the count of NaN values
             from a column is lower than ``threshold`` value, the name of the column
             will be in the returned set
 
@@ -681,6 +681,7 @@ class DataFrameWithInfo:
             Set of column names with a NaN count lower than the ``threshold`` argument
         """
         best_feature_list = set()
+        # TODO: Add argument col_list to select the columns to analyze
         for c in self.med_exam_col_list:
             if sum(self.df[c].isna()) < threshold:
                 best_feature_list.add(c)
@@ -745,6 +746,8 @@ class DataFrameWithInfo:
             Boolean that indicates if there are columns with the same name
         """
         # TODO: Rename to "contains_duplicated_features"
+        # TODO: In case there are columns with the same name, check if the
+        #  values are the same too and inform the user appropriately
         logger.info("Checking duplicated columns")
         # Check if there are duplicates in the df columns
         if len(self.df.columns) != len(set(self.df.columns)):

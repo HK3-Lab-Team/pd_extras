@@ -285,6 +285,70 @@ class DataFrameMock:
             )
         return pd.DataFrame(categ_cols_dict)
 
+    @staticmethod
+    def df_least_nan(sample_size: int) -> pd.DataFrame:
+        """
+        Create pandas DataFrame with columns containing variable ratios of NaN values.
+
+        The returned DataFrame has a number of rows equal to the biggest
+        value V such that:
+        a) V < ``sample_size``
+        b) V is divisible by 10.
+        The DataFrame has columns as follows:
+        1. One column containing numerical values
+        2. One column containing 50% of NaN values
+        3. One column containing NaN values + 1 numerical value
+        4. One column containing 100% of NaN values
+
+        Parameters
+        ----------
+        sample_size: int
+            Number of samples that the returned DataFrame will contain
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas DataFrame with ``sample_size`` samples and 5 columns
+            containing variable ratios of NaN values.
+        """
+        sample_size = sample_size // 10 * 10
+        ratio_25 = int(sample_size * 0.25)
+        num_values = [0.05 * i for i in range(sample_size)]
+        df_multi_type_dict = {
+            "0nan_col": [0.05 * i for i in range(sample_size)],
+            "50nan_col": ([pd.NA] * ratio_25 * 2) + num_values[: ratio_25 * 2],
+            "99nan_col": [pd.NA] * (sample_size - 1) + [3],
+            "100nan_col": ([pd.NA] * sample_size),
+        }
+        return pd.DataFrame(df_multi_type_dict)
+
+    @staticmethod
+    def df_duplicated_columns(duplicated_cols_count: int) -> pd.DataFrame:
+        """
+        Create DataFrame with ``duplicated_cols_count`` duplicated columns.
+
+        The returned DataFrame has 5 rows and ``duplicated_cols_count`` + 2 columns.
+        Two columns are considered duplicated if they have the same column name
+
+        Parameters
+        ----------
+        duplicated_cols_count: int
+            Number of columns with duplicated name.
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas DataFrame with 5 rows and ``duplicated_cols_count`` duplicated
+            columns (+ 2 generic columns).
+        """
+        df_duplicated_dict = {
+            "col_0": list(range(5)),
+            "col_3": list(range(5)),
+        }
+        for _ in range(duplicated_cols_count):
+            df_duplicated_dict["duplic_col"] = list(range(5))
+        return pd.DataFrame(df_duplicated_dict)
+
 
 class SeriesMock:
     @staticmethod
