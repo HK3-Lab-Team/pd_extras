@@ -10,6 +10,7 @@ from ...pd_extras.dataframe_with_info import (
 )
 from ...pd_extras.exceptions import MultipleOperationsFoundError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
+
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
 
