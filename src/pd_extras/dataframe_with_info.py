@@ -752,9 +752,9 @@ class DataFrameWithInfo:
         # Check if there are duplicates in the df columns
         if len(self.df.columns) != len(set(self.df.columns)):
             logger.error("There are duplicated columns")
-            return False
-        else:
             return True
+        else:
+            return False
 
     def show_columns_type(self, col_list: Tuple[str] = None) -> None:
         """

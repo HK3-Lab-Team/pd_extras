@@ -2,13 +2,8 @@ import pytest
 from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType,
-    DataFrameWithInfo,
-    FeatureOperation,
-    _find_samples_by_type,
-    _find_single_column_type,
-    _split_columns_by_type_parallel,
-)
+    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
+    _split_columns_by_type_parallel)
 from ...pd_extras.feature_enum import OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
@@ -381,7 +376,7 @@ def test_least_nan_cols(request, nan_threshold, expected_least_nan_cols):
 
 
 @pytest.mark.parametrize(
-    "duplicated_cols_count, expected_contains_duplicated_cols_bool",
+    "duplicated_cols_count, expected_contains_dupl_cols_bool",
     [(0, False), (4, True), (2, True)],
 )
 def test_contains_duplicated_features(

@@ -341,13 +341,12 @@ class DataFrameMock:
             Pandas DataFrame with 5 rows and ``duplicated_cols_count`` duplicated
             columns (+ 2 generic columns).
         """
-        df_duplicated_dict = {
-            "col_0": list(range(5)),
-            "col_3": list(range(5)),
-        }
+        df_duplicated = pd.DataFrame({"col_0": list(range(5)), "col_3": list(range(5))})
         for _ in range(duplicated_cols_count):
-            df_duplicated_dict["duplic_col"] = list(range(5))
-        return pd.DataFrame(df_duplicated_dict)
+            single_col_df = pd.DataFrame({"duplic_col": list(range(5))})
+            df_duplicated = pd.concat([df_duplicated, single_col_df], axis=1)
+
+        return pd.DataFrame(df_duplicated)
 
 
 class SeriesMock:
