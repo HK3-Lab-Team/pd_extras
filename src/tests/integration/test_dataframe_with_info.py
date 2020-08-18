@@ -406,23 +406,3 @@ def test_contains_duplicated_features(
 
     assert isinstance(contains_duplicated_features, bool)
     assert contains_duplicated_features is expected_contains_dupl_cols_bool
-
-
-def test_show_columns_type(request):
-    # df_col_names_by_type = DataFrameMock.df_column_names_by_type()
-    # expected_cols_to_type_map = {
-    #     "bool_col_0": "bool_col",
-    #     "bool_col_1": "bool_col",
-    #     "string_col_0": "string_col",
-    #     "string_col_1": "string_col",
-    #     "string_col_2": "string_col",
-    #     "numerical_col_0": "numerical_col",
-    #     "other_col_0": "other_col",
-    #     "mixed_type_col_0": "mixed_type_col",
-    #     "mixed_type_col_1": "mixed_type_col",
-    #     "mixed_type_col_2": "mixed_type_col",
-    #     "mixed_type_col_3": "mixed_type_col",
-    # }
-
-    # TODO: Check "print" output or make the method easy to test and then complete test
-    pass
