@@ -246,12 +246,15 @@ class FeatureOperation:
         self.original_columns = original_columns
         self.operation_type = operation_type
         self.details = details
+
+        # TODO: Remove one of these following two:
         self.encoder = encoder
+        self.encoding_function = encoder
+
         if encoded_values_map is None:
             self.encoded_values_map = encoded_values_map
         else:
             self.encoded_values_map = {}
-        self.encoding_function = encoder
 
         if derived_columns == original_columns and original_columns is not None:
             self.derived_columns = ()
@@ -326,11 +329,15 @@ class FeatureOperation:
 
     def __str__(self):
         return (
-            f"Columns that have been used to produce the result: {self.original_columns}"
-            f"\nThe type of the operation that has been applied is: {self.operation_type}"
-            f"\nThe columns that have been created after the operation are: {self.derived_columns}"
-            f"\nThe map between the original values and the encoded ones is: \n{self.encoded_values_map}"
-            f"\nThe encoding function that has been used is: {self.encoding_function}"
+            f"Columns used to produce the result: {self.original_columns}"
+            + f"\nType of the operation that has been applied: {self.operation_type}"
+            + f"\nColumns created after the operation: {self.derived_columns}"
+            + f"\nMap between original values and encoded ones: \n{self.encoded_values_map}"
+            + (
+                f"\nEncoding function used: {self.encoding_function}"
+                if self.encoding_function is not None
+                else ""
+            )
         )
 
 
@@ -786,19 +793,21 @@ class DataFrameWithInfo:
         # This is used to identify the type of columns produced (it will be tested
         # and changed in the loop)
         is_metadata_cols = True
-        # Loop for every original column name, so we append this operation to every column_name
+        # Loop for every original column name, so we append this operation to every
+        # column_name
         for o in feature_operation.original_columns:
             self.feature_elaborations[o].append(feature_operation)
-            # Check if at least one of original_columns is not in the list of metadata_cols
-            # (in that case it does not contain only metadata information)
+            # Check if at least one of original_columns is not in the list of
+            # metadata_cols (in that case it does not contain only metadata information)
             if o not in self.metadata_cols:
                 is_metadata_cols = False
         if feature_operation.derived_columns is not None:
             # Add the same operation for each derived column
             for d in feature_operation.derived_columns:
                 self.feature_elaborations[d].append(feature_operation)
-            # If every original_column is in the list of metadata_cols, the derived_columns is also
-            # derived by metadata_cols only and therefore must be inserted in metadata_cols set, too
+            # If every original_column is in the list of metadata_cols, the
+            # derived_columns is also derived by metadata_cols only and therefore
+            # must be inserted in metadata_cols set, too
             if is_metadata_cols:
                 self.metadata_cols = self.metadata_cols.union(
                     set(feature_operation.derived_columns)
@@ -883,7 +892,7 @@ class DataFrameWithInfo:
         """
         Return the name of the column with encoded values, derived from ``column_name``.
 
-        This method checks if an operation of type OperationTypeEnum.CATEGORICAL_ENCODING
+        This method checks if an operation of type ``OperationTypeEnum.CATEGORICAL_ENCODING``
         has been performed on the ``column_name`` column. In case it is, it will return
         the name of the column with encoded values, otherwise None.
 
@@ -897,8 +906,8 @@ class DataFrameWithInfo:
         Returns
         -------
         Tuple[str]
-            Tuple of names of one (or more) columns with encoded values. None if the column
-            has not been encoded
+            Tuple of names of one (or more) columns with encoded values. None
+            if the column has not been encoded
 
         See Also
         --------
