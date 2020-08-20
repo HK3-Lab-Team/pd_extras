@@ -451,12 +451,6 @@ class Describe_DataFrameWithInfo:
             encoder=expected_found_feat_op.get("encoder", None),
             details=expected_found_feat_op.get("details", None),
         )
-        print(
-            [
-                f"{k} -> {v}"
-                for k, v in df_info_with_operations.feature_elaborations.items()
-            ]
-        )
 
         found_feat_operat = df_info_with_operations.find_operation_in_column(
             feat_operation=feat_op
