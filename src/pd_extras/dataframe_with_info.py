@@ -899,7 +899,7 @@ class DataFrameWithInfo:
             nl = "\n"
             raise MultipleOperationsFoundError(
                 "Multiple operations were found. Please provide additional information."
-                f"\nOperations found: "
+                "\nOperations found: "
                 + str(
                     [
                         f"{nl * 2}{i}. {sim_op}"
