@@ -714,7 +714,7 @@ class Describe_FeatureOperation:
 
         assert are_feat_ops_equal == is_equal_label
 
-    def test_featureoperation_equals_with_different_instance_types(self):
+    def test_featureoperation_equals_with_different_instance_types(self, request):
         feat_op_1 = FeatureOperation(
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             original_columns=("original_column_2",),
