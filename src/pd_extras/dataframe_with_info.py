@@ -245,6 +245,9 @@ class FeatureOperation:
 
         self.original_columns = original_columns
         self.operation_type = operation_type
+
+        # TODO: Maybe remove this (because the value in docstring is the same
+        #  as encoded_values_map
         self.details = details
 
         # TODO: Remove one of these following two:
@@ -781,10 +784,10 @@ class DataFrameWithInfo:
         attributes of ``feature_operation``, this method adds ``feature_operation``
         to the corresponding key of this instance attribute ``feature_operations``
         dictionary.
-        This method also checks if at least one of original_columns is in the list
-        of ``metadata_cols`` attribute. In that case the derived column(s) contains
-        metadata information and it (they) will be added to ``metadata_cols``
-        attribute.
+        This method also checks if every column in ``original_columns`` is
+        in the list of ``metadata_cols`` attribute. In that case the derived column(s)
+        contains metadata information and it (they) will be added to
+        ``metadata_cols`` attribute.
 
         Parameters
         ----------
@@ -793,6 +796,10 @@ class DataFrameWithInfo:
             ``self.feature_operation`` attribute corresponding to ``original_columns``
             or ``derived_columns`` feature_operation attributes
         """
+        # TODO: Think about the case where the same column is among "original_columns"
+        #  and "derived_columns". Does this make sense? Should we raise an error?
+        #  Would we add the same FeatureOperation twice to the column? That could
+        #  create problems when looking for that operation because two are found!
         # This is used to identify the type of columns produced (it will be tested
         # and changed in the loop)
         is_metadata_cols = True
@@ -804,6 +811,10 @@ class DataFrameWithInfo:
             # metadata_cols (in that case it does not contain only metadata information)
             if o not in self.metadata_cols:
                 is_metadata_cols = False
+
+        # TODO: Next line should now raise an Error because None means
+        #  "Not Specified", and if user wants to leave it blank, he should use "()",
+        #  (which is the new default value)
         if feature_operation.derived_columns is not None:
             # Add the same operation for each derived column
             for d in feature_operation.derived_columns:
@@ -885,8 +896,16 @@ class DataFrameWithInfo:
         elif len(similar_operations) == 1:
             return similar_operations[0]
         else:
+            nl = "\n"
             raise MultipleOperationsFoundError(
-                "Multiple operations were found. Please provide additional information"
+                "Multiple operations were found. Please provide additional information."
+                f"\nOperations found: "
+                + str(
+                    [
+                        f"{nl * 2}{i}. {sim_op}"
+                        for (i, sim_op) in enumerate(similar_operations)
+                    ]
+                )
             )
 
     def get_enc_column_from_original(
