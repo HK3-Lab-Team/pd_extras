@@ -3,9 +3,43 @@ import random
 from datetime import date
 
 import pandas as pd
+import pytest
+import sklearn
+
+from ..pd_extras.dataframe_with_info import DataFrameWithInfo, FeatureOperation
+from ..pd_extras.feature_enum import OperationTypeEnum
 
 
 class DataFrameMock:
+    @staticmethod
+    def df_generic(sample_size):
+        """
+        Create a generic DataFrame with ``sample_size`` samples and 2 columns.
+
+        The 2 columns of the returned DataFrame contain numerical and string
+        values separately.
+
+        Parameters
+        ----------
+        sample_size:
+            Number of samples in the returned DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas DataFrame instance with ``sample_size`` samples and 2 columns:
+            one with numerical values and the other with string values only.
+        """
+        return pd.DataFrame(
+            {
+                "metadata_num_col": [i for i in range(sample_size)],
+                "metadata_str_col": [f"value_{i}" for i in range(sample_size)],
+                "exam_num_col_0": [i for i in range(sample_size)],
+                "exam_num_col_1": [i for i in range(sample_size)],
+                "exam_str_col_0": [f"value_{i}" for i in range(sample_size)],
+            }
+        )
+
     @staticmethod
     def df_many_nans(nan_ratio: float, n_columns: int) -> pd.DataFrame:
         """
@@ -139,7 +173,11 @@ class DataFrameMock:
         """
         Create pandas DataFrame with columns containing values of different types.
 
-        The returned DataFrame has ``sample_size`` rows and columns as follows:
+        The returned DataFrame has a number of rows equal to the biggest
+        value V such that:
+        a) V < ``sample_size``
+        b) V is divisible by 10.
+        The DataFrame has columns as follows:
         1. One column containing boolean values
         2. One column containing string values
         3. One column containing string repeated values ("category" dtype)
@@ -155,7 +193,7 @@ class DataFrameMock:
         Parameters
         ----------
         sample_size: int
-            Number of samples that the returned DataFrame will contain
+            Number of samples that the returned DataFrame will contain.
 
         Returns
         -------
