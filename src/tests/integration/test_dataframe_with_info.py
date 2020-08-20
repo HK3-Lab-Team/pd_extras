@@ -207,7 +207,7 @@ class Describe_DataFrameWithInfo:
         ],
     )
     def test_column_list_by_type(
-        request, metadata_as_features, expected_column_list_type
+        self, metadata_as_features, expected_column_list_type
     ):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
         df_info = DataFrameWithInfo(
