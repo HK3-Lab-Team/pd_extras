@@ -3,11 +3,6 @@ import random
 from datetime import date
 
 import pandas as pd
-import pytest
-import sklearn
-
-from ..pd_extras.dataframe_with_info import DataFrameWithInfo, FeatureOperation
-from ..pd_extras.feature_enum import OperationTypeEnum
 
 
 class DataFrameMock:
