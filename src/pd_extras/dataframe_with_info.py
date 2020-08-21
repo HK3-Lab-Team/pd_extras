@@ -232,8 +232,8 @@ class FeatureOperation:
             encoding operation, to the represented values (of the
             ``original_columns``). Default set to None
         encoder: _BaseEncoder, optional
-            Encoder instance that has been used for encoding. It can be useful to
-            reverse the encoding.
+            Sklearn.preprocessing encoder instance that has been used for encoding.
+            It can be useful to reverse the encoding.
         details: Dict, optional
             Dict containing details about the operation, like the map between encoded
             value and original value. It may be set to None
@@ -250,7 +250,9 @@ class FeatureOperation:
         #  as encoded_values_map
         self.details = details
 
-        # TODO: Remove one of these following two:
+        # TODO: Remove one of these following two
+        #  (or maybe just distinguish between the instance and the
+        #  class type...maybe not!):
         self.encoder = encoder
         self.encoding_function = encoder
 
@@ -940,10 +942,12 @@ class DataFrameWithInfo:
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
             original_columns=column_name,
             encoder=encoder,
+            derived_columns=None,
         )
         found_operat = self.find_operation_in_column(feat_operation)
         # If no operation is found, or the column is the derived column
         # (i.e. the input of encoding function), we return None
+        # TODO: Is the check "column_name in found_operat.derived_columns" necessary?
         if found_operat is None or column_name in found_operat.derived_columns:
             return None
         else:
@@ -980,12 +984,14 @@ class DataFrameWithInfo:
         """
         feat_operation = FeatureOperation(
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
-            original_columns=column_name,
+            original_columns=None,
             encoder=encoder,
+            derived_columns=column_name,
         )
         found_operat = self.find_operation_in_column(feat_operation)
         # If no operation is found, or the column is the derived column
         # (i.e. the input of encoding function), we return None
+        # TODO: Is the check "column_name in found_operat.original_columns" necessary?
         if found_operat is None or column_name in found_operat.original_columns:
             return None
         else:
