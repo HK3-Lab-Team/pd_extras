@@ -36,7 +36,7 @@ def eq_featureoperation_combs():
             ("original_column_3", "original_column_4"),
         ],
         "derived_columns": ["derived_column_1", "derived_column_2"],
-        "encoder": [OneHotEncoder, OrdinalEncoder],
+        "encoder": [OneHotEncoder(), OrdinalEncoder()],
     }
     truth_table_combos_per_attribute = [
         (None, None, True),
