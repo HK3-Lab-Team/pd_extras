@@ -322,7 +322,7 @@ class Describe_DataFrameWithInfo:
                 ["exam_num_col_0", "exam_str_col_0"],
                 OperationTypeEnum.BIN_SPLITTING,
                 {0: "value_0", 1: "value_1"},
-                EncodingFunctions.ONEHOT,
+                EncodingFunctions.ONEHOT.value(),
                 {"key_2": "value_2", "key_3": "value_3"},
             ),
             (  # Case 2: Only one metadata column as original_columns
@@ -338,7 +338,7 @@ class Describe_DataFrameWithInfo:
                 ["exam_str_col_0", "exam_str_col_1"],
                 OperationTypeEnum.FEAT_COMBOS_ENCODING,
                 {0: "value_0", 1: "value_1"},
-                EncodingFunctions.ORDINAL,
+                EncodingFunctions.ORDINAL.value(),
                 {"key_2": "value_2", "key_3": "value_3"},
             ),
             (  # Case 4: Only one derived column, no metadata columns involved
@@ -346,7 +346,7 @@ class Describe_DataFrameWithInfo:
                 ["exam_str_col_0"],
                 OperationTypeEnum.CATEGORICAL_ENCODING,
                 {0: "value_0", 1: "value_1"},
-                EncodingFunctions.ONEHOT,
+                EncodingFunctions.ONEHOT.value(),
                 {"key_2": "value_2", "key_3": "value_3"},
             ),
         ],
@@ -400,7 +400,7 @@ class Describe_DataFrameWithInfo:
             derived_columns=[deriv_column],
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=EncodingFunctions.ONEHOT,
+            encoder=EncodingFunctions.ONEHOT.value(),
             details={"key_2": "value_2", "key_3": "value_3"},
         )
 
@@ -458,7 +458,7 @@ class Describe_DataFrameWithInfo:
                     "derived_columns": ("fop_derived_col_1",),
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": {0: "value_3", 1: "value_4"},
-                    "encoder": EncodingFunctions.ORDINAL,
+                    "encoder": EncodingFunctions.ORDINAL.value(),
                     "details": {"key_A": "value_A", "key_B": "value_B"},
                 },
             ),
@@ -467,7 +467,7 @@ class Describe_DataFrameWithInfo:
                     "original_columns": None,
                     "derived_columns": ["fop_derived_col_1"],
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
-                    "encoder": EncodingFunctions.ORDINAL,
+                    "encoder": EncodingFunctions.ORDINAL.value(),
                     "encoded_values_map": None,
                     "details": None,
                 },
@@ -476,7 +476,7 @@ class Describe_DataFrameWithInfo:
                     "derived_columns": ("fop_derived_col_1",),
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": {0: "value_3", 1: "value_4"},
-                    "encoder": EncodingFunctions.ORDINAL,
+                    "encoder": EncodingFunctions.ORDINAL.value(),
                     "details": {"key_A": "value_A", "key_B": "value_B"},
                 },
             ),
@@ -504,7 +504,7 @@ class Describe_DataFrameWithInfo:
                     "original_columns": ("fop_original_col_0",),
                     "derived_columns": ("fop_derived_col_0",),
                     "encoded_values_map": None,
-                    "encoder": EncodingFunctions.ONEHOT,
+                    "encoder": EncodingFunctions.ONEHOT.value(),
                     "details": None,
                 },
                 {
@@ -512,7 +512,7 @@ class Describe_DataFrameWithInfo:
                     "derived_columns": ("fop_derived_col_0",),
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": {0: "value_0", 1: "value_1"},
-                    "encoder": EncodingFunctions.ONEHOT,
+                    "encoder": EncodingFunctions.ONEHOT.value(),
                     "details": {"key_2": "value_2", "key_3": "value_3"},
                 },
             ),
@@ -694,7 +694,7 @@ class Describe_DataFrameWithInfo:
         [
             (  # Case 1: Everything specified and found
                 "fop_original_col_0",
-                EncodingFunctions.ONEHOT,
+                EncodingFunctions.ONEHOT.value(),
                 ("fop_derived_col_0",),
             ),
             ("fop_derived_col_1", None, None),  # Case 2: column_name in derived_columns
@@ -741,7 +741,7 @@ class Describe_DataFrameWithInfo:
         [
             (  # Case 1: Everything specified and found
                 "fop_derived_col_0",
-                EncodingFunctions.ONEHOT,
+                EncodingFunctions.ONEHOT.value(),
                 ("fop_original_col_0",),
             ),
             # Case 2: No encoder specified
@@ -815,13 +815,13 @@ class Describe_FeatureOperation:
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             original_columns=("original_column_2",),
             derived_columns=("derived_column_1", "derived_column_2"),
-            encoder=EncodingFunctions.ONEHOT,
+            encoder=EncodingFunctions.ONEHOT.value(),
         )
         feat_op_2 = dict(
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             original_columns=("original_column_2",),
             derived_columns=("derived_column_1", "derived_column_2"),
-            encoder=EncodingFunctions.ONEHOT,
+            encoder=EncodingFunctions.ONEHOT.value(),
         )
 
         are_feat_ops_equal = feat_op_1 == feat_op_2
@@ -934,7 +934,7 @@ def df_info_with_operations() -> DataFrameWithInfo:
             derived_columns=("fop_derived_col_1",),
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
             encoded_values_map={0: "value_3", 1: "value_4"},
-            encoder=EncodingFunctions.ORDINAL,
+            encoder=EncodingFunctions.ORDINAL.value(),
             details={"key_A": "value_A", "key_B": "value_B"},
         ),
         FeatureOperation(
@@ -942,7 +942,7 @@ def df_info_with_operations() -> DataFrameWithInfo:
             derived_columns=("fop_derived_col_0",),
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
             encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=EncodingFunctions.ONEHOT,
+            encoder=EncodingFunctions.ONEHOT.value(),
             details={"key_2": "value_2", "key_3": "value_3"},
         ),
         FeatureOperation(
@@ -950,7 +950,7 @@ def df_info_with_operations() -> DataFrameWithInfo:
             derived_columns=("fop_derived_col_0",),
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
             encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=EncodingFunctions.ORDINAL,
+            encoder=EncodingFunctions.ORDINAL.value(),
             details={"key_2": "value_2", "key_3": "value_3"},
         ),
         FeatureOperation(
@@ -958,7 +958,7 @@ def df_info_with_operations() -> DataFrameWithInfo:
             derived_columns=("fop_derived_col_2", "fop_derived_col_3"),
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
             encoded_values_map={0: "value_3", 1: "value_4"},
-            encoder=EncodingFunctions.ONEHOT,
+            encoder=EncodingFunctions.ONEHOT.value(),
             details={"key_A": "value_A", "key_B": "value_B"},
         ),
     ]

@@ -233,7 +233,8 @@ class FeatureOperation:
             ``original_columns``). Default set to None
         encoder: sklearn.preprocessing._encoders._BaseEncoder, optional
             Sklearn.preprocessing encoder instance that has been used for encoding.
-            It can be useful to reverse the encoding.
+            This should be an instance of one the classes listed in
+            ``EncodingFunctions`` Enum. This may be useful to reverse the encoding.
         details: Dict, optional
             Dict containing details about the operation, like the map between encoded
             value and original value. It may be set to None
@@ -250,11 +251,18 @@ class FeatureOperation:
         #  as encoded_values_map
         self.details = details
 
-        # TODO: Remove one of these following two
-        #  (or maybe just distinguish between the instance and the
-        #  class type...maybe not!):
-        self.encoder = encoder
-        self.encoding_function = encoder
+        encoding_functions_values = [e.value for e in EncodingFunctions]
+        if encoder is None or type(encoder) in encoding_functions_values:
+            # TODO: Remove one of these following two
+            #  (or maybe just distinguish between the instance and the
+            #  class type...maybe not!):
+            self.encoder = encoder
+            self.encoding_function = encoder
+        else:
+            raise NotImplementedError(
+                f"The encoder {encoder} is not yet supported "
+                f"by the library. Possible values are: {encoding_functions_values}"
+            )
 
         if encoded_values_map is None:
             self.encoded_values_map = encoded_values_map
@@ -326,7 +334,7 @@ class FeatureOperation:
                 and (
                     self.encoder is None
                     or other.encoder is None
-                    or self.encoder == other.encoder
+                    or isinstance(self.encoder, type(other.encoder))
                 )
             ):
                 return True
@@ -911,7 +919,9 @@ class DataFrameWithInfo:
             )
 
     def get_enc_column_from_original(
-        self, column_name: str, encoder: EncodingFunctions = None,
+        self,
+        column_name: str,
+        encoder: sklearn.preprocessing._encoders._BaseEncoder = None,
     ) -> Union[Tuple[str, ...], None]:
         """
         Return the name of the column with encoded values, derived from ``column_name``.
@@ -924,7 +934,7 @@ class DataFrameWithInfo:
         ----------
         column_name: str
             Name of the original column that has been encoded
-        encoder: EncodingFunctions, optional
+        encoder: sklearn.preprocessing._encoders._BaseEncoder, optional
             Type of encoder used to encode ``column_name`` column
 
         Returns
@@ -954,7 +964,9 @@ class DataFrameWithInfo:
             return found_operat.derived_columns
 
     def get_original_from_enc_column(
-        self, column_name: str, encoder: EncodingFunctions = None,
+        self,
+        column_name: str,
+        encoder: sklearn.preprocessing._encoders._BaseEncoder = None,
     ) -> Union[Tuple[str, ...], None]:
         """
         Return the name of the column with original values, used to generate ``column_name``.
@@ -967,7 +979,7 @@ class DataFrameWithInfo:
         ----------
         column_name: str
             Name of the column that has been encoded.
-        encoder: EncodingFunctions, optional
+        encoder: sklearn.preprocessing._encoders._BaseEncoder, optional
             Type of encoder used to generate ``column_name`` column.
 
         Returns
