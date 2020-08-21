@@ -1,8 +1,8 @@
 import pytest
 
 from ...pd_extras.dataframe_with_info import (
-    HEAD, ColumnListByType, DataFrameWithInfo, FeatureOperation, <<<<<<<, _find_samples_by_type,
-    _find_single_column_type, _split_columns_by_type_parallel)
+    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
+    _split_columns_by_type_parallel)
 from ...pd_extras.exceptions import MultipleOperationsFoundError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
@@ -689,7 +689,7 @@ class Describe_DataFrameWithInfo:
         [
             (  # Case 1: Everything specified and found
                 "fop_original_col_0",
-                EncodingFunctions.ONEHOT,
+                EncodingFunctions.ONEHOT.value(),
                 ("fop_derived_col_0",),
             ),
             ("fop_derived_col_1", None, None),  # Case 2: column_name in derived_columns
@@ -736,7 +736,7 @@ class Describe_DataFrameWithInfo:
         [
             (  # Case 1: Everything specified and found
                 "fop_derived_col_0",
-                EncodingFunctions.ONEHOT,
+                EncodingFunctions.ONEHOT.value(),
                 ("fop_original_col_0",),
             ),
             # Case 2: No encoder specified
