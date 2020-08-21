@@ -1,12 +1,10 @@
 import pytest
-import sklearn
-from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import (
     ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
     _split_columns_by_type_parallel)
 from ...pd_extras.exceptions import MultipleOperationsFoundError
-from ...pd_extras.feature_enum import OperationTypeEnum
+from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
 
@@ -321,7 +319,7 @@ class Describe_DataFrameWithInfo:
                 ["exam_num_col_0", "exam_str_col_0"],
                 OperationTypeEnum.BIN_SPLITTING,
                 {0: "value_0", 1: "value_1"},
-                sklearn.preprocessing.OneHotEncoder,
+                EncodingFunctions.ONEHOT,
                 {"key_2": "value_2", "key_3": "value_3"},
             ),
             (  # Case 2: Only one metadata column as original_columns
@@ -337,7 +335,7 @@ class Describe_DataFrameWithInfo:
                 ["exam_str_col_0", "exam_str_col_1"],
                 OperationTypeEnum.FEAT_COMBOS_ENCODING,
                 {0: "value_0", 1: "value_1"},
-                sklearn.preprocessing.OrdinalEncoder,
+                EncodingFunctions.ORDINAL,
                 {"key_2": "value_2", "key_3": "value_3"},
             ),
             (  # Case 4: Only one derived column, no metadata columns involved
@@ -345,7 +343,7 @@ class Describe_DataFrameWithInfo:
                 ["exam_str_col_0"],
                 OperationTypeEnum.CATEGORICAL_ENCODING,
                 {0: "value_0", 1: "value_1"},
-                sklearn.preprocessing.OneHotEncoder,
+                EncodingFunctions.ONEHOT,
                 {"key_2": "value_2", "key_3": "value_3"},
             ),
         ],
@@ -399,7 +397,7 @@ class Describe_DataFrameWithInfo:
             derived_columns=[deriv_column],
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=sklearn.preprocessing.OneHotEncoder,
+            encoder=EncodingFunctions.ONEHOT,
             details={"key_2": "value_2", "key_3": "value_3"},
         )
 
@@ -457,7 +455,7 @@ class Describe_DataFrameWithInfo:
                     "derived_columns": ("fop_derived_col_1",),
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": {0: "value_3", 1: "value_4"},
-                    "encoder": sklearn.preprocessing.OrdinalEncoder,
+                    "encoder": EncodingFunctions.ORDINAL,
                     "details": {"key_A": "value_A", "key_B": "value_B"},
                 },
             ),
@@ -466,7 +464,7 @@ class Describe_DataFrameWithInfo:
                     "original_columns": None,
                     "derived_columns": ["fop_derived_col_1"],
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
-                    "encoder": sklearn.preprocessing.OrdinalEncoder,
+                    "encoder": EncodingFunctions.ORDINAL,
                     "encoded_values_map": None,
                     "details": None,
                 },
@@ -475,7 +473,7 @@ class Describe_DataFrameWithInfo:
                     "derived_columns": ("fop_derived_col_1",),
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": {0: "value_3", 1: "value_4"},
-                    "encoder": sklearn.preprocessing.OrdinalEncoder,
+                    "encoder": EncodingFunctions.ORDINAL,
                     "details": {"key_A": "value_A", "key_B": "value_B"},
                 },
             ),
@@ -503,7 +501,7 @@ class Describe_DataFrameWithInfo:
                     "original_columns": ("fop_original_col_0",),
                     "derived_columns": ("fop_derived_col_0",),
                     "encoded_values_map": None,
-                    "encoder": sklearn.preprocessing.OneHotEncoder,
+                    "encoder": EncodingFunctions.ONEHOT,
                     "details": None,
                 },
                 {
@@ -511,7 +509,7 @@ class Describe_DataFrameWithInfo:
                     "derived_columns": ("fop_derived_col_0",),
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": {0: "value_0", 1: "value_1"},
-                    "encoder": sklearn.preprocessing.OneHotEncoder,
+                    "encoder": EncodingFunctions.ONEHOT,
                     "details": {"key_2": "value_2", "key_3": "value_3"},
                 },
             ),
@@ -576,6 +574,102 @@ class Describe_DataFrameWithInfo:
             in str(err.value)
         )
 
+    @pytest.mark.parametrize(
+        "original_column, encoder, expected_encoded_columns",
+        [
+            (  # Case 1: Everything specified and found
+                "fop_original_col_0",
+                EncodingFunctions.ONEHOT,
+                ("fop_derived_col_0",),
+            ),
+            ("fop_derived_col_1", None, None),  # Case 2: column_name in derived_columns
+            ("fop_original_col_10", None, None),  # Case 3: No operation associated
+            # Case 4: No encoder specified
+            ("fop_original_col_2", None, ("fop_derived_col_2", "fop_derived_col_3")),
+        ],
+    )
+    def test_get_enc_column_from_original(
+        self,
+        request,
+        df_info_with_operations,
+        original_column,
+        encoder,
+        expected_encoded_columns,
+    ):
+        encoded_columns = df_info_with_operations.get_enc_column_from_original(
+            column_name=original_column, encoder=encoder
+        )
+
+        if expected_encoded_columns is None:
+            assert encoded_columns is None
+        else:
+            assert isinstance(encoded_columns, tuple)
+            assert len(encoded_columns) == len(expected_encoded_columns)
+            assert set(encoded_columns) == set(expected_encoded_columns)
+
+    def test_get_enc_column_from_original_raise_error(
+        self, request, df_info_with_operations
+    ):
+        with pytest.raises(MultipleOperationsFoundError) as err:
+            _ = df_info_with_operations.get_enc_column_from_original(
+                column_name="fop_original_col_0"
+            )
+
+        assert isinstance(err.value, MultipleOperationsFoundError)
+        assert (
+            "Multiple operations were found. Please provide additional information"
+            in str(err.value)
+        )
+
+    @pytest.mark.parametrize(
+        "encoded_column, encoder, expected_original_columns",
+        [
+            (  # Case 1: Everything specified and found
+                "fop_derived_col_0",
+                EncodingFunctions.ONEHOT,
+                ("fop_original_col_0",),
+            ),
+            # Case 2: No encoder specified
+            ("fop_derived_col_1", None, ("fop_original_col_0", "fop_original_col_1")),
+            ("fop_derived_col_10", None, None),  # Case 3: No operation associated
+            # Case 4: Column_name in original_columns
+            ("fop_original_col_2", None, None),
+        ],
+    )
+    def test_get_original_from_enc_column(
+        self,
+        request,
+        df_info_with_operations,
+        encoded_column,
+        encoder,
+        expected_original_columns,
+    ):
+        original_columns = df_info_with_operations.get_original_from_enc_column(
+            column_name=encoded_column, encoder=encoder
+        )
+
+        if expected_original_columns is None:
+            assert original_columns is None
+        else:
+            assert isinstance(original_columns, tuple)
+            assert len(original_columns) == len(expected_original_columns)
+            assert set(original_columns) == set(expected_original_columns)
+
+    def test_get_original_from_enc_column_raise_error(
+        self, request, df_info_with_operations
+    ):
+        with pytest.raises(MultipleOperationsFoundError) as err:
+
+            _ = df_info_with_operations.get_original_from_enc_column(
+                column_name="fop_derived_col_0"
+            )
+
+        assert isinstance(err.value, MultipleOperationsFoundError)
+        assert (
+            "Multiple operations were found. Please provide additional information"
+            in str(err.value)
+        )
+
 
 class Describe_FeatureOperation:
     @pytest.mark.parametrize(
@@ -606,13 +700,13 @@ class Describe_FeatureOperation:
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             original_columns=("original_column_2",),
             derived_columns=("derived_column_1", "derived_column_2"),
-            encoder=OneHotEncoder,
+            encoder=EncodingFunctions.ONEHOT,
         )
         feat_op_2 = dict(
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             original_columns=("original_column_2",),
             derived_columns=("derived_column_1", "derived_column_2"),
-            encoder=OneHotEncoder,
+            encoder=EncodingFunctions.ONEHOT,
         )
 
         are_feat_ops_equal = feat_op_1 == feat_op_2
@@ -725,7 +819,7 @@ def df_info_with_operations() -> DataFrameWithInfo:
             derived_columns=("fop_derived_col_1",),
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
             encoded_values_map={0: "value_3", 1: "value_4"},
-            encoder=sklearn.preprocessing.OrdinalEncoder,
+            encoder=EncodingFunctions.ORDINAL,
             details={"key_A": "value_A", "key_B": "value_B"},
         ),
         FeatureOperation(
@@ -733,7 +827,7 @@ def df_info_with_operations() -> DataFrameWithInfo:
             derived_columns=("fop_derived_col_0",),
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
             encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=sklearn.preprocessing.OneHotEncoder,
+            encoder=EncodingFunctions.ONEHOT,
             details={"key_2": "value_2", "key_3": "value_3"},
         ),
         FeatureOperation(
@@ -741,8 +835,16 @@ def df_info_with_operations() -> DataFrameWithInfo:
             derived_columns=("fop_derived_col_0",),
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
             encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=sklearn.preprocessing.OrdinalEncoder,
+            encoder=EncodingFunctions.ORDINAL,
             details={"key_2": "value_2", "key_3": "value_3"},
+        ),
+        FeatureOperation(
+            original_columns=("fop_original_col_2",),
+            derived_columns=("fop_derived_col_2", "fop_derived_col_3"),
+            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
+            encoded_values_map={0: "value_3", 1: "value_4"},
+            encoder=EncodingFunctions.ONEHOT,
+            details={"key_A": "value_A", "key_B": "value_B"},
         ),
     ]
     for feat_op in feat_operat_list:
