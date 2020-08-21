@@ -702,7 +702,7 @@ class Describe_DataFrameWithInfo:
         [
             (  # Case 1: Everything specified and found
                 "fop_original_col_0",
-                EncodingFunctions.ONEHOT,
+                EncodingFunctions.ONEHOT.value(),
                 ("fop_derived_col_0",),
             ),
             ("fop_derived_col_1", None, None),  # Case 2: column_name in derived_columns
@@ -749,7 +749,7 @@ class Describe_DataFrameWithInfo:
         [
             (  # Case 1: Everything specified and found
                 "fop_derived_col_0",
-                EncodingFunctions.ONEHOT,
+                EncodingFunctions.ONEHOT.value(),
                 ("fop_original_col_0",),
             ),
             # Case 2: No encoder specified
