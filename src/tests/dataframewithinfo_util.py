@@ -316,7 +316,7 @@ class DataFrameMock:
         num_values = [0.05 * i for i in range(sample_size)]
         df_multi_type_dict = {
             "0nan_col": [0.05 * i for i in range(sample_size)],
-            "50nan_col": ([pd.NA] * ratio_50 * 2) + num_values[: ratio_50 * 2],
+            "50nan_col": ([pd.NA] * ratio_50) + num_values[:ratio_50],
             "99nan_col": [pd.NA] * (sample_size - 1) + [3],
             "100nan_col": ([pd.NA] * sample_size),
         }
