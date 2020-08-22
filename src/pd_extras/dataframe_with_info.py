@@ -335,7 +335,7 @@ class FeatureOperation:
             + f"\nMap between original values and encoded ones: \n{self.encoded_values_map}"
             + (
                 f"\nEncoding function used: {self.encoding_function}"
-                if self.encoding_function is not None
+                if self.encoding_function
                 else ""
             )
         )

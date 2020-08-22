@@ -333,22 +333,39 @@ def test_column_list_by_type(request, metadata_as_features, expected_column_list
     assert col_list_by_type == expected_column_list_type
 
 
-@pytest.mark.parametrize("metadata_as_features", [True, False])
-def test_med_exam_col_list(request, metadata_as_features):
+@pytest.mark.parametrize(
+    "metadata_as_features, expected_med_exam_col_list",
+    [
+        (
+            True,
+            {
+                "numerical_col",
+                "num_categorical_col",
+                "bool_col",
+                "interval_col",
+                "nan_col",
+                "metadata_num_col",
+            },
+        ),
+        (
+            False,
+            {
+                "numerical_col",
+                "num_categorical_col",
+                "bool_col",
+                "interval_col",
+                "nan_col",
+            },
+        ),
+    ],
+)
+def test_med_exam_col_list(request, metadata_as_features, expected_med_exam_col_list):
     df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
     df_info = DataFrameWithInfo(
         df_object=df_multi_type,
         metadata_cols=("metadata_num_col",),
         metadata_as_features=metadata_as_features,
     )
-    metadata_col_set = {"metadata_num_col"} if metadata_as_features else set()
-    expected_med_exam_col_list = {
-        "numerical_col",
-        "num_categorical_col",
-        "bool_col",
-        "interval_col",
-        "nan_col",
-    } | metadata_col_set
 
     med_exam_col_list = df_info.med_exam_col_list
 
@@ -366,7 +383,7 @@ def test_med_exam_col_list(request, metadata_as_features):
     ],
 )
 def test_least_nan_cols(request, nan_threshold, expected_least_nan_cols):
-    df_multi_type = DataFrameMock.df_least_nan(sample_size=200)
+    df_multi_type = DataFrameMock.df_multi_nan_ratio(sample_size=200)
     df_info = DataFrameWithInfo(df_object=df_multi_type)
 
     least_nan_cols = df_info.least_nan_cols(nan_threshold)
