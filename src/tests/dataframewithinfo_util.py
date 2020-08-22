@@ -4,6 +4,8 @@ from datetime import date
 
 import pandas as pd
 
+random.seed(42)
+
 
 class DataFrameMock:
     @staticmethod
@@ -116,7 +118,6 @@ class DataFrameMock:
             trivial_dict[f"same_{j}"] = [4] * sample_count
         # Create 5 more columns with valid values (with NaN, repeated and random values)
         valid_values_columns = 5
-        random.seed = 42
         for k in range(valid_values_columns):
             same_value_sample_count = int(sample_count * (1 - 0.05 * (k + 1)) / 2)
             nan_sample_count = int(sample_count * (1 - 0.05 * (k + 1)) / 2)
@@ -165,7 +166,6 @@ class DataFrameMock:
         # Get only the part that is divisible by 2 and 5
         sample_size = sample_size // 10 * 10
         bool_col = [True, False, True, True, False] * (sample_size // 5)
-        random.seed(42)
         random.shuffle(bool_col)
 
         df_multi_type_dict = {
