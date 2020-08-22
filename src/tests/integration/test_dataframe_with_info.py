@@ -2,13 +2,8 @@ import pytest
 from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType,
-    DataFrameWithInfo,
-    FeatureOperation,
-    _find_samples_by_type,
-    _find_single_column_type,
-    _split_columns_by_type_parallel,
-)
+    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
+    _split_columns_by_type_parallel)
 from ...pd_extras.feature_enum import OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
@@ -265,41 +260,74 @@ def test_get_categorical_cols(request, sample_size, expected_categ_cols):
     assert categ_cols == expected_categ_cols
 
 
-@pytest.mark.parametrize("metadata_as_features", [True, False])
-def test_column_list_by_type(request, metadata_as_features):
+@pytest.mark.parametrize(
+    "metadata_as_features, expected_column_list_type",
+    [
+        (
+            True,
+            ColumnListByType(
+                mixed_type_cols={"mixed_type_col"},
+                same_value_cols={"same_col"},
+                numerical_cols={
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                    "metadata_num_col",
+                },
+                med_exam_col_list={
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                    "metadata_num_col",
+                },
+                str_cols={"string_col", "str_categorical_col"},
+                str_categorical_cols={"str_categorical_col"},
+                num_categorical_cols={"num_categorical_col", "nan_col"},
+                other_cols={"datetime_col"},
+                bool_cols={"bool_col"},
+            ),
+        ),
+        (
+            False,
+            ColumnListByType(
+                mixed_type_cols={"mixed_type_col"},
+                same_value_cols={"same_col"},
+                numerical_cols={
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                },
+                med_exam_col_list={
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                },
+                str_cols={"string_col", "str_categorical_col"},
+                str_categorical_cols={"str_categorical_col"},
+                num_categorical_cols={"num_categorical_col", "nan_col"},
+                other_cols={"datetime_col"},
+                bool_cols={"bool_col"},
+            ),
+        ),
+    ],
+)
+def test_column_list_by_type(request, metadata_as_features, expected_column_list_type):
     df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
     df_info = DataFrameWithInfo(
         df_object=df_multi_type,
         metadata_cols=("metadata_num_col",),
         metadata_as_features=metadata_as_features,
     )
-    metadata_col_set = {"metadata_num_col"} if metadata_as_features else set()
 
     col_list_by_type = df_info.column_list_by_type
 
     assert isinstance(col_list_by_type, ColumnListByType)
-    assert col_list_by_type == ColumnListByType(
-        mixed_type_cols={"mixed_type_col"},
-        same_value_cols={"same_col"},
-        numerical_cols={
-            "numerical_col",
-            "num_categorical_col",
-            "bool_col",
-            "interval_col",
-            "nan_col",
-        }
-        | metadata_col_set,
-        med_exam_col_list={
-            "numerical_col",
-            "num_categorical_col",
-            "bool_col",
-            "interval_col",
-            "nan_col",
-        }
-        | metadata_col_set,
-        str_cols={"string_col", "str_categorical_col"},
-        str_categorical_cols={"str_categorical_col"},
-        num_categorical_cols={"num_categorical_col", "nan_col"},
-        other_cols={"datetime_col"},
-        bool_cols={"bool_col"},
-    )
+    assert col_list_by_type == expected_column_list_type

@@ -165,10 +165,11 @@ class DataFrameMock:
         # Get only the part that is divisible by 2 and 5
         sample_size = sample_size // 10 * 10
         bool_col = [True, False, True, True, False] * (sample_size // 5)
+        random.seed(42)
         random.shuffle(bool_col)
 
         df_multi_type_dict = {
-            "metadata_num_col": [i for i in range(sample_size)],
+            "metadata_num_col": list(range(sample_size)),
             "bool_col": bool_col,
             "string_col": [f"value_{i}" for i in range(sample_size)],
             "str_categorical_col": pd.Series(
@@ -184,7 +185,7 @@ class DataFrameMock:
             "interval_col": pd.arrays.IntervalArray(
                 [pd.Interval(0, i) for i in range(sample_size)],
             ),
-            "mixed_type_col": [i for i in range(sample_size // 2)]
+            "mixed_type_col": list(range(sample_size // 2))
             + [f"value_{i}" for i in range(sample_size // 2)],
             "same_col": [2] * sample_size,
             "nan_col": [pd.NA] * (sample_size - 1) + [3],
