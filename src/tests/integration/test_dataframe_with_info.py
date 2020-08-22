@@ -896,6 +896,18 @@ def test_split_columns_by_type_parallel(request):
     )
 
 
+def test_copy_df_info_with_new_df(request):
+    original_df_info = DataFrameWithInfo(df_object=DataFrameMock.df_generic(10))
+    # TODO: Test if during the copy something was lost
+    # TODO: Test the warning?
+    pass
+
+
+# ====================
+#      FIXTURES
+# ====================
+
+
 @pytest.fixture(scope="function")
 def df_info_with_operations() -> DataFrameWithInfo:
     """
