@@ -286,7 +286,7 @@ class DataFrameMock:
         return pd.DataFrame(categ_cols_dict)
 
     @staticmethod
-    def df_least_nan(sample_size: int) -> pd.DataFrame:
+    def df_multi_nan_ratio(sample_size: int) -> pd.DataFrame:
         """
         Create pandas DataFrame with columns containing variable ratios of NaN values.
 
@@ -312,11 +312,11 @@ class DataFrameMock:
             containing variable ratios of NaN values.
         """
         sample_size = sample_size // 10 * 10
-        ratio_25 = int(sample_size * 0.25)
+        ratio_50 = int(sample_size * 0.5)
         num_values = [0.05 * i for i in range(sample_size)]
         df_multi_type_dict = {
             "0nan_col": [0.05 * i for i in range(sample_size)],
-            "50nan_col": ([pd.NA] * ratio_25 * 2) + num_values[: ratio_25 * 2],
+            "50nan_col": ([pd.NA] * ratio_50 * 2) + num_values[: ratio_50 * 2],
             "99nan_col": [pd.NA] * (sample_size - 1) + [3],
             "100nan_col": ([pd.NA] * sample_size),
         }
