@@ -10,7 +10,7 @@ import pandas as pd
 import sklearn
 from joblib import Parallel, delayed
 
-from .exceptions import MultipleOperationsFoundError
+from .exceptions import MultipleObjectsInFileError, MultipleOperationsFoundError
 from .feature_enum import EncodingFunctions, OperationTypeEnum
 from .settings import CATEG_COL_THRESHOLD
 
@@ -1089,16 +1089,19 @@ def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
     # We leave the error management to the function (FileNotFoundError)
     my_shelf = shelve.open(str(filename))
     # Check how many objects have been stored
-    assert (
-        len(my_shelf.keys()) == 1
-    ), f"There are {len(my_shelf.keys())} objects in file {filename}. Expected 1."
+    if len(my_shelf.keys()) != 1:
+        raise MultipleObjectsInFileError(
+            f"There are {len(my_shelf.keys())} objects in file {filename}. Expected 1."
+        )
     # Retrieve the single object
     df_info = list(my_shelf.values())[0]
+
     # Check if the object is a DataFrameWithInfo instance
-    assert "DataFrameWithInfo" in str(df_info.__class__), (
-        f"The object is not a DataFrameWithInfo "
-        f"instance, but it is {df_info.__class__}"
-    )
+    if isinstance(df_info, "DataFrameWithInfo"):
+        raise TypeError(
+            f"The object is not a DataFrameWithInfo "
+            f"instance, but it is {df_info.__class__}"
+        )
     my_shelf.close()
     return df_info
 
