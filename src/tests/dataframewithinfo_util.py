@@ -12,7 +12,7 @@ class DataFrameMock:
         Create a generic DataFrame with ``sample_size`` samples and 2 columns.
 
         The 2 columns of the returned DataFrame contain numerical and string
-        values separately.
+        values, respectively.
 
         Parameters
         ----------
@@ -27,10 +27,10 @@ class DataFrameMock:
         """
         return pd.DataFrame(
             {
-                "metadata_num_col": [i for i in range(sample_size)],
+                "metadata_num_col": list(range(sample_size)),
                 "metadata_str_col": [f"value_{i}" for i in range(sample_size)],
-                "exam_num_col_0": [i for i in range(sample_size)],
-                "exam_num_col_1": [i for i in range(sample_size)],
+                "exam_num_col_0": list(range(sample_size)),
+                "exam_num_col_1": list(range(sample_size)),
                 "exam_str_col_0": [f"value_{i}" for i in range(sample_size)],
             }
         )
