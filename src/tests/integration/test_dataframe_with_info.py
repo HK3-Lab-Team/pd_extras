@@ -147,44 +147,118 @@ class Describe_DataFrameWithInfo:
         assert isinstance(categ_cols, set)
         assert categ_cols == expected_categ_cols
 
-    @pytest.mark.parametrize("metadata_as_features", [True, False])
-    def test_column_list_by_type(self, request, metadata_as_features):
+    @pytest.mark.parametrize(
+        "metadata_as_features, expected_column_list_type",
+        [
+            (
+                True,
+                ColumnListByType(
+                    mixed_type_cols={"mixed_type_col"},
+                    same_value_cols={"same_col"},
+                    numerical_cols={
+                        "numerical_col",
+                        "num_categorical_col",
+                        "bool_col",
+                        "interval_col",
+                        "nan_col",
+                        "metadata_num_col",
+                    },
+                    med_exam_col_list={
+                        "numerical_col",
+                        "num_categorical_col",
+                        "bool_col",
+                        "interval_col",
+                        "nan_col",
+                        "metadata_num_col",
+                    },
+                    str_cols={"string_col", "str_categorical_col"},
+                    str_categorical_cols={"str_categorical_col"},
+                    num_categorical_cols={"num_categorical_col", "nan_col"},
+                    other_cols={"datetime_col"},
+                    bool_cols={"bool_col"},
+                ),
+            ),
+            (
+                False,
+                ColumnListByType(
+                    mixed_type_cols={"mixed_type_col"},
+                    same_value_cols={"same_col"},
+                    numerical_cols={
+                        "numerical_col",
+                        "num_categorical_col",
+                        "bool_col",
+                        "interval_col",
+                        "nan_col",
+                    },
+                    med_exam_col_list={
+                        "numerical_col",
+                        "num_categorical_col",
+                        "bool_col",
+                        "interval_col",
+                        "nan_col",
+                    },
+                    str_cols={"string_col", "str_categorical_col"},
+                    str_categorical_cols={"str_categorical_col"},
+                    num_categorical_cols={"num_categorical_col", "nan_col"},
+                    other_cols={"datetime_col"},
+                    bool_cols={"bool_col"},
+                ),
+            ),
+        ],
+    )
+    def test_column_list_by_type(
+        request, metadata_as_features, expected_column_list_type
+    ):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
         df_info = DataFrameWithInfo(
             df_object=df_multi_type,
             metadata_cols=("metadata_num_col",),
             metadata_as_features=metadata_as_features,
         )
-        metadata_col_set = {"metadata_num_col"} if metadata_as_features else set()
 
         col_list_by_type = df_info.column_list_by_type
 
         assert isinstance(col_list_by_type, ColumnListByType)
-        assert col_list_by_type == ColumnListByType(
-            mixed_type_cols={"mixed_type_col"},
-            same_value_cols={"same_col"},
-            numerical_cols={
-                "numerical_col",
-                "num_categorical_col",
-                "bool_col",
-                "interval_col",
-                "nan_col",
-            }
-            | metadata_col_set,
-            med_exam_col_list={
-                "numerical_col",
-                "num_categorical_col",
-                "bool_col",
-                "interval_col",
-                "nan_col",
-            }
-            | metadata_col_set,
-            str_cols={"string_col", "str_categorical_col"},
-            str_categorical_cols={"str_categorical_col"},
-            num_categorical_cols={"num_categorical_col", "nan_col"},
-            other_cols={"datetime_col"},
-            bool_cols={"bool_col"},
+        assert col_list_by_type == expected_column_list_type
+
+    @pytest.mark.parametrize(
+        "metadata_as_features, expected_med_exam_col_list",
+        [
+            (
+                True,
+                {
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                    "metadata_num_col",
+                },
+            ),
+            (
+                False,
+                {
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                },
+            ),
+        ],
+    )
+    def test_med_exam_col_list(self, metadata_as_features, expected_med_exam_col_list):
+        df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
+        df_info = DataFrameWithInfo(
+            df_object=df_multi_type,
+            metadata_cols=("metadata_num_col",),
+            metadata_as_features=metadata_as_features,
         )
+
+        med_exam_col_list = df_info.med_exam_col_list
+
+        assert isinstance(med_exam_col_list, set)
+        assert med_exam_col_list == expected_med_exam_col_list
 
     @pytest.mark.parametrize(
         "nan_threshold, expected_least_nan_cols",
@@ -471,20 +545,20 @@ class Describe_DataFrameWithInfo:
     def test_find_operation_in_column_raise_error(
         self, request, df_info_with_operations
     ):
-
+        feat_op = FeatureOperation(
+            OperationTypeEnum.BIN_SPLITTING,
+            original_columns=["fop_original_col_0", "fop_original_col_1"],
+            derived_columns=None,
+        )
         with pytest.raises(MultipleOperationsFoundError) as err:
-            feat_op = FeatureOperation(
-                OperationTypeEnum.BIN_SPLITTING,
-                original_columns=["fop_original_col_0", "fop_original_col_1"],
-                derived_columns=None,
-            )
-            _ = df_info_with_operations.find_operation_in_column(feat_operation=feat_op)
+            df_info_with_operations.find_operation_in_column(feat_operation=feat_op)
 
         assert isinstance(err.value, MultipleOperationsFoundError)
         assert (
             "Multiple operations were found. Please provide additional information"
             in str(err.value)
         )
+
         # "Operations found: "
         #     + "\n\n0. Columns used to produce the result: ('fop_original_col_0', 'fop_original_col_1')"
         #     + "\nType of the operation that has been applied: OperationTypeEnum.BIN_SPLITTING"
@@ -502,7 +576,7 @@ class Describe_FeatureOperation:
         "feat_op_1_dict, feat_op_2_dict, is_equal_label", eq_featureoperation_combs()
     )
     def test_featureoperation_equals(
-        self, request, feat_op_1_dict, feat_op_2_dict, is_equal_label
+        self, feat_op_1_dict, feat_op_2_dict, is_equal_label
     ):
         feat_op_1 = FeatureOperation(
             operation_type=feat_op_1_dict["operation_type"],
@@ -521,7 +595,7 @@ class Describe_FeatureOperation:
 
         assert are_feat_ops_equal == is_equal_label
 
-    def test_featureoperation_equals_with_different_instance_types(self, request):
+    def test_featureoperation_equals_with_different_instance_types(self):
         feat_op_1 = FeatureOperation(
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             original_columns=("original_column_2",),
@@ -612,206 +686,6 @@ def test_split_columns_by_type_parallel(request):
     )
 
 
-@pytest.mark.parametrize(
-    "sample_size, expected_categ_cols",
-    [
-        (
-            50,
-            {
-                "numerical_3",
-                "numerical_5",
-                "string_3",
-                "string_5",
-                "mixed_3",
-                "mixed_5",
-            },
-        ),
-        (
-            100,
-            {
-                "numerical_3",
-                "numerical_5",
-                "string_3",
-                "string_5",
-                "mixed_3",
-                "mixed_5",
-            },
-        ),
-        (
-            3000,
-            {
-                "numerical_3",
-                "numerical_5",
-                "numerical_8",
-                "string_3",
-                "string_5",
-                "string_8",
-                "mixed_3",
-                "mixed_5",
-                "mixed_8",
-            },
-        ),
-        (
-            15000,
-            {
-                "numerical_3",
-                "numerical_5",
-                "numerical_8",
-                "numerical_40",
-                "string_3",
-                "string_5",
-                "string_8",
-                "string_40",
-                "mixed_3",
-                "mixed_5",
-                "mixed_8",
-                "mixed_40",
-            },
-        ),
-    ],
-)
-def test_get_categorical_cols(request, sample_size, expected_categ_cols):
-    df_categ = DataFrameMock.df_categorical_cols(sample_size)
-    df_info = DataFrameWithInfo(df_object=df_categ)
-
-    categ_cols = df_info._get_categorical_cols(col_list=df_categ.columns)
-
-    assert isinstance(categ_cols, set)
-    assert categ_cols == expected_categ_cols
-
-
-@pytest.mark.parametrize(
-    "metadata_as_features, expected_column_list_type",
-    [
-        (
-            True,
-            ColumnListByType(
-                mixed_type_cols={"mixed_type_col"},
-                same_value_cols={"same_col"},
-                numerical_cols={
-                    "numerical_col",
-                    "num_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
-                    "metadata_num_col",
-                },
-                med_exam_col_list={
-                    "numerical_col",
-                    "num_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
-                    "metadata_num_col",
-                },
-                str_cols={"string_col", "str_categorical_col"},
-                str_categorical_cols={"str_categorical_col"},
-                num_categorical_cols={"num_categorical_col", "nan_col"},
-                other_cols={"datetime_col"},
-                bool_cols={"bool_col"},
-            ),
-        ),
-        (
-            False,
-            ColumnListByType(
-                mixed_type_cols={"mixed_type_col"},
-                same_value_cols={"same_col"},
-                numerical_cols={
-                    "numerical_col",
-                    "num_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
-                },
-                med_exam_col_list={
-                    "numerical_col",
-                    "num_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
-                },
-                str_cols={"string_col", "str_categorical_col"},
-                str_categorical_cols={"str_categorical_col"},
-                num_categorical_cols={"num_categorical_col", "nan_col"},
-                other_cols={"datetime_col"},
-                bool_cols={"bool_col"},
-            ),
-        ),
-    ],
-)
-def test_column_list_by_type(request, metadata_as_features, expected_column_list_type):
-    df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
-    df_info = DataFrameWithInfo(
-        df_object=df_multi_type,
-        metadata_cols=("metadata_num_col",),
-        metadata_as_features=metadata_as_features,
-    )
-
-    col_list_by_type = df_info.column_list_by_type
-
-    assert isinstance(col_list_by_type, ColumnListByType)
-    assert col_list_by_type == expected_column_list_type
-
-
-@pytest.mark.parametrize(
-    "metadata_as_features, expected_med_exam_col_list",
-    [
-        (
-            True,
-            {
-                "numerical_col",
-                "num_categorical_col",
-                "bool_col",
-                "interval_col",
-                "nan_col",
-                "metadata_num_col",
-            },
-        ),
-        (
-            False,
-            {
-                "numerical_col",
-                "num_categorical_col",
-                "bool_col",
-                "interval_col",
-                "nan_col",
-            },
-        ),
-    ],
-)
-def test_med_exam_col_list(request, metadata_as_features, expected_med_exam_col_list):
-    df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
-    df_info = DataFrameWithInfo(
-        df_object=df_multi_type,
-        metadata_cols=("metadata_num_col",),
-        metadata_as_features=metadata_as_features,
-    )
-
-    med_exam_col_list = df_info.med_exam_col_list
-
-    assert isinstance(med_exam_col_list, set)
-    assert med_exam_col_list == expected_med_exam_col_list
-
-
-@pytest.mark.parametrize(
-    "nan_threshold, expected_least_nan_cols",
-    [
-        (10, {"0nan_col"}),
-        (101, {"0nan_col", "50nan_col"}),
-        (199, {"0nan_col", "50nan_col"}),
-        (200, {"0nan_col", "50nan_col", "99nan_col"}),
-    ],
-)
-def test_least_nan_cols(request, nan_threshold, expected_least_nan_cols):
-    df_multi_type = DataFrameMock.df_multi_nan_ratio(sample_size=200)
-    df_info = DataFrameWithInfo(df_object=df_multi_type)
-
-    least_nan_cols = df_info.least_nan_cols(nan_threshold)
-
-    assert isinstance(least_nan_cols, set)
-    assert least_nan_cols == expected_least_nan_cols
-
-
 @pytest.fixture(scope="function")
 def df_info_with_operations() -> DataFrameWithInfo:
     """
@@ -819,9 +693,6 @@ def df_info_with_operations() -> DataFrameWithInfo:
 
     The returned DataFrameWithInfo will have ``feature_elaborations`` attribute
     initialized with ``feature_elaborations`` argument.
-
-    Parameters
-    ----------
 
     Returns
     -------
