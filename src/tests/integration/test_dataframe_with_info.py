@@ -2,6 +2,7 @@ import os
 import shelve
 import shutil
 from pathlib import Path
+from typing import Tuple
 
 import pytest
 
@@ -926,45 +927,11 @@ def test_copy_df_info_with_new_df(request, df_info_with_operations):
     pass
 
 
-def test_import_df_with_info_from_file(
-    request, export_df_info_with_operations_to_file_fixture
-):
-
-    df_info = import_df_with_info_from_file(
-        df_info_with_operations, export_df_info_with_operations_to_file_fixture
-    )
-    assert isinstance(df_info, DataFrameWithInfo)
-
-
-def test_import_df_info_raise_typeerror(
-    request, export_df_info_with_operations_to_file_fixture
-):
-    new_df = DataFrameMock.df_generic(10)
-
-    new_df_info = copy_df_info_with_new_df(
-        df_info=df_info_with_operations, new_pandas_df=new_df
-    )
-    with pytest.raises(TypeError) as err:
-        imported_df_info = import_df_with_info_from_file(
-            df_info_with_operations, export_df_info_with_operations_to_file_fixture
-        )
-
-    assert isinstance(err.value, TypeError)
-    assert (
-        f"The object is not a DataFrameWithInfo instance, but it"
-        f" is {imported_df_info.__class__}" == str(err.value)
-    )
-
-
 def test_export_df_info_raise_fileexistserror(
     request, df_info_with_operations, temporary_data_dir
 ):
-    new_df = DataFrameMock.df_generic(10)
     filename = temporary_data_dir / "export_raise_fileexistserr"
 
-    new_df_info = copy_df_info_with_new_df(
-        df_info=df_info_with_operations, new_pandas_df=new_df
-    )
     with pytest.raises(FileExistsError) as err:
         export_df_with_info_to_file(df_info_with_operations, filename)
 
@@ -975,6 +942,52 @@ def test_export_df_info_raise_fileexistserror(
     )
 
 
+def test_export_df_info_raise_fileexistserror(
+    request, df_info_with_operations, temporary_data_dir
+):
+    filename = temporary_data_dir / "export_raise_fileexistserr"
+
+    with pytest.raises(FileExistsError) as err:
+        export_df_with_info_to_file(df_info_with_operations, filename)
+
+    assert isinstance(err.value, FileExistsError)
+    assert (
+        f"File {filename} already exists. If overwriting is not a problem, "
+        f"set the 'overwrite' argument to True" == str(err.value)
+    )
+
+
+def test_import_df_with_info_from_file(
+    request, export_df_info_with_operations_to_file_fixture
+):
+    (
+        expected_imported_df_info,
+        exported_df_info_path,
+    ) = export_df_info_with_operations_to_file_fixture
+
+    imported_df_info = import_df_with_info_from_file(exported_df_info_path)
+
+    assert isinstance(imported_df_info, DataFrameWithInfo)
+    assert imported_df_info == expected_imported_df_info
+
+
+def test_import_df_info_raise_typeerror(
+    request, export_df_info_with_operations_to_file_fixture
+):
+    (
+        expected_imported_df_info,
+        exported_df_info_path,
+    ) = export_df_info_with_operations_to_file_fixture
+    with pytest.raises(TypeError) as err:
+        imported_df_info = import_df_with_info_from_file(exported_df_info_path)
+
+    assert isinstance(err.value, TypeError)
+    assert (
+        f"The object is not a DataFrameWithInfo instance, but it"
+        f" is {imported_df_info.__class__}" == str(err.value)
+    )
+
+
 # ====================
 #      FIXTURES
 # ====================
@@ -982,7 +995,29 @@ def test_export_df_info_raise_fileexistserror(
 
 @pytest.fixture(scope="module")
 def temporary_data_dir(request) -> Path:
+    """
+    Create a temporary directory for test data and delete it after test end.
+
+    The temporary directory is created in the working directory and it is
+    named "temp_test_data_folder".
+    The fixture uses a finalizer that deletes the temporary directory where
+    every test data was saved. Therefore every time the user calls tests that
+    use this fixture (and save data inside the returned directory), at the end
+    of the test the finalizer deletes this directory.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    Path
+        Path where every temporary file used by tests is saved.
+    """
     temp_data_dir = Path(os.getcwd()) / "temp_test_data_folder"
+    try:
+        os.mkdir(temp_data_dir)
+    except FileExistsError:
+        pass
 
     def remove_temp_dir_created():
         shutil.rmtree(temp_data_dir)
@@ -1064,11 +1099,30 @@ def df_info_with_operations() -> DataFrameWithInfo:
 
 @pytest.fixture
 def export_df_info_with_operations_to_file_fixture(
-    request, df_info_with_operations, temporary_data_dir
-):
-    exported_df_info_dir = temporary_data_dir / "exported_df_info_ops_fixture"
-    my_shelf = shelve.open(exported_df_info_dir, "n")
+    df_info_with_operations, temporary_data_dir
+) -> Tuple[DataFrameWithInfo, Path]:
+    """
+    Export a DataFrameWithInfo instance to a file.
+
+    The DataFrameWithInfo instance is created by the fixture ``df_info_with_operations``
+    and it is exported using "shelve" module to a file named ``exported_df_info_ops_fixture`` inside
+    the folder returned by the fixture ``temporary_data_dir``.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    DataFrameWithInfo
+        DataFrameWithInfo instance (created by ``df_info_with_operations`` fixture)
+        that is exported to the file
+    Path
+        Path of the directory where the DataFrameWithInfo instance is saved
+
+    """
+    exported_df_info_path = temporary_data_dir / "exported_df_info_ops_fixture"
+    my_shelf = shelve.open(exported_df_info_path, "n")
     my_shelf["df_info"] = df_info_with_operations
     my_shelf.close()
 
-    return exported_df_info_dir
+    return df_info_with_operations, exported_df_info_path
