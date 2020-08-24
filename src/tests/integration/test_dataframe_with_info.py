@@ -1,8 +1,14 @@
 import pytest
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
-    _split_columns_by_type_parallel)
+    ColumnListByType,
+    DataFrameWithInfo,
+    FeatureOperation,
+    _find_samples_by_type,
+    _find_single_column_type,
+    _split_columns_by_type_parallel,
+    copy_df_info_with_new_df,
+)
 from ...pd_extras.exceptions import MultipleOperationsFoundError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
@@ -896,8 +902,18 @@ def test_split_columns_by_type_parallel(request):
     )
 
 
-def test_copy_df_info_with_new_df(request):
-    original_df_info = DataFrameWithInfo(df_object=DataFrameMock.df_generic(10))
+def test_copy_df_info_with_new_df(request, df_info_with_operations):
+    new_df = DataFrameMock.df_generic(10)
+
+    new_df_info = copy_df_info_with_new_df(
+        df_info=df_info_with_operations, new_pandas_df=new_df
+    )
+
+    assert isinstance(new_df_info, DataFrameWithInfo)
+    assert (
+        new_df_info.feature_elaborations == df_info_with_operations.feature_elaborations
+    )
+
     # TODO: Test if during the copy something was lost
     # TODO: Test the warning?
     pass
