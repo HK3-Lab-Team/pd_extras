@@ -1,3 +1,8 @@
+import os
+import shelve
+import shutil
+from pathlib import Path
+
 import pytest
 
 from ...pd_extras.dataframe_with_info import (
@@ -8,6 +13,8 @@ from ...pd_extras.dataframe_with_info import (
     _find_single_column_type,
     _split_columns_by_type_parallel,
     copy_df_info_with_new_df,
+    export_df_with_info_to_file,
+    import_df_with_info_from_file,
 )
 from ...pd_extras.exceptions import MultipleOperationsFoundError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
@@ -919,9 +926,69 @@ def test_copy_df_info_with_new_df(request, df_info_with_operations):
     pass
 
 
+def test_import_df_with_info_from_file(
+    request, export_df_info_with_operations_to_file_fixture
+):
+
+    df_info = import_df_with_info_from_file(
+        df_info_with_operations, export_df_info_with_operations_to_file_fixture
+    )
+    assert isinstance(df_info, DataFrameWithInfo)
+
+
+def test_import_df_info_raise_typeerror(
+    request, export_df_info_with_operations_to_file_fixture
+):
+    new_df = DataFrameMock.df_generic(10)
+
+    new_df_info = copy_df_info_with_new_df(
+        df_info=df_info_with_operations, new_pandas_df=new_df
+    )
+    with pytest.raises(TypeError) as err:
+        imported_df_info = import_df_with_info_from_file(
+            df_info_with_operations, export_df_info_with_operations_to_file_fixture
+        )
+
+    assert isinstance(err.value, TypeError)
+    assert (
+        f"The object is not a DataFrameWithInfo instance, but it"
+        f" is {imported_df_info.__class__}" == str(err.value)
+    )
+
+
+def test_export_df_info_raise_fileexistserror(
+    request, df_info_with_operations, temporary_data_dir
+):
+    new_df = DataFrameMock.df_generic(10)
+    filename = temporary_data_dir / "export_raise_fileexistserr"
+
+    new_df_info = copy_df_info_with_new_df(
+        df_info=df_info_with_operations, new_pandas_df=new_df
+    )
+    with pytest.raises(FileExistsError) as err:
+        export_df_with_info_to_file(df_info_with_operations, filename)
+
+    assert isinstance(err.value, FileExistsError)
+    assert (
+        f"File {filename} already exists. If overwriting is not a problem, "
+        f"set the 'overwrite' argument to True" == str(err.value)
+    )
+
+
 # ====================
 #      FIXTURES
 # ====================
+
+
+@pytest.fixture(scope="module")
+def temporary_data_dir(request) -> Path:
+    temp_data_dir = Path(os.getcwd()) / "temp_test_data_folder"
+
+    def remove_temp_dir_created():
+        shutil.rmtree(temp_data_dir)
+
+    request.addfinalizer(remove_temp_dir_created)
+    return temp_data_dir
 
 
 @pytest.fixture(scope="function")
@@ -993,3 +1060,15 @@ def df_info_with_operations() -> DataFrameWithInfo:
             df_info.feature_elaborations[der_col].append(feat_op)
 
     return df_info
+
+
+@pytest.fixture
+def export_df_info_with_operations_to_file_fixture(
+    request, df_info_with_operations, temporary_data_dir
+):
+    exported_df_info_dir = temporary_data_dir / "exported_df_info_ops_fixture"
+    my_shelf = shelve.open(exported_df_info_dir, "n")
+    my_shelf["df_info"] = df_info_with_operations
+    my_shelf.close()
+
+    return exported_df_info_dir
