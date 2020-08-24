@@ -4,8 +4,6 @@ from datetime import date
 
 import pandas as pd
 
-random.seed(42)
-
 
 class DataFrameMock:
     @staticmethod
@@ -71,6 +69,7 @@ class DataFrameMock:
             Pandas DataFrame with ``n_columns`` containing the same repeated value
             and 5 columns with some different values.
         """
+        random.seed(42)
         same_value_dict = {}
         sample_count = 100
         # Create n_columns columns with same repeated value
@@ -106,6 +105,7 @@ class DataFrameMock:
             Pandas DataFrame with ``n_columns`` containing the same repeated value
             and 5 columns with some different values.
         """
+        random.seed(42)
         trivial_dict = {}
         sample_count = 100
         nan_columns = n_columns // 2
@@ -163,6 +163,7 @@ class DataFrameMock:
             Pandas DataFrame with ``sample_size`` samples and 5 columns
             containing values of different types.
         """
+        random.seed(42)
         # Get only the part that is divisible by 2 and 5
         sample_size = sample_size // 10 * 10
         bool_col = [True, False, True, True, False] * (sample_size // 5)
@@ -245,6 +246,7 @@ class DataFrameMock:
             various sample types and number of unique values
 
         """
+        random.seed(42)
         unique_value_counts = (3, 5, 8, 40)
         categ_cols_dict = {}
         mixed_list = [f"string_{i}" for i in range(20)] + [i * 20 for i in range(21)]
