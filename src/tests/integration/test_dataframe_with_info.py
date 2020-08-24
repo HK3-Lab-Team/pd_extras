@@ -3,13 +3,8 @@ import sklearn
 from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType,
-    DataFrameWithInfo,
-    FeatureOperation,
-    _find_samples_by_type,
-    _find_single_column_type,
-    _split_columns_by_type_parallel,
-)
+    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
+    _split_columns_by_type_parallel)
 from ...pd_extras.exceptions import MultipleOperationsFoundError
 from ...pd_extras.feature_enum import OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
@@ -191,7 +186,6 @@ class Describe_DataFrameWithInfo:
             bool_cols={"bool_col"},
         )
 
-
     @pytest.mark.parametrize(
         "nan_threshold, expected_least_nan_cols",
         [
@@ -202,7 +196,7 @@ class Describe_DataFrameWithInfo:
         ],
     )
     def test_least_nan_cols(self, request, nan_threshold, expected_least_nan_cols):
-        df_multi_type = DataFrameMock.df_least_nan(sample_size=200)
+        df_multi_type = DataFrameMock.df_multi_nan_ratio(sample_size=200)
         df_info = DataFrameWithInfo(df_object=df_multi_type)
 
         least_nan_cols = df_info.least_nan_cols(nan_threshold)
@@ -797,6 +791,7 @@ def test_med_exam_col_list(request, metadata_as_features, expected_med_exam_col_
 
     assert isinstance(med_exam_col_list, set)
     assert med_exam_col_list == expected_med_exam_col_list
+
 
 @pytest.mark.parametrize(
     "nan_threshold, expected_least_nan_cols",
