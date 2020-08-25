@@ -30,3 +30,7 @@ class NotShelveFileError(Exception):
     """
 
     pass
+
+
+class NotShelveFileError(Exception):
+    pass
