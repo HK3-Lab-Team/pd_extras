@@ -3,13 +3,8 @@ import sklearn
 from sklearn.preprocessing import OneHotEncoder
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType,
-    DataFrameWithInfo,
-    FeatureOperation,
-    _find_samples_by_type,
-    _find_single_column_type,
-    _split_columns_by_type_parallel,
-)
+    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
+    _split_columns_by_type_parallel)
 from ...pd_extras.exceptions import MultipleOperationsFoundError
 from ...pd_extras.feature_enum import OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
@@ -580,17 +575,6 @@ class Describe_DataFrameWithInfo:
             "Multiple operations were found. Please provide additional information"
             in str(err.value)
         )
-
-        # "Operations found: "
-        #     + "\n\n0. Columns used to produce the result: ('fop_original_col_0', 'fop_original_col_1')"
-        #     + "\nType of the operation that has been applied: OperationTypeEnum.BIN_SPLITTING"
-        #     + "\nColumns created after the operation:  ('fop_derived_col_0', 'fop_derived_col_1')"
-        #     + "\nMap between original values and encoded ones: \n{}"
-        #     + "\n\n1. Columns used to produce the result: ('fop_original_col_0', 'fop_original_col_1')"
-        #     + "\nType of the operation that has been applied: OperationTypeEnum.BIN_SPLITTING}"
-        #     + "\nColumns created after the operation: ('fop_derived_col_0',)"
-        #     + "\nMap between original values and encoded ones: \n{}"
-        # )
 
 
 class Describe_FeatureOperation:
