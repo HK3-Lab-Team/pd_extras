@@ -784,7 +784,7 @@ class DataFrameWithInfo:
         - bool -> "bool_col"
         - str -> "string_col"
         - other types -> "other_col"
-
+        
         Parameters
         ----------
         col_list: Tuple[str], optional
