@@ -4,6 +4,7 @@ import logging
 import os
 import shelve
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, DefaultDict, Dict, Iterable, List, Set, Tuple, Union
 
 import pandas as pd
@@ -1074,17 +1075,30 @@ def copy_df_info_with_new_df(
 
 def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
     """
-    Use 'shelve' module to import the data of a stored DataFrameWithInfo instance
+    Import a DataFrameWithInfo instance stored inside ``filename`` file.
+
+    This function uses 'shelve' module and it expects to find 3 files with
+    suffixes ".dat", ".bak", ".dir" that contain only one DataFrameWithInfo
+    instance.
 
     Parameters
     ----------
     filename: str
-        Name/Path of the file where the data dump may be found
+        Name/Path of the file where the data dump may be found.
 
     Returns
     -------
     DataFrameWithInfo
         DataFrameWithInfo instance that was saved in ``filename`` path.
+
+    Raises
+    ------
+    TypeError
+        This error is to report that no DataFrameWithInfo instances were found
+        inside the ``filename`` file.
+    MultipleObjectsInFileError
+        This error reports that multiple objects were found inside the
+        ``filename`` file.
     """
     # We leave the error management to the function (FileNotFoundError)
     my_shelf = shelve.open(str(filename))
@@ -1107,22 +1121,32 @@ def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
 
 
 def export_df_with_info_to_file(
-    df_info: DataFrameWithInfo, filename: str, overwrite: bool = False
-):
+    df_info: DataFrameWithInfo, filename: Union[Path, str], overwrite: bool = False
+) -> None:
     """
-    This uses 'shelve' module to export the data of a previous DataFrameWithInfo instance
-    to 'filename'
+    Export data of a previous DataFrameWithInfo instance to ``filename``
+
+    This function uses "shelve" module that creates 3 files containing only
+    the object ``df_info`` (named "df_info")
 
     Parameters
     ----------
     df_info: DataFrameWithInfo
         DataFrameWithInfo instance that needs to be exported
-    filename: str
+    filename: Union[Path, str]
         Name/Path of the file where the data dump will be exported
     overwrite: bool, optional
         Option to overwrite the file if it already exists as ``filename``.
         Default set to False
+
+    Raises
+    ------
+    FileExistsError
+        This error is to report that a file in ``filename`` path is already present
+        and ``overwrite`` is set to False. In case overwriting is not a problem,
+        ``overwrite`` should be set to True
     """
+    filename = str(filename)
     if not overwrite:
         if os.path.exists(filename):
             raise FileExistsError(
