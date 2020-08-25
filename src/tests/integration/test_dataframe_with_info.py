@@ -1,3 +1,4 @@
+import logging
 import os
 import shelve
 import shutil
@@ -7,17 +8,10 @@ from typing import Tuple
 import pytest
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType,
-    DataFrameWithInfo,
-    FeatureOperation,
-    _find_samples_by_type,
-    _find_single_column_type,
-    _split_columns_by_type_parallel,
-    copy_df_info_with_new_df,
-    export_df_with_info_to_file,
-    import_df_with_info_from_file,
-)
-from ...pd_extras.exceptions import MultipleOperationsFoundError
+    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
+    _split_columns_by_type_parallel, copy_df_info_with_new_df, export_df_with_info_to_file,
+    import_df_with_info_from_file)
+from ...pd_extras.exceptions import MultipleOperationsFoundError, NotShelveFileError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
@@ -698,101 +692,6 @@ class Describe_DataFrameWithInfo:
             in str(err.value)
         )
 
-    @pytest.mark.parametrize(
-        "original_column, encoder, expected_encoded_columns",
-        [
-            (  # Case 1: Everything specified and found
-                "fop_original_col_0",
-                EncodingFunctions.ONEHOT.value(),
-                ("fop_derived_col_0",),
-            ),
-            ("fop_derived_col_1", None, None),  # Case 2: column_name in derived_columns
-            ("fop_original_col_10", None, None),  # Case 3: No operation associated
-            # Case 4: No encoder specified
-            ("fop_original_col_2", None, ("fop_derived_col_2", "fop_derived_col_3")),
-        ],
-    )
-    def test_get_enc_column_from_original(
-        self,
-        request,
-        df_info_with_operations,
-        original_column,
-        encoder,
-        expected_encoded_columns,
-    ):
-        encoded_columns = df_info_with_operations.get_enc_column_from_original(
-            column_name=original_column, encoder=encoder
-        )
-
-        if expected_encoded_columns is None:
-            assert encoded_columns is None
-        else:
-            assert isinstance(encoded_columns, tuple)
-            assert len(encoded_columns) == len(expected_encoded_columns)
-            assert set(encoded_columns) == set(expected_encoded_columns)
-
-    def test_get_enc_column_from_original_raise_error(
-        self, request, df_info_with_operations
-    ):
-        with pytest.raises(MultipleOperationsFoundError) as err:
-            _ = df_info_with_operations.get_enc_column_from_original(
-                column_name="fop_original_col_0"
-            )
-
-        assert isinstance(err.value, MultipleOperationsFoundError)
-        assert (
-            "Multiple operations were found. Please provide additional information"
-            in str(err.value)
-        )
-
-    @pytest.mark.parametrize(
-        "encoded_column, encoder, expected_original_columns",
-        [
-            (  # Case 1: Everything specified and found
-                "fop_derived_col_0",
-                EncodingFunctions.ONEHOT.value(),
-                ("fop_original_col_0",),
-            ),
-            # Case 2: No encoder specified
-            ("fop_derived_col_1", None, ("fop_original_col_0", "fop_original_col_1")),
-            ("fop_derived_col_10", None, None),  # Case 3: No operation associated
-            # Case 4: Column_name in original_columns
-            ("fop_original_col_2", None, None),
-        ],
-    )
-    def test_get_original_from_enc_column(
-        self,
-        request,
-        df_info_with_operations,
-        encoded_column,
-        encoder,
-        expected_original_columns,
-    ):
-        original_columns = df_info_with_operations.get_original_from_enc_column(
-            column_name=encoded_column, encoder=encoder
-        )
-
-        if expected_original_columns is None:
-            assert original_columns is None
-        else:
-            assert isinstance(original_columns, tuple)
-            assert len(original_columns) == len(expected_original_columns)
-            assert set(original_columns) == set(expected_original_columns)
-
-    def test_get_original_from_enc_column_raise_error(
-        self, request, df_info_with_operations
-    ):
-        with pytest.raises(MultipleOperationsFoundError) as err:
-
-            _ = df_info_with_operations.get_original_from_enc_column(
-                column_name="fop_derived_col_0"
-            )
-
-        assert isinstance(err.value, MultipleOperationsFoundError)
-        assert (
-            "Multiple operations were found. Please provide additional information"
-            in str(err.value)
-        )
 
 
 class Describe_FeatureOperation:
@@ -910,7 +809,7 @@ def test_split_columns_by_type_parallel(request):
     )
 
 
-def test_copy_df_info_with_new_df(request, df_info_with_operations):
+def test_copy_df_info_with_new_df(df_info_with_operations):
     new_df = DataFrameMock.df_generic(10)
 
     new_df_info = copy_df_info_with_new_df(
@@ -918,19 +817,52 @@ def test_copy_df_info_with_new_df(request, df_info_with_operations):
     )
 
     assert isinstance(new_df_info, DataFrameWithInfo)
-    assert (
-        new_df_info.feature_elaborations == df_info_with_operations.feature_elaborations
+    conserved_attributes = new_df_info.__dict__.keys() - {"df"}
+    for k in conserved_attributes:
+        assert new_df_info.__dict__[k] == df_info_with_operations.__dict__[k]
+    assert new_df_info.df.equals(new_df)
+
+
+def test_copy_df_info_with_new_df_log_warning(caplog, df_info_with_operations):
+    new_df = DataFrameMock.df_generic(10)
+    reduced_new_df = new_df.drop(["exam_num_col_0"], axis=1)
+
+    copy_df_info_with_new_df(
+        df_info=df_info_with_operations, new_pandas_df=reduced_new_df
     )
 
-    # TODO: Test if during the copy something was lost
-    # TODO: Test the warning?
-    pass
+    assert caplog.record_tuples == [
+        (
+            "root",
+            logging.WARNING,
+            "Some columns of the previous DataFrameWithInfo instance "
+            + "are being lost, but information about operation on them "
+            + "is still present",
+        )
+    ]
+
+
+def test_export_df_info_to_file(df_info_with_operations, temporary_data_dir):
+    filename = temporary_data_dir / "export_raise_fileexistserr"
+
+    export_df_with_info_to_file(df_info_with_operations, filename)
+
+    my_shelf = shelve.open(str(filename))
+    assert len(my_shelf.keys()) == 1
+    exported_df_info = list(my_shelf.values())[0]
+    my_shelf.close()
+    assert isinstance(exported_df_info, DataFrameWithInfo)
+    # This is to identify attribute errors easier
+    conserved_attributes = exported_df_info.__dict__.keys() - {"df"}
+    for k in conserved_attributes:
+        assert exported_df_info.__dict__[k] == df_info_with_operations.__dict__[k]
+    assert exported_df_info.df.equals(df_info_with_operations.df)
 
 
 def test_export_df_info_raise_fileexistserror(
-    request, df_info_with_operations, temporary_data_dir
+    df_info_with_operations, create_generic_file
 ):
-    filename = temporary_data_dir / "export_raise_fileexistserr"
+    filename = create_generic_file
 
     with pytest.raises(FileExistsError) as err:
         export_df_with_info_to_file(df_info_with_operations, filename)
@@ -938,28 +870,12 @@ def test_export_df_info_raise_fileexistserror(
     assert isinstance(err.value, FileExistsError)
     assert (
         f"File {filename} already exists. If overwriting is not a problem, "
-        f"set the 'overwrite' argument to True" == str(err.value)
+        + "set the 'overwrite' argument to True"
+        == str(err.value)
     )
 
 
-def test_export_df_info_raise_fileexistserror(
-    request, df_info_with_operations, temporary_data_dir
-):
-    filename = temporary_data_dir / "export_raise_fileexistserr"
-
-    with pytest.raises(FileExistsError) as err:
-        export_df_with_info_to_file(df_info_with_operations, filename)
-
-    assert isinstance(err.value, FileExistsError)
-    assert (
-        f"File {filename} already exists. If overwriting is not a problem, "
-        f"set the 'overwrite' argument to True" == str(err.value)
-    )
-
-
-def test_import_df_with_info_from_file(
-    request, export_df_info_with_operations_to_file_fixture
-):
+def test_import_df_with_info_from_file(export_df_info_with_operations_to_file_fixture):
     (
         expected_imported_df_info,
         exported_df_info_path,
@@ -968,23 +884,32 @@ def test_import_df_with_info_from_file(
     imported_df_info = import_df_with_info_from_file(exported_df_info_path)
 
     assert isinstance(imported_df_info, DataFrameWithInfo)
-    assert imported_df_info == expected_imported_df_info
+    # This is to identify attribute errors easier
+    conserved_attributes = imported_df_info.__dict__.keys() - {"df"}
+    for k in conserved_attributes:
+        assert imported_df_info.__dict__[k] == expected_imported_df_info.__dict__[k]
+    assert imported_df_info.df.equals(expected_imported_df_info.df)
 
 
-def test_import_df_info_raise_typeerror(
-    request, export_df_info_with_operations_to_file_fixture
-):
-    (
-        expected_imported_df_info,
-        exported_df_info_path,
-    ) = export_df_info_with_operations_to_file_fixture
+def test_import_df_info_raise_notshelvefileerror(create_generic_file):
+    with pytest.raises(NotShelveFileError) as err:
+        import_df_with_info_from_file(create_generic_file)
+
+    assert isinstance(err.value, NotShelveFileError)
+    assert (
+        f"The file {create_generic_file} was not created by 'shelve' module or no "
+        f"db type could be determined" == str(err.value)
+    )
+
+
+def test_import_df_info_raise_typeerror(create_generic_shelve_file):
     with pytest.raises(TypeError) as err:
-        imported_df_info = import_df_with_info_from_file(exported_df_info_path)
+        import_df_with_info_from_file(create_generic_shelve_file)
 
     assert isinstance(err.value, TypeError)
     assert (
-        f"The object is not a DataFrameWithInfo instance, but it"
-        f" is {imported_df_info.__class__}" == str(err.value)
+        "The object is not a DataFrameWithInfo instance, but it is <class 'str'>"
+        == str(err.value)
     )
 
 
@@ -1024,6 +949,46 @@ def temporary_data_dir(request) -> Path:
 
     request.addfinalizer(remove_temp_dir_created)
     return temp_data_dir
+
+
+@pytest.fixture()
+def create_generic_file(temporary_data_dir) -> Path:
+    """
+    Create and store a generic file using Python built-in functions.
+
+    At the end of tests, this file is removed by the finalizer of the
+    'temporary_data_dir' fixture.
+
+    Returns
+    -------
+    pathlib.Path
+        Path of the saved file
+    """
+    filename = temporary_data_dir / "generic_file_with_string"
+    text_file = open(filename, "w")
+    text_file.write("Generic File")
+    text_file.close()
+    return filename
+
+
+@pytest.fixture()
+def create_generic_shelve_file(temporary_data_dir) -> Path:
+    """
+    Create and store a generic file using 'shelve' module.
+
+    At the end of tests, this file is removed by the finalizer of the
+    'temporary_data_dir' fixture.
+
+    Returns
+    -------
+    pathlib.Path
+        Path of the saved file
+    """
+    filename = temporary_data_dir / "generic_shelve_file_with_string"
+    my_shelf = shelve.open(str(filename), "n")  # 'n' for new
+    my_shelf["shelve_data"] = "Generic File"
+    my_shelf.close()
+    return filename
 
 
 @pytest.fixture(scope="function")
@@ -1121,7 +1086,7 @@ def export_df_info_with_operations_to_file_fixture(
 
     """
     exported_df_info_path = temporary_data_dir / "exported_df_info_ops_fixture"
-    my_shelf = shelve.open(exported_df_info_path, "n")
+    my_shelf = shelve.open(str(exported_df_info_path), "n")
     my_shelf["df_info"] = df_info_with_operations
     my_shelf.close()
 
