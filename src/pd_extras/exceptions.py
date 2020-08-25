@@ -34,3 +34,7 @@ class NotShelveFileError(Exception):
 
 class MultipleObjectsInFileError(Exception):
     pass
+
+
+class NotShelveFileError(Exception):
+    pass
