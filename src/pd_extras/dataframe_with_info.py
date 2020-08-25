@@ -777,20 +777,28 @@ class DataFrameWithInfo:
 
     def show_columns_type(self, col_list: Tuple[str] = None) -> None:
         """
-        Print the type of the first element of the columns.
+        Print the type of the ``col_list`` columns.
 
+        The possible identified types are:
+        - float/int -> "numerical_col"
+        - bool -> "bool_col"
+        - str -> "string_col"
+        - other types -> "other_col"
+        
         Parameters
         ----------
         col_list: Tuple[str], optional
             Tuple of the name of columns that should be considered.
             If set to None, every column of ``df`` attribute will be considered.
         """
-        # TODO: If we want to find the type of a particular list of columns, we
-        #  should use something similar to the first part of the function
-        #  ``_split_columns_by_type_parallel``
         col_list = self.df.columns if col_list is None else col_list
-        for col in col_list:
-            print(type(self.df[col].iloc[0]))
+        column_type_dict_list = Parallel(n_jobs=-1)(
+            delayed(_find_single_column_type)(df_col=self.df[col]) for col in col_list
+        )
+        for i, col_type_dict in enumerate(column_type_dict_list):
+            print(
+                f"{i}: {col_type_dict[_COL_NAME_COLUMN]} -> {col_type_dict[_COL_TYPE_COLUMN]}"
+            )
 
     def add_operation(self, feature_operation: FeatureOperation) -> None:
         """
