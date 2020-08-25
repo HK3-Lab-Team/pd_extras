@@ -1,5 +1,6 @@
 import collections
 import copy
+import dbm
 import logging
 import os
 import shelve
@@ -11,7 +12,7 @@ import pandas as pd
 import sklearn
 from joblib import Parallel, delayed
 
-from .exceptions import MultipleObjectsInFileError, MultipleOperationsFoundError
+from .exceptions import MultipleObjectsInFileError, MultipleOperationsFoundError, NotShelveFileError
 from .feature_enum import EncodingFunctions, OperationTypeEnum
 from .settings import CATEG_COL_THRESHOLD
 
@@ -1100,8 +1101,14 @@ def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
         This error reports that multiple objects were found inside the
         ``filename`` file.
     """
-    # We leave the error management to the function (FileNotFoundError)
-    my_shelf = shelve.open(str(filename))
+    try:
+        my_shelf = shelve.open(str(filename))
+    except dbm.error:
+        # We leave the FileNotFoundError management to the function
+        raise NotShelveFileError(
+            f"The file {filename} was not created by 'shelve' module or no "
+            f"db type could be determined"
+        )
     # Check how many objects have been stored
     if len(my_shelf.keys()) != 1:
         raise MultipleObjectsInFileError(
@@ -1111,7 +1118,7 @@ def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
     df_info = list(my_shelf.values())[0]
 
     # Check if the object is a DataFrameWithInfo instance
-    if isinstance(df_info, "DataFrameWithInfo"):
+    if not isinstance(df_info, DataFrameWithInfo):
         raise TypeError(
             f"The object is not a DataFrameWithInfo "
             f"instance, but it is {df_info.__class__}"

@@ -4,3 +4,7 @@ class MultipleOperationsFoundError(Exception):
 
 class MultipleObjectsInFileError(Exception):
     pass
+
+
+class NotShelveFileError(Exception):
+    pass
