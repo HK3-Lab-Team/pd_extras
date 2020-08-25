@@ -4,11 +4,6 @@ from datetime import date
 from typing import Tuple
 
 import pandas as pd
-import pytest
-import sklearn
-
-from ..pd_extras.dataframe_with_info import DataFrameWithInfo, FeatureOperation
-from ..pd_extras.feature_enum import OperationTypeEnum
 
 
 class DataFrameMock:
