@@ -1,6 +1,7 @@
 import itertools
 import random
 from datetime import date
+from typing import Tuple
 
 import pandas as pd
 
@@ -380,6 +381,45 @@ class DataFrameMock:
             df_duplicated = pd.concat([df_duplicated, single_col_df], axis=1)
 
         return pd.DataFrame(df_duplicated)
+
+    @staticmethod
+    def df_with_private_info(private_cols: Tuple[str]):
+        """
+        Create DataFrame with private info columns along with data columns
+
+        The returned DataFrame mock contains (len(private_cols) + 2) columns
+        and 5 rows. Particularly it contains the columns listed in ``private_cols``
+        with string values,and 2 data columns containing
+        integer values.
+        Two of these rows have same values in ``private_cols`` columns, but different
+        values in the other 2 data columns (this could be simulating a DataFrame
+        with multiple rows related to the same customer/patient).
+
+        Parameters
+        ----------
+        private_cols: Tuple[str]
+            List of columns that will be created as private columns
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame mock containing (len(private_cols) + 2) columns
+            and 5 rows. Particularly it contains the columns listed in ``private_cols``
+            with generic string values,and 2 data columns containing
+            integer values.
+
+        """
+        df_private_info_dict = {}
+        sample_size = 5
+        for i, col in enumerate(private_cols):
+            df_private_info_dict[col] = [
+                f"col_{i}_value_{k}" for k in range(sample_size - 1)
+            ]
+            # Add a duplicated row (it may be associated to the same customer)
+            df_private_info_dict[col].append(f"col_{i}_value_{sample_size-2}")
+        df_private_info_dict["data_col_0"] = list(range(sample_size))
+        df_private_info_dict["data_col_1"] = list(range(sample_size))
+        return pd.DataFrame(df_private_info_dict)
 
 
 class SeriesMock:
