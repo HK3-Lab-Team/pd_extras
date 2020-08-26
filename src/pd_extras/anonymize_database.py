@@ -2,6 +2,8 @@ import hashlib
 import os
 import random
 import string
+from pathlib import Path
+from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -26,13 +28,22 @@ def add_id_owner_col(private_df, cols_to_hash):
     """
     This function uses the columns of the "private_df" database to generate an hash value
     and it creates an "ID_OWNER" column with those values.
-    To generate hash values, we add nonces (random prefix and suffix) to the column values and then we use "sha256".
-    See https://medium.com/luckspark/hashing-pandas-dataframe-column-with-nonce-763a8c23a833 for more info.
+    To generate hash values, the function adds nonces (random prefix and suffix)
+    to the column values and then we use "sha256".
+    See https://medium.com/luckspark/hashing-pandas-dataframe-column-with-nonce-763a8c23a833
+    for more info.
 
-    :param private_df: Pandas.DataFrame with the owner's private data
-    :param cols_to_hash: This is a list of column names with the infos we want to hash
+    Parameters
+    ----------
+    private_df: pd.DataFrame
+        Pandas.DataFrame with the owner's private data
+    cols_to_hash: Tuple[str]
+        This is a list of column names with the infos we want to hash
 
-    :return: Pandas.DataFrame similar to "private_df" with a new "ID_OWNER" column
+    Returns
+    -------
+    pd.DataFrame
+        Pandas.DataFrame similar to ``private_df`` with a new "ID_OWNER" column
     """
     # Turn rows into strings to be used
     rows_into_strings = np.sum(
@@ -53,29 +64,41 @@ def add_id_owner_col(private_df, cols_to_hash):
     return private_df
 
 
-def create_private_info_db(df, private_cols_to_map):
+def create_private_info_db(
+    df: pd.DataFrame, private_cols_to_map: Tuple[str]
+) -> pd.DataFrame:
     """
-    This function creates a Pandas.DataFrame where you will store all the owner's
-    private data needed to identify them.
-    These informations are listed in "private_cols_to_map" argument.
+    Create a DataFrame with private data and a unique ID.
 
-    :param df: Pandas.DataFrame that we will anonymize
-    :param private_cols_to_map: This is a list of the columns that will be stored in the
-    private_db that will be returned, along with the new "ID_OWNER"
-    :return: Pandas.DataFrame with the values of the "private_cols_to_map" and their hashed value in the column "ID_OWNER"
+    This function will store in a DataFrame all the owner's private data
+    contained in the columns ``private_cols_to_map`` needed to identify them.
+    The function will also add a unique owner ID (in the column "OWNER_ID") that
+    is hashed based on ``private_cols_to_map``.
+    In case there are multiple rows with the same private infos
+    (e.g.: multiple data from the same customer), only one of those rows
+    is included in the returned DataFrame.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Pandas.DataFrame that we will anonymize
+    private_cols_to_map: Tuple[str]
+        List of the columns that will be stored in the private_db
+        that will be returned, along with the new "ID_OWNER"
+
+    Returns
+    -------
+    pd.DataFrame
+        Pandas.DataFrame with the values of the ``private_cols_to_map`` and
+        their hashed value in the column "ID_OWNER"
     """
     # Create the private_db with the columns with private infos only
     private_df = df[private_cols_to_map]
 
-    # Get unique combinations of the columns you chose
-    private_df = (
-        private_df.groupby(private_cols_to_map, as_index=False, group_keys=False)
-        .size()
-        .reset_index()
-    )
-
-    # Eliminate size column
-    private_df = private_df.drop(columns=[0])
+    # In case there are multiple rows with the same private infos
+    # (e.g.: multiple data from the same customer), only one of these rows
+    # should be included in ``private_df``
+    private_df.drop_duplicates(inplace=True)
 
     # Add the ID_OWNER column with the hash value of the row
     private_df = add_id_owner_col(private_df, private_cols_to_map)
@@ -84,40 +107,77 @@ def create_private_info_db(df, private_cols_to_map):
 
 
 def anonymize_data(
-    df, file_name, private_cols_to_remove, private_cols_to_map, dest_path
-):
+    df: pd.DataFrame,
+    file_name: str,
+    private_cols_to_remove: Tuple[str],
+    private_cols_to_map: Tuple[str],
+    dest_path: Union[Path, str],
+    random_seed: int = 42,
+) -> Tuple[pd.DataFrame]:
     """
-    This function will take the Pandas DataFrame "df" and it will return two files written inside the "dest_path":
-    1. One file (called "[file_name]_anonym") will contain the database "df" where
-    we replaced the columns "private_cols_to_remove" with the column "ID_OWNER"
+    Separate generic from private data leaving a unique ID as map between them.
+
+    This function will take the Pandas DataFrame ``df`` and it will return two
+    files written inside the ``dest_path`` directory:
+    1. One file (called "[file_name]_anonym") will contain the database ``df`` where
+    we replaced the columns ``private_cols_to_remove`` with the column "ID_OWNER"
     2. Another file (called "[file_name]_private_info") will contain only the
-    owner infos "private_cols_to_map", which we associated an ID_OWNER to.
-    The ID_OWNER will be hashed using SHA256.
+    owner infos ``private_cols_to_map``, which we associated an ID_OWNER to.
+    To generate hash values for the "ID_OWNER" column values, the algorithm
+    adds nonces (random prefix and suffix) to the column values and then
+    it uses "SHA256" algorithm.
 
-    :param df: Pandas.DataFrame that we will anonymize
-    :param file_name: Name of the database we are working on (no ".csv" suffix). Used as prefix when saving csv output files.
-    :param private_cols_to_remove: Columns that will be removed from "_anonym" file
-    :param private_cols_to_map: Columns of the "_private_info" files
-    :param dest_path: The directory where we will save the two files
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Pandas.DataFrame that we will anonymize
+    file_name: str
+        Name of the database we are working on (no ".csv" suffix). Used as
+        prefix when saving csv output files.
+    private_cols_to_remove: Tuple[str]
+        Columns that will be removed from "_anonym" file
+    private_cols_to_map: Tuple[str]
+        Columns of the "_private_info" files
+    dest_path: Union[Path, str]
+        The directory where we will save the two files
+    random_seed: int
+        Integer value used as "seed" for the generation of random prefixes and
+        suffixes in "nonces".
 
-    :return: [file_name]_anonym : pd.DataFrame
-             [file_name]_private_info : pd.DataFrame
+    Returns
+    -------
+    pd.DataFrame
+        Pandas DataFrame containing only the private infos ``private_cols_to_map``,
+        along with another column "ID_OWNER" that allows to map these private
+        informations to the data in the other DataFrame. This file is
+        also saved to "[``dest_path``] / [``file_name``]_private_info.csv" file.
+    pd.DataFrame
+        Pandas DataFrame containing the same infos as the DataFrame ``df``, but
+        the columns "private_cols_to_remove" have been replaced by "ID_OWNER"
+        column.
+        This file is also saved to "[``dest_path``] / [``file_name``]_anonym.csv"
+        file.
     """
+    # Fix the random seed for the generation of random prefixes and
+    # suffixes in "nonces", used for creating "ID_OWNER" column.
+    random.seed(random_seed)
+    # Create the "_anonym" DataFrame which will contain the anonymized database
+    anonym_df = df.copy()
     # Fill NaN values in the columns we will map, to make DataFrame merge easier
     df[private_cols_to_map] = df[private_cols_to_map].fillna("----")
     # Create the "_private_info" db which will contain the map to owner's private data
     private_df = create_private_info_db(df, private_cols_to_map)
 
-    # Create the "_anonym" DataFrame which will contain the anonymized database
-    anonym_df = pd.DataFrame(df_sani)
-
-    # Merge to insert the new ID_OWNER column
+    # Merge to insert the new ID_OWNER column corresponding to the
+    # private column value combinations
     anonym_df = anonym_df.merge(private_df)
 
     # Delete the columns with private owner's data
     anonym_df = anonym_df.drop(private_cols_to_remove, axis=1)
 
     # Write the two DataFrames to CSV files
+    dest_path = str(dest_path)
+    file_name = str(file_name)
     try:
         private_df.to_csv(
             os.path.join(dest_path, f"{file_name}_private_info.csv"),
