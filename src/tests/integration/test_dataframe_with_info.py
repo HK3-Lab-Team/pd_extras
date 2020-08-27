@@ -16,10 +16,7 @@ from ...pd_extras.dataframe_with_info import (
     export_df_with_info_to_file,
     import_df_with_info_from_file,
 )
-from ...pd_extras.exceptions import (
-    MultipleOperationsFoundError,
-    NotShelveFileError,
-)
+from ...pd_extras.exceptions import MultipleOperationsFoundError, NotShelveFileError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs

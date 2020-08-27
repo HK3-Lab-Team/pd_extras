@@ -7,16 +7,8 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-from .dataframe_with_info import (
-    DataFrameWithInfo,
-    FeatureOperation,
-    copy_df_info_with_new_df,
-)
-from .feature_enum import (
-    ENCODED_COLUMN_SUFFIX,
-    EncodingFunctions,
-    OperationTypeEnum,
-)
+from .dataframe_with_info import DataFrameWithInfo, FeatureOperation, copy_df_info_with_new_df
+from .feature_enum import ENCODED_COLUMN_SUFFIX, EncodingFunctions, OperationTypeEnum
 
 logger = logging.getLogger(__name__)
 
@@ -213,17 +205,26 @@ def _one_hot_encode_column(
     drop_old_column: bool = False,
 ):
     """
-    OneHotEncoding of 'column' in df
+    Encode categorical column named ``column`` using OneHotEncoding
 
     Parameters
     ----------
-    df
-    column
-    drop_one_new_column
-    drop_old_column
+    df: pd.DataFrame
+        DataFrame containing the column ``column`` to be encoded.
+    column: str
+        Name of the column that has to be encoded.
+    drop_one_new_column: bool
+        Option to drop one of the column created by OneHotEncoder. This is a good
+        practice in order to avoid duplicated informations in the DataFrame,
+        which may lead to singularities (when proper regularization is not employed).
+    drop_old_column: bool
+        Option to drop the column ``column`` with the original values.
 
     Returns
     -------
+    pd.DataFrame
+    sklearn.preprocessing._encoders._BaseEncoder
+    Tuple[str]
 
     """
     df_new = df.copy()
