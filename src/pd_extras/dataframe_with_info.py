@@ -12,7 +12,8 @@ import pandas as pd
 import sklearn
 from joblib import Parallel, delayed
 
-from .exceptions import MultipleObjectsInFileError, MultipleOperationsFoundError, NotShelveFileError
+from .exceptions import (MultipleObjectsInFileError,
+                         MultipleOperationsFoundError, NotShelveFileError)
 from .feature_enum import EncodingFunctions, OperationTypeEnum
 from .settings import CATEG_COL_THRESHOLD
 

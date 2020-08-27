@@ -7,8 +7,16 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-from .dataframe_with_info import DataFrameWithInfo, FeatureOperation, copy_df_info_with_new_df
-from .feature_enum import ENCODED_COLUMN_SUFFIX, EncodingFunctions, OperationTypeEnum
+from .dataframe_with_info import (
+    DataFrameWithInfo,
+    FeatureOperation,
+    copy_df_info_with_new_df,
+)
+from .feature_enum import (
+    ENCODED_COLUMN_SUFFIX,
+    EncodingFunctions,
+    OperationTypeEnum,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +26,11 @@ BIN_SPLIT_COL_SUFFIX = "_bin_id"
 
 def convert_maps_from_tuple_to_str(group_id_to_tuple_map):
     """
-    It gets a dictionary (with tuple values) and it converts the tuple
-    values into strings and returns it as a dictionary
+    Convert tuple values of a dictionary into string values with same keys
+
+    It gets a dictionary (with tuple values) and it returns a dictionary
+    with the same keys, but where the tuple values have been combined
+    into strings.
     """
     gr_id_to_string_map = {}
     for gr_id in group_id_to_tuple_map.keys():
@@ -34,22 +45,40 @@ def split_continuous_column_into_bins(
     df_info: DataFrameWithInfo, col_name, bin_threshold
 ):
     """
-    This function adds a column to DataFrame df_info called "[col_name]_bin_id" where we split the "col_name" into bins
-    :param df_info: DataFrameWithInfo -> DataFrameWithInfo instance containing the 'col_name' column to split
-    :param col_name: String -> Name of the column to be split into discrete intervals
-    :param bin_threshold: List -> It contains the thresholds used to separate different groups
-                                  (the threshold will be included in the bin with higher values)
-    :return: pd.DataFrame -> Same "df_info" passed with a new column with the bin_indices
-                             which the column value belongs to
-             Dict[List] -> Dictionary with the bin_indices as keys and bin_ranges as values
+    Split the ``col_name`` column into bins and save the bin_id values
+
+    The function adds a column to DataFrame ``df_info`` called
+    "[col_name]_bin_id" that contains the bin_id corresponding to the bin
+    that the ``col_name`` values belongs to.
+
+    Parameters
+    ----------
+    df_info: DataFrameWithInfo
+        DataFrameWithInfo instance containing the 'col_name' column to split
+    col_name: str
+        Name of the column to be split into discrete intervals
+    bin_threshold: List
+        It contains the thresholds used to separate different groups
+        (the threshold will be included in the bin with higher values)
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame instance with same values as ``df_info`` and an
+        additional column with the bin ids that the ``col_name``
+        values belongs to.
+    Dict[List]
+        Dictionary with the bin_indices as keys and bin_ranges as values
     """
     new_col_name = f"{col_name}{BIN_SPLIT_COL_SUFFIX}"
     # Initialize the bin <--> id_range map  with the min and max value
     bin_id_range_map = {}
     # For the BIN 0 choose the column minimum as the bin "lower_value",
-    # in the other case the "upper_value" of the previous loops is set as "lower_value"
+    # in the other case the "upper_value" of the previous loops is
+    # set as "lower_value"
     lower_value = min(df_info.df[col_name].unique()) - 1
-    # Loop over the bins (we need to increase by 1 because they are only the separating values)
+    # Loop over the bins (we need to increase by 1 because they are only
+    # the separating values)
     for i in range(len(bin_threshold) + 1):
 
         bin_id_range_map[i] = []
@@ -95,7 +124,7 @@ def split_continuous_column_into_bins(
 
 
 def combine_categorical_columns_to_one(
-    df_info: DataFrameWithInfo, columns_list: Tuple[str], include_nan: bool = False
+    df_info: DataFrameWithInfo, columns_list: Tuple[str], include_nan: bool = False,
 ) -> Tuple[DataFrameWithInfo, str]:
     """
     This function generates and indexes the possible permutations of the unique values

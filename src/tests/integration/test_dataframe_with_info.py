@@ -16,7 +16,10 @@ from ...pd_extras.dataframe_with_info import (
     export_df_with_info_to_file,
     import_df_with_info_from_file,
 )
-from ...pd_extras.exceptions import MultipleOperationsFoundError, NotShelveFileError
+from ...pd_extras.exceptions import (
+    MultipleOperationsFoundError,
+    NotShelveFileError,
+)
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
@@ -436,7 +439,7 @@ class Describe_DataFrameWithInfo:
         [
             (
                 {  # Case 1: Encoder attribute not specified
-                    "original_columns": ("fop_original_col_0", "fop_original_col_1"),
+                    "original_columns": ("fop_original_col_0", "fop_original_col_1",),
                     "derived_columns": ["fop_derived_col_0"],
                     "operation_type": OperationTypeEnum.BIN_SPLITTING,
                     "encoded_values_map": None,
@@ -444,7 +447,7 @@ class Describe_DataFrameWithInfo:
                     "details": None,
                 },
                 {
-                    "original_columns": ("fop_original_col_0", "fop_original_col_1"),
+                    "original_columns": ("fop_original_col_0", "fop_original_col_1",),
                     "derived_columns": ["fop_derived_col_0"],
                     "operation_type": OperationTypeEnum.BIN_SPLITTING,
                     "encoded_values_map": {0: "value_0", 1: "value_1"},
@@ -454,7 +457,7 @@ class Describe_DataFrameWithInfo:
             ),
             (
                 {  # Case 2: Derived_columns not specified
-                    "original_columns": ("fop_original_col_0", "fop_original_col_1"),
+                    "original_columns": ("fop_original_col_0", "fop_original_col_1",),
                     "derived_columns": None,
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": None,
@@ -462,7 +465,7 @@ class Describe_DataFrameWithInfo:
                     "details": None,
                 },
                 {
-                    "original_columns": ("fop_original_col_0", "fop_original_col_1"),
+                    "original_columns": ("fop_original_col_0", "fop_original_col_1",),
                     "derived_columns": ("fop_derived_col_1",),
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": {0: "value_3", 1: "value_4"},
@@ -480,7 +483,7 @@ class Describe_DataFrameWithInfo:
                     "details": None,
                 },
                 {
-                    "original_columns": ("fop_original_col_0", "fop_original_col_1"),
+                    "original_columns": ("fop_original_col_0", "fop_original_col_1",),
                     "derived_columns": ("fop_derived_col_1",),
                     "operation_type": OperationTypeEnum.CATEGORICAL_ENCODING,
                     "encoded_values_map": {0: "value_3", 1: "value_4"},
@@ -499,7 +502,7 @@ class Describe_DataFrameWithInfo:
                 },
                 {
                     "operation_type": OperationTypeEnum.BIN_SPLITTING,
-                    "original_columns": ["fop_original_col_0", "fop_original_col_1"],
+                    "original_columns": ["fop_original_col_0", "fop_original_col_1",],
                     "derived_columns": ["fop_derived_col_0"],
                     "encoded_values_map": {0: "value_0", 1: "value_1"},
                     "encoder": None,
@@ -527,7 +530,11 @@ class Describe_DataFrameWithInfo:
         ],
     )
     def test_find_operation_in_column(
-        self, request, searched_feat_op, expected_found_feat_op, df_info_with_operations
+        self,
+        request,
+        searched_feat_op,
+        expected_found_feat_op,
+        df_info_with_operations,
     ):
         feat_op = FeatureOperation(
             original_columns=searched_feat_op["original_columns"],
@@ -700,7 +707,7 @@ class Describe_DataFrameWithInfo:
 
 class Describe_FeatureOperation:
     @pytest.mark.parametrize(
-        "feat_op_1_dict, feat_op_2_dict, is_equal_label", eq_featureoperation_combs()
+        "feat_op_1_dict, feat_op_2_dict, is_equal_label", eq_featureoperation_combs(),
     )
     def test_featureoperation_equals(
         self, feat_op_1_dict, feat_op_2_dict, is_equal_label
@@ -879,7 +886,7 @@ def test_export_df_info_raise_fileexistserror(
     )
 
 
-def test_import_df_with_info_from_file(export_df_info_with_operations_to_file_fixture):
+def test_import_df_with_info_from_file(export_df_info_with_operations_to_file_fixture,):
     (
         expected_imported_df_info,
         exported_df_info_path,
