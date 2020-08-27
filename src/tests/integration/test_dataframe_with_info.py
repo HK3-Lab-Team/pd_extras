@@ -545,9 +545,7 @@ class Describe_DataFrameWithInfo:
         assert isinstance(found_feat_operat, FeatureOperation)
         assert found_feat_operat == expected_found_feat_op
 
-    def test_find_operation_in_column_none_found(
-        self, request, df_info_with_operations
-    ):
+    def test_find_operation_in_column_not_found(self, request, df_info_with_operations):
         feat_op = FeatureOperation(
             original_columns=("fop_original_col_0",),
             derived_columns=("fop_derived_col_0",),
@@ -611,7 +609,7 @@ class Describe_DataFrameWithInfo:
             ("fop_original_col_10"),  # Case 2: No operation associated
         ],
     )
-    def test_get_enc_column_from_original_no_col_found(
+    def test_get_enc_column_from_original_not_found(
         self, df_info_with_operations, original_column,
     ):
         encoded_columns = df_info_with_operations.get_enc_column_from_original(
@@ -637,12 +635,11 @@ class Describe_DataFrameWithInfo:
     @pytest.mark.parametrize(
         "encoded_column",
         [
-            ("fop_derived_col_10"),  # Case 3: No operation associated
-            # Case 4: Column_name in original_columns
-            ("fop_original_col_2"),
+            ("fop_derived_col_10"),  # Case 1: No operation associated
+            ("fop_original_col_2"),  # Case 2: Column_name in original_columns
         ],
     )
-    def test_get_original_from_enc_column_no_col_found(
+    def test_get_original_from_enc_column_not_found(
         self, df_info_with_operations, encoded_column,
     ):
         original_columns = df_info_with_operations.get_original_from_enc_column(
