@@ -2,8 +2,10 @@ class MultipleOperationsFoundError(Exception):
     """
     Exception raised when multiple operations are found when looking for a specific one.
 
-    This exception is usually raised when the user looks for a FeatureOperation instance,
-    but too many attributes are left unspecified (set to None).
+    This exception is usually raised when the user looks into a
+    DataFrameWithInfo instance to find a specific FeatureOperation instance
+    (stored in the "feature_elaborations" argument), but too many attributes are
+    left unspecified (set to None).
     """
 
     pass
@@ -24,8 +26,7 @@ class NotShelveFileError(Exception):
     """
     Exception raised when the file is not importable by "shelve" package.
 
-    Usually this happens when the file was not created by "shelve" package and
-    "shelve" raises the message "no db type could be determined".
+    Usually this happens when the file was not created by "shelve" package.
     """
 
     pass
