@@ -14,7 +14,7 @@ def add_nonce_func(
 ) -> Union[str, int, float, np.array]:
     """
     Add random prefix and suffix to an array of strings ``string_array``
-    
+
     This function takes an array of strings passed as ``string_array`` and
     attaches nonces (random prefix and suffix) to each string.
     It can also be used in a vectorized way
@@ -23,9 +23,9 @@ def add_nonce_func(
     Parameters
     ----------
     string_array: Union[str, int, float, np.array]
-        This can be a number, a string or a numpy array of values 
+        This can be a number, a string or a numpy array of values
         (e.g. a DataFrame column)
-    
+
     Returns
     -------
     np.array:
