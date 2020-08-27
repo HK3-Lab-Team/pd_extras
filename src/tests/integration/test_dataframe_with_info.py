@@ -633,22 +633,6 @@ class Describe_DataFrameWithInfo:
         )
 
     @pytest.mark.parametrize(
-        "encoded_column",
-        [
-            ("fop_derived_col_10"),  # Case 1: No operation associated
-            ("fop_original_col_2"),  # Case 2: Column_name in original_columns
-        ],
-    )
-    def test_get_original_from_enc_column_not_found(
-        self, df_info_with_operations, encoded_column,
-    ):
-        original_columns = df_info_with_operations.get_original_from_enc_column(
-            column_name=encoded_column, encoder=None
-        )
-
-        assert original_columns is None
-
-    @pytest.mark.parametrize(
         "encoded_column, encoder, expected_original_columns",
         [
             (  # Case 1: Everything specified and found
@@ -674,6 +658,22 @@ class Describe_DataFrameWithInfo:
         assert isinstance(original_columns, tuple)
         assert len(original_columns) == len(expected_original_columns)
         assert set(original_columns) == set(expected_original_columns)
+
+    @pytest.mark.parametrize(
+        "encoded_column",
+        [
+            ("fop_derived_col_10"),  # Case 1: No operation associated
+            ("fop_original_col_2"),  # Case 2: Column_name in original_columns
+        ],
+    )
+    def test_get_original_from_enc_column_not_found(
+        self, df_info_with_operations, encoded_column,
+    ):
+        original_columns = df_info_with_operations.get_original_from_enc_column(
+            column_name=encoded_column, encoder=None
+        )
+
+        assert original_columns is None
 
     def test_get_original_from_enc_column_raise_multicolfound_error(
         self, df_info_with_operations
