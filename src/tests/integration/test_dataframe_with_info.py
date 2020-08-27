@@ -962,46 +962,6 @@ def create_generic_shelve_file(tmpdir) -> Path:
     return filename
 
 
-@pytest.fixture()
-def create_generic_file(tmpdir) -> Path:
-    """
-    Create and store a generic file using Python built-in functions.
-
-    At the end of tests, this file is removed by the finalizer of the
-    'tmpdir' fixture.
-
-    Returns
-    -------
-    pathlib.Path
-        Path of the saved file
-    """
-    filename = tmpdir.join("generic_file_with_string")
-    text_file = open(filename, "w")
-    text_file.write("Generic File")
-    text_file.close()
-    return filename
-
-
-@pytest.fixture()
-def create_generic_shelve_file(tmpdir) -> Path:
-    """
-    Create and store a generic file using 'shelve' module.
-
-    At the end of tests, this file is removed by the finalizer of the
-    'temporary_data_dir' fixture.
-
-    Returns
-    -------
-    pathlib.Path
-        Path of the saved file
-    """
-    filename = tmpdir.join("generic_shelve_file_with_string")
-    my_shelf = shelve.open(str(filename), "n")  # 'n' for new
-    my_shelf["shelve_data"] = "Generic File"
-    my_shelf.close()
-    return filename
-
-
 @pytest.fixture(scope="function")
 def df_info_with_operations() -> DataFrameWithInfo:
     """
