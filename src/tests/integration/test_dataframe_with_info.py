@@ -1,7 +1,5 @@
 import logging
-import os
 import shelve
-import shutil
 from pathlib import Path
 from typing import Tuple
 
@@ -848,8 +846,8 @@ def test_copy_df_info_with_new_df_log_warning(caplog, df_info_with_operations):
     ]
 
 
-def test_export_df_info_to_file(df_info_with_operations, temporary_data_dir):
-    filename = temporary_data_dir / "export_raise_fileexistserr"
+def test_export_df_info_to_file(df_info_with_operations, tmpdir):
+    filename = tmpdir.join("export_raise_fileexistserr")
 
     export_df_with_info_to_file(df_info_with_operations, filename)
 
@@ -924,53 +922,20 @@ def test_import_df_info_raise_typeerror(create_generic_shelve_file):
 # ====================
 
 
-@pytest.fixture(scope="module")
-def temporary_data_dir(request) -> Path:
-    """
-    Create a temporary directory for test data and delete it after test end.
-
-    The temporary directory is created in the working directory and it is
-    named "temp_test_data_folder".
-    The fixture uses a finalizer that deletes the temporary directory where
-    every test data was saved. Therefore every time the user calls tests that
-    use this fixture (and save data inside the returned directory), at the end
-    of the test the finalizer deletes this directory.
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-    Path
-        Path where every temporary file used by tests is saved.
-    """
-    temp_data_dir = Path(os.getcwd()) / "temp_test_data_folder"
-    try:
-        os.mkdir(temp_data_dir)
-    except FileExistsError:
-        pass
-
-    def remove_temp_dir_created():
-        shutil.rmtree(temp_data_dir)
-
-    request.addfinalizer(remove_temp_dir_created)
-    return temp_data_dir
-
-
 @pytest.fixture()
-def create_generic_file(temporary_data_dir) -> Path:
+def create_generic_file(tmpdir) -> Path:
     """
     Create and store a generic file using Python built-in functions.
 
     At the end of tests, this file is removed by the finalizer of the
-    'temporary_data_dir' fixture.
+    'tmpdir' fixture.
 
     Returns
     -------
     pathlib.Path
         Path of the saved file
     """
-    filename = temporary_data_dir / "generic_file_with_string"
+    filename = tmpdir.join("generic_file_with_string")
     text_file = open(filename, "w")
     text_file.write("Generic File")
     text_file.close()
@@ -978,19 +943,19 @@ def create_generic_file(temporary_data_dir) -> Path:
 
 
 @pytest.fixture()
-def create_generic_shelve_file(temporary_data_dir) -> Path:
+def create_generic_shelve_file(tmpdir) -> Path:
     """
     Create and store a generic file using 'shelve' module.
 
     At the end of tests, this file is removed by the finalizer of the
-    'temporary_data_dir' fixture.
+    'tmpdir' fixture.
 
     Returns
     -------
     pathlib.Path
         Path of the saved file
     """
-    filename = temporary_data_dir / "generic_shelve_file_with_string"
+    filename = tmpdir.join("generic_shelve_file_with_string")
     my_shelf = shelve.open(str(filename), "n")  # 'n' for new
     my_shelf["shelve_data"] = "Generic File"
     my_shelf.close()
@@ -1070,17 +1035,14 @@ def df_info_with_operations() -> DataFrameWithInfo:
 
 @pytest.fixture
 def export_df_info_with_operations_to_file_fixture(
-    df_info_with_operations, temporary_data_dir
+    df_info_with_operations, tmpdir
 ) -> Tuple[DataFrameWithInfo, Path]:
     """
     Export a DataFrameWithInfo instance to a file.
 
     The DataFrameWithInfo instance is created by the fixture ``df_info_with_operations``
     and it is exported using "shelve" module to a file named ``exported_df_info_ops_fixture`` inside
-    the folder returned by the fixture ``temporary_data_dir``.
-
-    Parameters
-    ----------
+    the folder returned by the fixture ``tmpdir``.
 
     Returns
     -------
@@ -1091,7 +1053,7 @@ def export_df_info_with_operations_to_file_fixture(
         Path of the directory where the DataFrameWithInfo instance is saved
 
     """
-    exported_df_info_path = temporary_data_dir / "exported_df_info_ops_fixture"
+    exported_df_info_path = tmpdir / "exported_df_info_ops_fixture"
     my_shelf = shelve.open(str(exported_df_info_path), "n")
     my_shelf["df_info"] = df_info_with_operations
     my_shelf.close()
