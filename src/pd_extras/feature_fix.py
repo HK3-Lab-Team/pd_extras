@@ -362,6 +362,9 @@ def encode_single_categorical_column(
 
     Returns
     -------
+    DataFrameWithInfo
+        DataFrameWithInfo instance similar to ``df_info`` with few additional columns
+        containing the encoded values.
 
     """
     # If the column has already been encoded and the new column has already been created, return df_info
