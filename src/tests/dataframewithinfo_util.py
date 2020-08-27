@@ -389,7 +389,7 @@ class DataFrameMock:
 
         The returned DataFrame mock contains (len(private_cols) + 2) columns
         and 5 rows. Particularly it contains the columns listed in ``private_cols``
-        with string values,and 2 data columns containing
+        with string values, and 2 data columns containing
         integer values.
         Two of these rows have same values in ``private_cols`` columns, but different
         values in the other 2 data columns (this could be simulating a DataFrame
@@ -405,7 +405,7 @@ class DataFrameMock:
         pd.DataFrame
             DataFrame mock containing (len(private_cols) + 2) columns
             and 5 rows. Particularly it contains the columns listed in ``private_cols``
-            with generic string values,and 2 data columns containing
+            with generic string values, and 2 data columns containing
             integer values.
 
         """
