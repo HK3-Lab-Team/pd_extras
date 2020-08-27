@@ -1099,11 +1099,9 @@ def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
     Raises
     ------
     TypeError
-        This error is to report that no DataFrameWithInfo instances were found
-        inside the ``filename`` file.
+        If no DataFrameWithInfo instances were found inside the ``filename`` file.
     MultipleObjectsInFileError
-        This error reports that multiple objects were found inside the
-        ``filename`` file.
+        If multiple objects were found inside the ``filename`` file.
     """
     try:
         my_shelf = shelve.open(str(filename))
