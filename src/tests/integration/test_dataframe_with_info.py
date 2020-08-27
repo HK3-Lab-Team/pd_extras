@@ -1,8 +1,13 @@
 import pytest
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
-    _split_columns_by_type_parallel)
+    ColumnListByType,
+    DataFrameWithInfo,
+    FeatureOperation,
+    _find_samples_by_type,
+    _find_single_column_type,
+    _split_columns_by_type_parallel,
+)
 from ...pd_extras.exceptions import MultipleOperationsFoundError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
@@ -204,9 +209,7 @@ class Describe_DataFrameWithInfo:
             ),
         ],
     )
-    def test_column_list_by_type(
-        self, metadata_as_features, expected_column_list_type
-    ):
+    def test_column_list_by_type(self, metadata_as_features, expected_column_list_type):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
         df_info = DataFrameWithInfo(
             df_object=df_multi_type,
@@ -582,15 +585,12 @@ class Describe_DataFrameWithInfo:
                 EncodingFunctions.ONEHOT,
                 ("fop_derived_col_0",),
             ),
-            ("fop_derived_col_1", None, None),  # Case 2: column_name in derived_columns
-            ("fop_original_col_10", None, None),  # Case 3: No operation associated
-            # Case 4: No encoder specified
+            # Case 2: No encoder specified
             ("fop_original_col_2", None, ("fop_derived_col_2", "fop_derived_col_3")),
         ],
     )
-    def test_get_enc_column_from_original(
+    def test_get_enc_column_from_original_one_col_found(
         self,
-        request,
         df_info_with_operations,
         original_column,
         encoder,
@@ -600,18 +600,31 @@ class Describe_DataFrameWithInfo:
             column_name=original_column, encoder=encoder
         )
 
-        if expected_encoded_columns is None:
-            assert encoded_columns is None
-        else:
-            assert isinstance(encoded_columns, tuple)
-            assert len(encoded_columns) == len(expected_encoded_columns)
-            assert set(encoded_columns) == set(expected_encoded_columns)
+        assert isinstance(encoded_columns, tuple)
+        assert len(encoded_columns) == len(expected_encoded_columns)
+        assert set(encoded_columns) == set(expected_encoded_columns)
 
-    def test_get_enc_column_from_original_raise_error(
-        self, request, df_info_with_operations
+    @pytest.mark.parametrize(
+        "original_column",
+        [
+            ("fop_derived_col_1"),  # Case 1: column_name in derived_columns
+            ("fop_original_col_10"),  # Case 2: No operation associated
+        ],
+    )
+    def test_get_enc_column_from_original_no_col_found(
+        self, df_info_with_operations, original_column,
+    ):
+        encoded_columns = df_info_with_operations.get_enc_column_from_original(
+            column_name=original_column, encoder=None
+        )
+
+        assert encoded_columns is None
+
+    def test_get_enc_column_from_original_raise_multicolfound_error(
+        self, df_info_with_operations
     ):
         with pytest.raises(MultipleOperationsFoundError) as err:
-            _ = df_info_with_operations.get_enc_column_from_original(
+            df_info_with_operations.get_enc_column_from_original(
                 column_name="fop_original_col_0"
             )
 
@@ -620,6 +633,23 @@ class Describe_DataFrameWithInfo:
             "Multiple operations were found. Please provide additional information"
             in str(err.value)
         )
+
+    @pytest.mark.parametrize(
+        "encoded_column",
+        [
+            ("fop_derived_col_10"),  # Case 3: No operation associated
+            # Case 4: Column_name in original_columns
+            ("fop_original_col_2"),
+        ],
+    )
+    def test_get_original_from_enc_column_no_col_found(
+        self, df_info_with_operations, encoded_column,
+    ):
+        original_columns = df_info_with_operations.get_original_from_enc_column(
+            column_name=encoded_column, encoder=None
+        )
+
+        assert original_columns is None
 
     @pytest.mark.parametrize(
         "encoded_column, encoder, expected_original_columns",
@@ -631,14 +661,10 @@ class Describe_DataFrameWithInfo:
             ),
             # Case 2: No encoder specified
             ("fop_derived_col_1", None, ("fop_original_col_0", "fop_original_col_1")),
-            ("fop_derived_col_10", None, None),  # Case 3: No operation associated
-            # Case 4: Column_name in original_columns
-            ("fop_original_col_2", None, None),
         ],
     )
-    def test_get_original_from_enc_column(
+    def test_get_original_from_enc_column_one_col_found(
         self,
-        request,
         df_info_with_operations,
         encoded_column,
         encoder,
@@ -648,19 +674,15 @@ class Describe_DataFrameWithInfo:
             column_name=encoded_column, encoder=encoder
         )
 
-        if expected_original_columns is None:
-            assert original_columns is None
-        else:
-            assert isinstance(original_columns, tuple)
-            assert len(original_columns) == len(expected_original_columns)
-            assert set(original_columns) == set(expected_original_columns)
+        assert isinstance(original_columns, tuple)
+        assert len(original_columns) == len(expected_original_columns)
+        assert set(original_columns) == set(expected_original_columns)
 
-    def test_get_original_from_enc_column_raise_error(
-        self, request, df_info_with_operations
+    def test_get_original_from_enc_column_raise_multicolfound_error(
+        self, df_info_with_operations
     ):
         with pytest.raises(MultipleOperationsFoundError) as err:
-
-            _ = df_info_with_operations.get_original_from_enc_column(
+            df_info_with_operations.get_original_from_enc_column(
                 column_name="fop_derived_col_0"
             )
 
