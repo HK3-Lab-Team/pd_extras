@@ -13,10 +13,10 @@ class MultipleOperationsFoundError(Exception):
 
 class MultipleObjectsInFileError(Exception):
     """
-    Exception raised when multiple objects are found in the same file.
+    Exception raised when multiple Python objects are found in the same file.
 
     This exception is usually raised when the file read by "shelve" package contains
-    multiple instances of DataFrameWithInfo.
+    multiple instances of DataFrameWithInfo (or other Python objects).
     """
 
     pass
