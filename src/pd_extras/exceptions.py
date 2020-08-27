@@ -30,11 +30,3 @@ class NotShelveFileError(Exception):
     """
 
     pass
-
-
-class MultipleObjectsInFileError(Exception):
-    pass
-
-
-class NotShelveFileError(Exception):
-    pass
