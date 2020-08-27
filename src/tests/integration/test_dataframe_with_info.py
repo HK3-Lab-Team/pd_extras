@@ -8,9 +8,16 @@ from typing import Tuple
 import pytest
 
 from ...pd_extras.dataframe_with_info import (
-    ColumnListByType, DataFrameWithInfo, FeatureOperation, _find_samples_by_type, _find_single_column_type,
-    _split_columns_by_type_parallel, copy_df_info_with_new_df, export_df_with_info_to_file,
-    import_df_with_info_from_file)
+    ColumnListByType,
+    DataFrameWithInfo,
+    FeatureOperation,
+    _find_samples_by_type,
+    _find_single_column_type,
+    _split_columns_by_type_parallel,
+    copy_df_info_with_new_df,
+    export_df_with_info_to_file,
+    import_df_with_info_from_file,
+)
 from ...pd_extras.exceptions import MultipleOperationsFoundError, NotShelveFileError
 from ...pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
@@ -691,7 +698,6 @@ class Describe_DataFrameWithInfo:
             "Multiple operations were found. Please provide additional information"
             in str(err.value)
         )
-
 
 
 class Describe_FeatureOperation:
