@@ -8,7 +8,7 @@ from ...pd_extras.anonymize_database import anonymize_data
 
 @pytest.mark.parametrize(
     "private_cols_to_remove, private_cols_to_map, "
-    + "expected_anonym_df, expected_private_df",
+    "expected_anonym_df, expected_private_df",
     [
         (
             ["private_col_a", "private_col_b"],
@@ -71,7 +71,6 @@ def test_anonymize_data(
     expected_anonym_df,
     expected_private_df,
 ):
-
     original_df = DataFrameMock.df_with_private_info(private_cols=private_cols_to_map)
 
     anonym_df, private_df = anonymize_data(
