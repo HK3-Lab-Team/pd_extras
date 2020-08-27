@@ -7,8 +7,12 @@ import pandas as pd
 
 from .dataframe_with_info import DataFrameWithInfo, copy_df_info_with_new_df
 from .settings import (
-    CHAR_REPLACE_DICT, NAN_VALUE, NOT_NA_STRING_COL_THRESHOLD, PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
-    WHOLE_WORD_REPLACE_DICT)
+    CHAR_REPLACE_DICT,
+    NAN_VALUE,
+    NOT_NA_STRING_COL_THRESHOLD,
+    PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
+    WHOLE_WORD_REPLACE_DICT,
+)
 
 logger = logging.getLogger(__name__)
 
