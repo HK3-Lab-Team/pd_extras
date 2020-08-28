@@ -13,7 +13,7 @@ from pd_extras.dataframe_with_info import (
     _find_single_column_type,
     _split_columns_by_type_parallel,
     copy_df_info_with_new_df,
-    import_df_with_info_from_file,
+    read_file,
 )
 from pd_extras.exceptions import MultipleOperationsFoundError, NotShelveFileError
 from pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
@@ -846,7 +846,7 @@ def test_copy_df_info_with_new_df_log_warning(caplog, df_info_with_operations):
     ]
 
 
-def test_export_df_info_to_file(df_info_with_operations, tmpdir):
+def test_to_file(df_info_with_operations, tmpdir):
     filename = tmpdir.join("export_raise_fileexistserr")
 
     df_info_with_operations.to_file(filename)
@@ -863,9 +863,7 @@ def test_export_df_info_to_file(df_info_with_operations, tmpdir):
     assert exported_df_info.df.equals(df_info_with_operations.df)
 
 
-def test_export_df_info_raise_fileexistserror(
-    df_info_with_operations, create_generic_file
-):
+def test_to_file_raise_fileexistserror(df_info_with_operations, create_generic_file):
     filename = create_generic_file
 
     with pytest.raises(FileExistsError) as err:
@@ -879,13 +877,13 @@ def test_export_df_info_raise_fileexistserror(
     )
 
 
-def test_import_df_with_info_from_file(export_df_info_with_operations_to_file_fixture):
+def test_read_file(export_df_info_with_operations_to_file_fixture):
     (
         expected_imported_df_info,
         exported_df_info_path,
     ) = export_df_info_with_operations_to_file_fixture
 
-    imported_df_info = import_df_with_info_from_file(exported_df_info_path)
+    imported_df_info = read_file(exported_df_info_path)
 
     assert isinstance(imported_df_info, DataFrameWithInfo)
     # This is to identify attribute errors easier
@@ -895,9 +893,9 @@ def test_import_df_with_info_from_file(export_df_info_with_operations_to_file_fi
     assert imported_df_info.df.equals(expected_imported_df_info.df)
 
 
-def test_import_df_info_raise_notshelvefileerror(create_generic_file):
+def test_read_file_raise_notshelvefileerror(create_generic_file):
     with pytest.raises(NotShelveFileError) as err:
-        import_df_with_info_from_file(create_generic_file)
+        read_file(create_generic_file)
 
     assert isinstance(err.value, NotShelveFileError)
     assert (
@@ -906,9 +904,9 @@ def test_import_df_info_raise_notshelvefileerror(create_generic_file):
     )
 
 
-def test_import_df_info_raise_typeerror(create_generic_shelve_file):
+def test_read_file_raise_typeerror(create_generic_shelve_file):
     with pytest.raises(TypeError) as err:
-        import_df_with_info_from_file(create_generic_shelve_file)
+        read_file(create_generic_shelve_file)
 
     assert isinstance(err.value, TypeError)
     assert (
