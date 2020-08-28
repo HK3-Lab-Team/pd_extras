@@ -28,7 +28,7 @@ def add_nonce_func(
 
     Returns
     -------
-    np.array:
+    np.array
         Array of strings with nonces
     """
     return (
@@ -163,12 +163,12 @@ def anonymize_data(
     Returns
     -------
     pd.DataFrame
-        Pandas DataFrame containing only the private info ``private_cols_to_map``,
+        DataFrame containing only the private info ``private_cols_to_map``,
         along with another column "ID_OWNER" that allows to map these private
         informations to the data in the other DataFrame. This file is
         also saved to "[``dest_path``] / [``file_name``]_private_info.csv" file.
     pd.DataFrame
-        Pandas DataFrame containing the same infos as the DataFrame ``df``, but
+        DataFrame containing the same infos as the DataFrame ``df``, but
         the columns "private_cols_to_remove" have been replaced by "ID_OWNER"
         column.
         This file is also saved to "[``dest_path``] / [``file_name``]_anonym.csv"
