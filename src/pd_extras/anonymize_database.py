@@ -207,21 +207,3 @@ def anonymize_data(
         print("FileNotFoundError: The destination path was not found")
 
     return anonym_df, private_df
-
-
-if __name__ == "__main__":
-
-    private_cols_to_map = ["CLIENTE", "INDIRIZZO", "CIVICO", "COMUNE", "PROV"]
-    private_cols_to_remove = ["CLIENTE", "INDIRIZZO", "CIVICO"]
-
-    df_sani_dir = os.path.join(os.getcwd(), "data", "Sani 15300.csv")
-    output_data_dir = os.path.join(os.getcwd(), "data")
-    df_sani = pd.read_csv(df_sani_dir)
-
-    anonymize_data(
-        df_sani,
-        "Sani_15300",
-        private_cols_to_remove,
-        private_cols_to_map,
-        output_data_dir,
-    )

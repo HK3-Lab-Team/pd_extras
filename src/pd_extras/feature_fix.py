@@ -7,7 +7,11 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-from .dataframe_with_info import DataFrameWithInfo, FeatureOperation, copy_df_info_with_new_df
+from .dataframe_with_info import (
+    DataFrameWithInfo,
+    FeatureOperation,
+    copy_df_info_with_new_df,
+)
 from .feature_enum import ENCODED_COLUMN_SUFFIX, EncodingFunctions, OperationTypeEnum
 
 logger = logging.getLogger(__name__)
@@ -470,24 +474,3 @@ def make_categorical_columns_multiple_combinations(
         combination_columns.append(new_column)
 
     return df_info, combination_columns
-
-
-# def get_column_enc_categories():
-#     pass
-
-
-if __name__ == "__main__":
-    sys.path.append("../..")
-    import os
-
-    CWD = os.path.abspath(os.path.dirname("__file__"))
-    # DB_SMVET = os.path.join('/home/lorenzo-hk3lab/WorkspaceHK3Lab', 'smvet','data', 'Sani_15300_anonym.csv')
-    # SEGMENTATION_DATA = os.path.join(CWD, '..', 'segmentation', 'resources', 'dense_areas_percentage.csv')
-    DB_CORRECT = os.path.join(CWD, "..", "..", "data", "Sani_15300_anonym.csv")
-    df_info = DataFrameWithInfo(metadata_cols=(), data_file=DB_CORRECT)
-    print(df_info.df.columns)
-    col = "SEX"
-    df_info = encode_single_categorical_column(
-        df_info, col_name=col, encoding=EncodingFunctions.ONEHOT
-    )
-    print("end")
