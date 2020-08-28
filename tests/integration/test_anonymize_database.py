@@ -1,9 +1,9 @@
 import pandas as pd
 import pytest
 
-from tests.dataframewithinfo_util import DataFrameMock
+from pd_extras.anonymize_database import anonymize_data
 
-from ...pd_extras.anonymize_database import anonymize_data
+from ..dataframewithinfo_util import DataFrameMock
 
 
 @pytest.mark.parametrize(
