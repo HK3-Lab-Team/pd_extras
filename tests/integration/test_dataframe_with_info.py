@@ -3,6 +3,7 @@ import shelve
 from pathlib import Path
 from typing import Tuple
 
+import pandas as pd
 import pytest
 
 from pd_extras.dataframe_with_info import (
@@ -13,6 +14,7 @@ from pd_extras.dataframe_with_info import (
     _find_single_column_type,
     _split_columns_by_type_parallel,
     copy_df_info_with_new_df,
+    get_df_from_csv,
     read_file,
 )
 from pd_extras.exceptions import MultipleOperationsFoundError, NotShelveFileError
@@ -20,6 +22,7 @@ from pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
 
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
+from ..fixtures import CSV
 
 
 class Describe_DataFrameWithInfo:
@@ -913,6 +916,24 @@ def test_read_file_raise_typeerror(create_generic_shelve_file):
         "The object is not a DataFrameWithInfo instance, but it is <class 'str'>"
         == str(err.value)
     )
+
+
+def test_df_from_csv():
+    csv_path = CSV.dummy
+    expected_df = pd.DataFrame({"header1": [1, 2, 3], "header2": [1, 2, 3]})
+
+    df = get_df_from_csv(csv_path)
+
+    assert isinstance(df, pd.DataFrame)
+    pd.testing.assert_frame_equal(df, expected_df)
+
+
+def test_df_from_csv_notfound():
+    csv_path = "fake/path.csv"
+
+    df = get_df_from_csv(csv_path)
+
+    assert df is None
 
 
 # ====================
