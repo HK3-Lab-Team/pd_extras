@@ -1,6 +1,5 @@
 import itertools
 import logging
-import sys
 from typing import Tuple
 
 import numpy as np
