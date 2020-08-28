@@ -941,7 +941,7 @@ def copy_df_info_with_new_df(
     return new_df_info
 
 
-def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
+def read_file(filename: Union[Path, str]) -> DataFrameWithInfo:
     """
     Import a DataFrameWithInfo instance stored inside ``filename`` file.
 
@@ -951,7 +951,7 @@ def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
 
     Parameters
     ----------
-    filename: str
+    filename: Union[Path, str]
         Name/Path of the file where the data dump may be found.
 
     Returns
@@ -974,19 +974,21 @@ def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
             f"The file {filename} was not created by 'shelve' module or no "
             f"db type could be determined"
         )
-    # Check how many objects have been stored
-    if len(my_shelf.keys()) != 1:
-        raise MultipleObjectsInFileError(
-            f"There are {len(my_shelf.keys())} objects in file {filename}. Expected 1."
-        )
-    # Retrieve the single object
-    df_info = list(my_shelf.values())[0]
+    else:
+        # Check how many objects have been stored
+        if len(my_shelf.keys()) != 1:
+            raise MultipleObjectsInFileError(
+                f"There are {len(my_shelf.keys())} objects in file {filename}. Expected 1."
+            )
+        # Retrieve the single object
+        df_info = list(my_shelf.values())[0]
 
-    # Check if the object is a DataFrameWithInfo instance
-    if not isinstance(df_info, DataFrameWithInfo):
-        raise TypeError(
-            f"The object is not a DataFrameWithInfo "
-            f"instance, but it is {df_info.__class__}"
-        )
-    my_shelf.close()
+        # Check if the object is a DataFrameWithInfo instance
+        if not isinstance(df_info, DataFrameWithInfo):
+            raise TypeError(
+                f"The object is not a DataFrameWithInfo "
+                f"instance, but it is {df_info.__class__}"
+            )
+        my_shelf.close()
+
     return df_info
