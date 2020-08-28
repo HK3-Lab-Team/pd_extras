@@ -265,8 +265,9 @@ class DataFrameMock:
         Create pandas DataFrame with columns containing categorical values
 
         The returned DataFrame will contain ``sample_size`` samples and 12 columns.
-        The columns will be distinguished based on value types (sample_type) and
-        number of unique values (unique_value_count).
+        The columns will be distinguished based on value types (i.e. "sample_type"
+        that can be "numerical", "string" or "mixed") and number of unique values
+        (i.e. "unique_value_count" that will be 3, 5, 8 or 40).
 
         Parameters
         ----------
@@ -285,6 +286,7 @@ class DataFrameMock:
         categ_cols_dict = {}
         mixed_list = [f"string_{i}" for i in range(20)] + [i * 20 for i in range(21)]
         random.shuffle(mixed_list)
+        # Create dict with all the possible values that will be used for each sample type
         value_per_sample_type = {
             "numerical": [i * 20 for i in range(41)],
             "string": [f"string_{i}" for i in range(41)],

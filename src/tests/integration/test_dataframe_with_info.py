@@ -499,7 +499,7 @@ class Describe_DataFrameWithInfo:
                 },
                 {
                     "operation_type": OperationTypeEnum.BIN_SPLITTING,
-                    "original_columns": ["fop_original_col_0", "fop_original_col_1",],
+                    "original_columns": ["fop_original_col_0", "fop_original_col_1"],
                     "derived_columns": ["fop_derived_col_0"],
                     "encoded_values_map": {0: "value_0", 1: "value_1"},
                     "encoder": None,
