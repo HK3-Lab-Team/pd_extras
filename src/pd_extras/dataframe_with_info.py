@@ -840,6 +840,44 @@ class DataFrameWithInfo:
         else:
             return found_operat.original_columns
 
+    def to_file(self, filename: Union[Path, str], overwrite: bool = False) -> None:
+        """
+        Export DataFrameWithInfo instance to ``filename``
+
+        This function uses "shelve" module that creates 3 files containing only
+        the DataFrameWithInfo object.
+
+        Parameters
+        ----------
+        filename: Union[Path, str]
+            Name/Path of the file where the data dump will be exported
+        overwrite: bool, optional
+            Option to overwrite the file if it already exists as ``filename``.
+            Default set to False
+
+        Raises
+        ------
+        FileExistsError
+            If a file in ``filename`` path is already present and ``overwrite`` is set 
+            to False. In case overwriting is not a problem, ``overwrite`` should be set 
+            to True.
+        """
+        filename = str(filename)
+        if not overwrite:
+            if os.path.exists(filename):
+                raise FileExistsError(
+                    f"File {filename} already exists. If overwriting is not a problem, "
+                    f"set the 'overwrite' argument to True"
+                )
+
+        with shelve.open(filename, "n") as my_shelf:  # 'n' for new
+            try:
+                my_shelf["df_info"] = self
+            except TypeError as e:
+                logging.error(f"ERROR shelving: \n{e}")
+            except KeyError as e:
+                logging.error(f"Exporting data unsuccessful: \n{e}")
+
     def __str__(self) -> str:
         """
         Return text with the number of columns for every variable type
@@ -952,47 +990,3 @@ def import_df_with_info_from_file(filename: str) -> DataFrameWithInfo:
         )
     my_shelf.close()
     return df_info
-
-
-def export_df_with_info_to_file(
-    df_info: DataFrameWithInfo, filename: Union[Path, str], overwrite: bool = False
-) -> None:
-    """
-    Export data of a previous DataFrameWithInfo instance to ``filename``
-
-    This function uses "shelve" module that creates 3 files containing only
-    the object ``df_info`` (named "df_info")
-
-    Parameters
-    ----------
-    df_info: DataFrameWithInfo
-        DataFrameWithInfo instance that needs to be exported
-    filename: Union[Path, str]
-        Name/Path of the file where the data dump will be exported
-    overwrite: bool, optional
-        Option to overwrite the file if it already exists as ``filename``.
-        Default set to False
-
-    Raises
-    ------
-    FileExistsError
-        This error is to report that a file in ``filename`` path is already present
-        and ``overwrite`` is set to False. In case overwriting is not a problem,
-        ``overwrite`` should be set to True
-    """
-    filename = str(filename)
-    if not overwrite:
-        if os.path.exists(filename):
-            raise FileExistsError(
-                f"File {filename} already exists. If overwriting is not a problem, "
-                f"set the 'overwrite' argument to True"
-            )
-    my_shelf = shelve.open(filename, "n")  # 'n' for new
-    try:
-        my_shelf["df_info"] = df_info
-    except TypeError as e:
-        logging.error(f"ERROR shelving: \n{e}")
-    except KeyError as e:
-        logging.error(f"Exporting data unsuccessful: \n{e}")
-
-    my_shelf.close()

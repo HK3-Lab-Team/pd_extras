@@ -13,7 +13,6 @@ from pd_extras.dataframe_with_info import (
     _find_single_column_type,
     _split_columns_by_type_parallel,
     copy_df_info_with_new_df,
-    export_df_with_info_to_file,
     import_df_with_info_from_file,
 )
 from pd_extras.exceptions import MultipleOperationsFoundError, NotShelveFileError
@@ -850,7 +849,7 @@ def test_copy_df_info_with_new_df_log_warning(caplog, df_info_with_operations):
 def test_export_df_info_to_file(df_info_with_operations, tmpdir):
     filename = tmpdir.join("export_raise_fileexistserr")
 
-    export_df_with_info_to_file(df_info_with_operations, filename)
+    df_info_with_operations.to_file(filename)
 
     my_shelf = shelve.open(str(filename))
     assert len(my_shelf.keys()) == 1
@@ -870,7 +869,7 @@ def test_export_df_info_raise_fileexistserror(
     filename = create_generic_file
 
     with pytest.raises(FileExistsError) as err:
-        export_df_with_info_to_file(df_info_with_operations, filename)
+        df_info_with_operations.to_file(filename)
 
     assert isinstance(err.value, FileExistsError)
     assert (
