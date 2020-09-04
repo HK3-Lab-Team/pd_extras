@@ -34,7 +34,7 @@ install_requires = [
     "joblib",
 ]
 
-test_requires = ["pytest", "coverage", "pytest-cov"]
+test_requires = ["pytest", "coverage", "pytest-cov", "coveralls"]
 
 setuptools.setup(
     name="pd_extras",
