@@ -1,5 +1,8 @@
 # pd_extras
 
+[![Coverage Status](https://coveralls.io/repos/github/HK3-Lab-Team/pd_extras/badge.svg?branch=coveralls)](https://coveralls.io/github/HK3-Lab-Team/pd_extras?branch=coveralls)
+[![Build Status](https://travis-ci.com/HK3-Lab-Team/pd_extras.svg?branch=master)](https://travis-ci.com/HK3-Lab-Team/pd_extras)
+
 This library is meant to be used to preprocess medical databases with many features/columns.
 
 Library with useful wrapping for pandas DataFrame. It allows the user to have synthetic info about data, and to preprocess the DataFrame.
