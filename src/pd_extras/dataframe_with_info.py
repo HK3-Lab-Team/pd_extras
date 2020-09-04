@@ -858,8 +858,8 @@ class DataFrameWithInfo:
         Raises
         ------
         FileExistsError
-            If a file in ``filename`` path is already present and ``overwrite`` is set 
-            to False. In case overwriting is not a problem, ``overwrite`` should be set 
+            If a file in ``filename`` path is already present and ``overwrite`` is set
+            to False. In case overwriting is not a problem, ``overwrite`` should be set
             to True.
         """
         filename = str(filename)
