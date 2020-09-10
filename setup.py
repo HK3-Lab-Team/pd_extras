@@ -20,10 +20,10 @@ def ascii_bytes_from(path, *paths):
 
 # read required text from files
 thisdir = os.path.dirname(__file__)
-init_py = ascii_bytes_from(thisdir, "src", "pd_extras", "__init__.py")
+init_py = ascii_bytes_from(thisdir, "src", "trousse", "__init__.py")
 readme = ascii_bytes_from(thisdir, "README.md")
 # This allows users to check installed version with:
-# `python -c 'from pd_extras import __version__; print(__version__)'`
+# `python -c 'from trousse import __version__; print(__version__)'`
 version = re.search('__version__ = "([^"]+)"', init_py).group(1)
 
 install_requires = [
@@ -37,15 +37,15 @@ install_requires = [
 test_requires = ["pytest", "coverage", "pytest-cov", "coveralls"]
 
 setuptools.setup(
-    name="pd_extras",
+    name="pytrousse",
     version=version,
-    maintainer="pd_extras Developers",
+    maintainer="pytrousse Developers",
     maintainer_email="lorenzo.gorini@hk3lab.ai",
     author="L. Gorini, A. Marcolini",
     description="",
     long_description=readme,
     long_description_content_type="text/markdown",
-    url="https://github.com/HK3-Lab-Team/pd_extras/",
+    url="https://github.com/HK3-Lab-Team/pytrousse/",
     install_requires=install_requires,
     tests_require=test_requires,
     extras_require={"testing": test_requires},

@@ -13,7 +13,7 @@ install:
 # command to run tests
 script:
   - flake8 .
-  - pytest --cov=pd_extras
+  - pytest --cov=trousse
 
 after_success:
   - coveralls

@@ -8,8 +8,9 @@ from typing import Tuple
 import bokeh.plotting as bk
 import numpy as np
 import pandas as pd
-import scikit_posthocs as sp
 import scipy.stats as ss
+
+import scikit_posthocs as sp
 from medplot.utils.bokeh_boxplot import make_boxplot
 from medplot.utils.seaborn_bar_plot import get_show_samples_per_group
 
@@ -482,7 +483,10 @@ if __name__ == "__main__":
 
     sys.path.append("..")
     # try:
-    from pd_extras.utils.dataframe_with_info import DataFrameWithInfo, import_df_with_info_from_file
+    from trousse.utils.dataframe_with_info import (
+        DataFrameWithInfo,
+        import_df_with_info_from_file,
+    )
 
     # except ImportError:
     #     from bwplot.smvet_utils.utils.dataframe_with_info import DataFrameWithInfo

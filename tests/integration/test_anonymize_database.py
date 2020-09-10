@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from pd_extras.anonymize_database import anonymize_data
+from trousse.anonymize_database import anonymize_data
 
 from ..dataframewithinfo_util import DataFrameMock
 

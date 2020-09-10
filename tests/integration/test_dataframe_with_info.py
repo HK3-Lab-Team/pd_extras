@@ -6,7 +6,7 @@ from typing import Tuple
 import pandas as pd
 import pytest
 
-from pd_extras.dataframe_with_info import (
+from trousse.dataframe_with_info import (
     ColumnListByType,
     DataFrameWithInfo,
     FeatureOperation,
@@ -17,8 +17,8 @@ from pd_extras.dataframe_with_info import (
     get_df_from_csv,
     read_file,
 )
-from pd_extras.exceptions import MultipleOperationsFoundError, NotShelveFileError
-from pd_extras.feature_enum import EncodingFunctions, OperationTypeEnum
+from trousse.exceptions import MultipleOperationsFoundError, NotShelveFileError
+from trousse.feature_enum import EncodingFunctions, OperationTypeEnum
 
 from ..dataframewithinfo_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs

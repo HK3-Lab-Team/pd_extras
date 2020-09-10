@@ -1,7 +1,7 @@
 import os
 import time
 
-from pd_extras.dataframe_with_info import DataFrameWithInfo
+from trousse.dataframe_with_info import DataFrameWithInfo
 
 df_sani_dir = os.path.join(
     "/home/lorenzo-hk3lab/WorkspaceHK3Lab/", "smvet", "data", "Sani_15300_anonym.csv",
