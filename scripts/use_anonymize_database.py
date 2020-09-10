@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from pd_extras.anonymize_database import anonymize_data
+from trousse.anonymize_database import anonymize_data
 
 private_cols_to_map = ["CLIENTE", "INDIRIZZO", "CIVICO", "COMUNE", "PROV"]
 private_cols_to_remove = ["CLIENTE", "INDIRIZZO", "CIVICO"]

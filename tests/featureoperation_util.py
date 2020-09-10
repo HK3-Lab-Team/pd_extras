@@ -3,7 +3,7 @@ import itertools
 
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-from pd_extras.feature_enum import OperationTypeEnum
+from trousse.feature_enum import OperationTypeEnum
 
 
 def eq_featureoperation_combs():

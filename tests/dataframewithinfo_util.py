@@ -235,7 +235,7 @@ class DataFrameMock:
         DataFrame has 11 rows and 2 columns. One column called "col_name" contains
         some strings (that represent the column names of another DataFrame sample "df2").
         Another column called "col_type" contains some possible outputs from
-        ``src.pd_extras.dataframe_with_info._find_single_column_type`` function
+        ``trousse.dataframe_with_info._find_single_column_type`` function
         that describe the type of values contained in the column of "df2".
 
         Returns

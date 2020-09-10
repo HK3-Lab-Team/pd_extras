@@ -1,9 +1,9 @@
 import os
 import sys
 
-from pd_extras.dataframe_with_info import DataFrameWithInfo
-from pd_extras.feature_enum import EncodingFunctions
-from pd_extras.feature_fix import encode_single_categorical_column
+from trousse.dataframe_with_info import DataFrameWithInfo
+from trousse.feature_enum import EncodingFunctions
+from trousse.feature_fix import encode_single_categorical_column
 
 sys.path.append("../..")
 
