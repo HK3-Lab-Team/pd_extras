@@ -1,7 +1,7 @@
 import os
 import time
 
-from trousse.dataframe_with_info import DataFrameWithInfo
+from trousse.dataset import Dataset
 
 df_sani_dir = os.path.join(
     "/home/lorenzo-hk3lab/WorkspaceHK3Lab/", "smvet", "data", "Sani_15300_anonym.csv",
@@ -15,7 +15,7 @@ metadata_cols = (
 )
 metadata_cols = tuple(metadata_cols.replace("\t", ",").split(","))
 
-df_sani = DataFrameWithInfo(metadata_cols=metadata_cols, data_file=df_sani_dir)
+df_sani = Dataset(metadata_cols=metadata_cols, data_file=df_sani_dir)
 
 time0 = time.time()
 print(df_sani.column_list_by_type)

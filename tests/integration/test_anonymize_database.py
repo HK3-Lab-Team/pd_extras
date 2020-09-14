@@ -3,7 +3,7 @@ import pytest
 
 from trousse.anonymize_database import anonymize_data
 
-from ..dataframewithinfo_util import DataFrameMock
+from ..dataset_util import DataFrameMock
 
 
 @pytest.mark.parametrize(

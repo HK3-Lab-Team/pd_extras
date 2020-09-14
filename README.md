@@ -18,6 +18,6 @@ the applied transformations
 formatting features fixing wrong formats/types
 3. providing basic informations about the database (columns count per type, trivial columns, ...)
 
-Regarding 1), the idea is to have a base wrapper 'DataFrameWithInfo' for pandas.DataFrame that analyzes the dataset 
+Regarding 1), the idea is to have a base wrapper 'Dataset' for pandas.DataFrame that analyzes the dataset 
 and gives synthetic infos about data (like type of columns, trivial columns, ...).
 This class is used as input for many functions of the library and it tracks the operations performed on each feature.

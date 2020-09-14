@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from .dataframe_with_info import DataFrameWithInfo, FeatureOperation, copy_df_info_with_new_df
+from .dataset import Dataset, FeatureOperation, copy_df_info_with_new_df
 from .feature_enum import OperationTypeEnum
 
 BREED_SPECIFIC_BIN_COLUMN_SUFFIX = "_bin_breed_specific"
@@ -403,7 +403,7 @@ def _get_samples_with_breed_not_nan(
 
 
 def add_breed_specific_bin_id_to_df(
-    df_info: DataFrameWithInfo,
+    df_info: Dataset,
     column_to_split: str,
     new_column_name: str,
     bin_thresh_increase: float = 1.1,
@@ -411,7 +411,7 @@ def add_breed_specific_bin_id_to_df(
     bin_thresholds: Tuple[float] = None,
     sample_count_threshold: int = 20,
     start_from_zero: bool = False,
-) -> Tuple[DataFrameWithInfo, Dict[str, Dict]]:
+) -> Tuple[Dataset, Dict[str, Dict]]:
     """
     This function adds an extra column containing the bin identifier for the 'column_to_split',
     computed as follows.
@@ -421,7 +421,7 @@ def add_breed_specific_bin_id_to_df(
 
     Parameters
     ----------
-    df_info: DataFrameWithInfo
+    df_info: Dataset
         Input Data we use to compute age_bin_ids
     column_to_split: str
         Name of the column whose values we want to split into bins
@@ -445,8 +445,8 @@ def add_breed_specific_bin_id_to_df(
 
     Returns
     -------
-    DataFrameWithInfo
-        New DataFrame with the additional column. The new column is defined as global variable AGE_BIN_COLUMN_BREED
+    Dataset
+        New Dataset with the additional column. The new column is defined as global variable AGE_BIN_COLUMN_BREED
     Dict[str, Dict]
         Mapping from (breed, bin id) to related range of 'column_to_split' values
     """
@@ -487,7 +487,7 @@ def add_breed_specific_bin_id_to_df(
             df_info.df.iloc[na_breed_samples_ids]
         )
     df_with_bin_column.reset_index(drop=True, inplace=True)
-    # Create DataFrameWithInfo with same instance attribute as df_info, but with the new bin_column
+    # Create Dataset with same instance attribute as df_info, but with the new bin_column
     age_bin_df_info = copy_df_info_with_new_df(
         df_info=df_info, new_pandas_df=df_with_bin_column
     )

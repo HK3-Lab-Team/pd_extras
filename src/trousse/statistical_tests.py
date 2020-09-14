@@ -14,7 +14,7 @@ import scikit_posthocs as sp
 from medplot.utils.bokeh_boxplot import make_boxplot
 from medplot.utils.seaborn_bar_plot import get_show_samples_per_group
 
-from .dataframe_with_info import DataFrameWithInfo
+from .dataset import Dataset
 
 logger = logging.getLogger(__name__)
 NA_VALUE = 0
@@ -42,7 +42,7 @@ def subgroups_statistical_test(
     sample_count_threshold_for_statistics=20,
     p_value_stat_func=ss.kruskal,
     p_value_thresholds=(0.05, 0.01),
-    complete_df_info: DataFrameWithInfo = None,
+    complete_df_info: Dataset = None,
     show_separated_boxplot=False,
     show_separated_boxplot_params=(30, 0.01),
 ):
@@ -72,7 +72,7 @@ def subgroups_statistical_test(
         '0' -> p-value = 1 - 0.05
         '1' -> p-value =  0.05 - 0.01
         '2' -> p-value =  0.01 - 0
-    @param complete_df_info: DataFrameWithInfo instance with the full DataFrame where we will find data
+    @param complete_df_info: Dataset instance with the full DataFrame where we will find data
         to draw boxplot from. Required only if 'show_separated_boxplot' == True
     @param show_separated_boxplot: Bool: Option if you want to show the boxplots with many separated
         distributions. Each boxplot will contain distributions from a specific breed only and a
@@ -99,7 +99,7 @@ def subgroups_statistical_test(
     if complete_df_info is None and show_separated_boxplot:
         logging.error(
             "If you want to see the most separated boxplot, you must provide the original "
-            "full DataFrameWithInfo instance"
+            "full Dataset instance"
         )
     # Initialize variables
     features_already_plotted = set()
@@ -343,7 +343,7 @@ def draw_every_plot_from_apply(full_plot_list):
 
 
 def compute_separation_per_breed_per_subgroup_vs_feature(
-    df_info: DataFrameWithInfo,
+    df_info: Dataset,
     groupby_column: str,
     subgroup_col_name: str,
     sample_count_threshold_for_statistics: int,
@@ -369,7 +369,7 @@ def compute_separation_per_breed_per_subgroup_vs_feature(
     as columns and the pairwise combinations of the values of the 'subgroup_col_name' column
     repeated for every value of the 'groupby_column'. The p-values will also be encoded based on how
     much separated the partitions are. The p-value intervals will be described by 'p_value_thresholds'.
-    @param df_info: DataFrameWithInfo instance with data
+    @param df_info: Dataset instance with data
     @param groupby_column: The rows of df_info will be split according to the values in this column
     @param first_groups_sorted: Optionally, the user may directly input which values from the
         'groupby_column' should be analyzed
@@ -483,13 +483,10 @@ if __name__ == "__main__":
 
     sys.path.append("..")
     # try:
-    from trousse.utils.dataframe_with_info import (
-        DataFrameWithInfo,
+    from .dataset import (
+        Dataset,
         import_df_with_info_from_file,
     )
-
-    # except ImportError:
-    #     from bwplot.smvet_utils.utils.dataframe_with_info import DataFrameWithInfo
 
     logging.basicConfig(
         format="%(asctime)s \t %(levelname)s \t Module: %(module)s \t %(message)s ",
