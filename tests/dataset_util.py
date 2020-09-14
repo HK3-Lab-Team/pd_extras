@@ -213,7 +213,8 @@ class DataFrameMock:
                 dtype="category",
             ),
             "num_categorical_col": pd.Series(
-                [0, 1, 2, 3, 4] * (sample_size // 5), dtype="category",
+                [0, 1, 2, 3, 4] * (sample_size // 5),
+                dtype="category",
             ),
             "numerical_col": [0.05 * i for i in range(sample_size)],
             "datetime_col": [date(2000 + i, 8, 1) for i in range(sample_size)],
@@ -235,7 +236,7 @@ class DataFrameMock:
         DataFrame has 11 rows and 2 columns. One column called "col_name" contains
         some strings (that represent the column names of another DataFrame sample "df2").
         Another column called "col_type" contains some possible outputs from
-        ``trousse.dataframe_with_info._find_single_column_type`` function
+        ``trousse.dataset._find_single_column_type`` function
         that describe the type of values contained in the column of "df2".
 
         Returns
