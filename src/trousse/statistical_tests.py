@@ -42,13 +42,13 @@ def subgroups_statistical_test(
     sample_count_threshold_for_statistics=20,
     p_value_stat_func=ss.kruskal,
     p_value_thresholds=(0.05, 0.01),
-    complete_df_info: Dataset = None,
+    complete_dataset: Dataset = None,
     show_separated_boxplot=False,
     show_separated_boxplot_params=(30, 0.01),
 ):
     """
     This function will be applied to a DataFrame compute the p-values between pairs of distributions.
-    Particularly it will group the df_info rows based on: their 'groupby_column' and
+    Particularly it will group the dataset rows based on: their 'groupby_column' and
     a 'subgroup_col_name' column.  Then, for each group of rows, it will consider the values
     they have in every feature and it will consider these values as a distribution that
     can be compared with every other. To be more precise the single distributions will
@@ -60,7 +60,7 @@ def subgroups_statistical_test(
     repeated for every value of the 'groupby_column'. The p-values will also be encoded based on how
     much separated the partitions are. The p-value intervals will be described by 'p_value_thresholds'.
     @param df_group_slice: pd.DataFrame slice with only rows from a specific group
-    @param groupby_column: The rows of df_info will be split according to the values in this column
+    @param groupby_column: The rows of dataset will be split according to the values in this column
     @param subgroup_col_name: This is the column whose values will determine the different partitions.
         The function will consider every possible combination of its values and will perform a
         statistical test on each of these pairs
@@ -72,7 +72,7 @@ def subgroups_statistical_test(
         '0' -> p-value = 1 - 0.05
         '1' -> p-value =  0.05 - 0.01
         '2' -> p-value =  0.01 - 0
-    @param complete_df_info: Dataset instance with the full DataFrame where we will find data
+    @param complete_dataset: Dataset instance with the full DataFrame where we will find data
         to draw boxplot from. Required only if 'show_separated_boxplot' == True
     @param show_separated_boxplot: Bool: Option if you want to show the boxplots with many separated
         distributions. Each boxplot will contain distributions from a specific breed only and a
@@ -96,7 +96,7 @@ def subgroups_statistical_test(
     group_name = df_group_slice.name
     df_groupby_subgroups = df_group_slice.groupby(subgroup_col_name)
 
-    if complete_df_info is None and show_separated_boxplot:
+    if complete_dataset is None and show_separated_boxplot:
         logging.error(
             "If you want to see the most separated boxplot, you must provide the original "
             "full Dataset instance"
@@ -174,7 +174,7 @@ def subgroups_statistical_test(
     #     H_value_by_breed_by_subgroup=H_value_by_group_by_subgroup,
     #     p_value_by_breed_by_subgroup=p_value_by_group_by_subgroup,
     #     p_value_stat_func=p_value_stat_func,
-    #     p_value_thresholds=p_value_thresholds, complete_df_info=complete_df_info,
+    #     p_value_thresholds=p_value_thresholds, complete_dataset=complete_dataset,
     #     show_separated_boxplot=show_separated_boxplot,
     #     show_separated_boxplot_params=show_separated_boxplot_params,
     #     axis=0
@@ -208,12 +208,12 @@ def subgroups_statistical_test(
                 # Select the 2 distributions corresponding to the selected (group, subgroup, feature)
                 # correct combination
                 group_1_distribution = (
-                    complete_df_info.df.loc[groupby_subgroups_ids[g1_id]][feat]
+                    complete_dataset.df.loc[groupby_subgroups_ids[g1_id]][feat]
                     .dropna()
                     .values
                 )
                 group_2_distribution = (
-                    complete_df_info.df.loc[groupby_subgroups_ids[g2_id]][feat]
+                    complete_dataset.df.loc[groupby_subgroups_ids[g2_id]][feat]
                     .dropna()
                     .values
                 )
@@ -288,7 +288,7 @@ def subgroups_statistical_test(
 
                     # Create a new plot for every level
                     p, _ = make_boxplot(
-                        complete_df_info,
+                        complete_dataset,
                         selected_group_to_plot=(groupby_column, group_name),
                         level_col_name=subgroup_col_name,
                         level_id=3,
@@ -343,7 +343,7 @@ def draw_every_plot_from_apply(full_plot_list):
 
 
 def compute_separation_per_breed_per_subgroup_vs_feature(
-    df_info: Dataset,
+    dataset: Dataset,
     groupby_column: str,
     subgroup_col_name: str,
     sample_count_threshold_for_statistics: int,
@@ -358,7 +358,7 @@ def compute_separation_per_breed_per_subgroup_vs_feature(
 ):
     """
     This function will compute the p-values between pairs of distributions.
-    Particularly it will group the df_info rows based on: their 'groupby_column' and
+    Particularly it will group the dataset rows based on: their 'groupby_column' and
     a 'subgroup_col_name' column.  Then, for each group of rows, it will consider the values
     they have in every feature and it will consider these values as a distribution that
     can be compared with every other. To be more precise the single distributions will
@@ -369,8 +369,8 @@ def compute_separation_per_breed_per_subgroup_vs_feature(
     as columns and the pairwise combinations of the values of the 'subgroup_col_name' column
     repeated for every value of the 'groupby_column'. The p-values will also be encoded based on how
     much separated the partitions are. The p-value intervals will be described by 'p_value_thresholds'.
-    @param df_info: Dataset instance with data
-    @param groupby_column: The rows of df_info will be split according to the values in this column
+    @param dataset: Dataset instance with data
+    @param groupby_column: The rows of dataset will be split according to the values in this column
     @param first_groups_sorted: Optionally, the user may directly input which values from the
         'groupby_column' should be analyzed
     @param first_group_elements_threshold: If the possible values in 'groupby_column' are too
@@ -409,13 +409,13 @@ def compute_separation_per_breed_per_subgroup_vs_feature(
     """
     # If feature_list argument is not provided, we use all the valid columns from df
     if feature_list is None:
-        feature_list = df_info.med_exam_col_list
+        feature_list = dataset.med_exam_col_list
 
     # STEP 1. If we don't know the names of the N most populated groups, we calculate them
     if first_groups_sorted is None:
         # Count samples per group
         df_samples_per_group = get_show_samples_per_group(
-            df_info, groupby_column, show_plot=False
+            dataset, groupby_column, show_plot=False
         )
         # Select only first elements
         first_groups_sorted = list(
@@ -423,8 +423,8 @@ def compute_separation_per_breed_per_subgroup_vs_feature(
         )
 
     # Select only the top populated groups based on first_groups_sorted
-    df_most_populated_groups = df_info.df[
-        df_info.df[groupby_column].isin(first_groups_sorted)
+    df_most_populated_groups = dataset.df[
+        dataset.df[groupby_column].isin(first_groups_sorted)
     ]
     # Create groups
     df_groupby_slice = df_most_populated_groups.groupby(groupby_column)
@@ -449,7 +449,7 @@ def compute_separation_per_breed_per_subgroup_vs_feature(
         feature_list=feature_list,
         groupby_column=groupby_column,
         separation_count=separation_count,
-        complete_df_info=df_info,
+        complete_dataset=dataset,
         sample_count_threshold_for_statistics=sample_count_threshold_for_statistics,
         full_plot_list=full_plot_list,
         p_value_stat_func=p_value_stat_func,
@@ -485,7 +485,7 @@ if __name__ == "__main__":
     # try:
     from .dataset import (
         Dataset,
-        import_df_with_info_from_file,
+        read_file,
     )
 
     logging.basicConfig(
@@ -496,15 +496,15 @@ if __name__ == "__main__":
 
     CWD = Path(os.path.abspath(os.path.dirname("__file__"))).parents[0]  # Repo DIR
     DF_PATH = CWD / "data" / "output_data" / "df_patient"
-    df_info = import_df_with_info_from_file(str(DF_PATH))
-    df_info.metadata_as_features = False
+    dataset = read_file(str(DF_PATH))
+    dataset.metadata_as_features = False
     # Comparing only young patients (first two ids)
-    df_info.df = df_info.df[df_info.df["AGE_bin_id"].isin(["2", "1"])]
+    dataset.df = dataset.df[dataset.df["AGE_bin_id"].isin(["2", "1"])]
 
-    feature_list = df_info.med_exam_col_list
+    feature_list = dataset.med_exam_col_list
 
     p_value_separation_map = compute_separation_per_breed_per_subgroup_vs_feature(
-        df_info=df_info,
+        dataset=dataset,
         groupby_column="GROUPS",  # trivial column
         subgroup_col_name="AGE_bin_id",
         first_group_elements_threshold=10,
@@ -534,7 +534,7 @@ if __name__ == "__main__":
     ]
 
     # for feat in separated_feat:
-    #     bwplot = make_boxplot(df_info=db_join_hu_med_rad,
+    #     bwplot = make_boxplot(dataset=db_join_hu_med_rad,
     #                           level_col_name='ground_glass',
     #                           input_feat_x=feat,
     #                           remove_outliers=False, hover_tool_list=('study_uid',),

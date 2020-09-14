@@ -399,7 +399,7 @@ class Dataset:
 
     def _get_categorical_cols(self, col_list: Tuple[str]) -> Set[str]:
         """
-        Identify every categorical column in df_info.
+        Identify every categorical column in dataset.
 
         It will also set those column's types to "category".
         To avoid considering every string column as categorical, it selects the
@@ -872,7 +872,7 @@ class Dataset:
 
         with shelve.open(filename, "n") as my_shelf:  # 'n' for new
             try:
-                my_shelf["df_info"] = self
+                my_shelf["dataset"] = self
             except TypeError as e:
                 logging.error(f"ERROR shelving: \n{e}")
             except KeyError as e:
@@ -905,9 +905,7 @@ class Dataset:
         return self.df
 
 
-def copy_df_info_with_new_df(
-    df_info: Dataset, new_pandas_df: pd.DataFrame
-) -> Dataset:
+def copy_dataset_with_new_df(dataset: Dataset, new_pandas_df: pd.DataFrame) -> Dataset:
     """
     Copy a Dataset instance using "shallow_copy"
 
@@ -918,7 +916,7 @@ def copy_df_info_with_new_df(
 
     Parameters
     ----------
-    df_info: Dataset
+    dataset: Dataset
         Dataset instance that will be copied
     new_pandas_df: pd.DataFrame
         Pandas DataFrame instance that contains the new values of ``df`` attribute
@@ -927,18 +925,18 @@ def copy_df_info_with_new_df(
     Returns
     -------
     Dataset
-        Dataset instance with same attribute values as ``df_info`` argument,
+        Dataset instance with same attribute values as ``dataset`` argument,
         but with ``new_pandas_df`` used as ``df`` attribute value.
     """
-    if not set(df_info.df.columns).issubset(new_pandas_df.columns):
+    if not set(dataset.df.columns).issubset(new_pandas_df.columns):
         logging.warning(
             "Some columns of the previous Dataset instance "
             "are being lost, but information about operation on them "
             "is still present"
         )
-    new_df_info = copy.copy(df_info)
-    new_df_info.df = new_pandas_df
-    return new_df_info
+    new_dataset = copy.copy(dataset)
+    new_dataset.df = new_pandas_df
+    return new_dataset
 
 
 def read_file(filename: Union[Path, str]) -> Dataset:
@@ -981,14 +979,14 @@ def read_file(filename: Union[Path, str]) -> Dataset:
                 f"There are {len(my_shelf.keys())} objects in file {filename}. Expected 1."
             )
         # Retrieve the single object
-        df_info = list(my_shelf.values())[0]
+        dataset = list(my_shelf.values())[0]
 
         # Check if the object is a Dataset instance
-        if not isinstance(df_info, Dataset):
+        if not isinstance(dataset, Dataset):
             raise TypeError(
                 f"The object is not a Dataset "
-                f"instance, but it is {df_info.__class__}"
+                f"instance, but it is {dataset.__class__}"
             )
         my_shelf.close()
 
-    return df_info
+    return dataset

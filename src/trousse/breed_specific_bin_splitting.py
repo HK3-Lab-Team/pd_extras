@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from .dataset import Dataset, FeatureOperation, copy_df_info_with_new_df
+from .dataset import Dataset, FeatureOperation, copy_dataset_with_new_df
 from .feature_enum import OperationTypeEnum
 
 BREED_SPECIFIC_BIN_COLUMN_SUFFIX = "_bin_breed_specific"
@@ -236,7 +236,7 @@ def create_df_with_overlapping_bins_single_breed(
     col_array = df_breed[column_to_split].values
     # Instantiate an empty DataFrame with the new column added
     for id_bin, bin_range in enumerate(bins_list):
-        # Select the df_info rows in the age bin
+        # Select the dataset rows in the age bin
         range_samples_bool_map = np.logical_and(
             np.greater_equal(col_array, bin_range[0]),
             np.less_equal(col_array, bin_range[1]),
@@ -277,7 +277,7 @@ def add_column_bins_to_single_breed(
     col_array = df_breed[column_to_split].values
     # Instantiate an empty DataFrame with the new column added
     for id_bin, bin_range in enumerate(bins_list):
-        # Select the df_info rows in the age bin
+        # Select the dataset rows in the age bin
         range_samples_bool_map = np.logical_and(
             np.greater_equal(col_array, bin_range[0]),
             np.less_equal(col_array, bin_range[1]),
@@ -403,7 +403,7 @@ def _get_samples_with_breed_not_nan(
 
 
 def add_breed_specific_bin_id_to_df(
-    df_info: Dataset,
+    dataset: Dataset,
     column_to_split: str,
     new_column_name: str,
     bin_thresh_increase: float = 1.1,
@@ -415,13 +415,13 @@ def add_breed_specific_bin_id_to_df(
     """
     This function adds an extra column containing the bin identifier for the 'column_to_split',
     computed as follows.
-    First, the df_info is split according to breed. Then for each breed we look for the range of
+    First, the dataset is split according to breed. Then for each breed we look for the range of
     age values and we split the range into bins according to the arguments provided.
     We finally associate the row to the age_bin id according to its age value
 
     Parameters
     ----------
-    df_info: Dataset
+    dataset: Dataset
         Input Data we use to compute age_bin_ids
     column_to_split: str
         Name of the column whose values we want to split into bins
@@ -454,7 +454,7 @@ def add_breed_specific_bin_id_to_df(
         contains_na_breed_samples,
         not_na_df,
         na_breed_samples_ids,
-    ) = _get_samples_with_breed_not_nan(df_info.df)
+    ) = _get_samples_with_breed_not_nan(dataset.df)
     # Compute the bins from the most populated breed so that the least populated can use these
     # bins when lacking infos about the range
     mongrels_age_bins, _ = get_bin_list_per_single_breed(
@@ -484,14 +484,14 @@ def add_breed_specific_bin_id_to_df(
     # Reinsert the samples with NaN breed values
     if contains_na_breed_samples:
         df_with_bin_column = df_with_bin_column.append(
-            df_info.df.iloc[na_breed_samples_ids]
+            dataset.df.iloc[na_breed_samples_ids]
         )
     df_with_bin_column.reset_index(drop=True, inplace=True)
-    # Create Dataset with same instance attribute as df_info, but with the new bin_column
-    age_bin_df_info = copy_df_info_with_new_df(
-        df_info=df_info, new_pandas_df=df_with_bin_column
+    # Create Dataset with same instance attribute as dataset, but with the new bin_column
+    age_bin_dataset = copy_dataset_with_new_df(
+        dataset=dataset, new_pandas_df=df_with_bin_column
     )
-    age_bin_df_info.add_operation(
+    age_bin_dataset.add_operation(
         FeatureOperation(
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             original_columns=column_to_split,
@@ -499,4 +499,4 @@ def add_breed_specific_bin_id_to_df(
             encoded_values_map=column_bin_to_range_map_per_breed,
         )
     )
-    return age_bin_df_info, column_bin_to_range_map_per_breed
+    return age_bin_dataset, column_bin_to_range_map_per_breed

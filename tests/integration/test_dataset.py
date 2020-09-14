@@ -13,7 +13,7 @@ from trousse.dataset import (
     _find_samples_by_type,
     _find_single_column_type,
     _split_columns_by_type_parallel,
-    copy_df_info_with_new_df,
+    copy_dataset_with_new_df,
     get_df_from_csv,
     read_file,
 )
@@ -52,9 +52,9 @@ class Describe_Dataset:
         self, request, nan_ratio, n_columns, expected_many_nan_columns
     ):
         df = DataFrameMock.df_many_nans(nan_ratio, n_columns)
-        df_info = Dataset(df_object=df, nan_percentage_threshold=nan_ratio - 0.01)
+        dataset = Dataset(df_object=df, nan_percentage_threshold=nan_ratio - 0.01)
 
-        many_nan_columns = df_info.many_nan_columns
+        many_nan_columns = dataset.many_nan_columns
 
         assert len(many_nan_columns) == len(expected_many_nan_columns)
         assert isinstance(many_nan_columns, set)
@@ -66,9 +66,9 @@ class Describe_Dataset:
     )
     def test_same_value_columns(self, request, n_columns, expected_same_value_columns):
         df = DataFrameMock.df_same_value(n_columns)
-        df_info = Dataset(df_object=df)
+        dataset = Dataset(df_object=df)
 
-        same_value_columns = df_info.same_value_cols
+        same_value_columns = dataset.same_value_cols
 
         assert len(same_value_columns) == len(expected_same_value_columns)
         assert isinstance(same_value_columns, set)
@@ -84,9 +84,9 @@ class Describe_Dataset:
     )
     def test_trivial_columns(self, request, n_columns, expected_trivial_columns):
         df = DataFrameMock.df_trivial(n_columns)
-        df_info = Dataset(df_object=df)
+        dataset = Dataset(df_object=df)
 
-        trivial_columns = df_info.trivial_columns
+        trivial_columns = dataset.trivial_columns
 
         assert len(trivial_columns) == len(expected_trivial_columns)
         assert isinstance(trivial_columns, set)
@@ -152,9 +152,9 @@ class Describe_Dataset:
     )
     def test_get_categorical_cols(self, request, sample_size, expected_categ_cols):
         df_categ = DataFrameMock.df_categorical_cols(sample_size)
-        df_info = Dataset(df_object=df_categ)
+        dataset = Dataset(df_object=df_categ)
 
-        categ_cols = df_info._get_categorical_cols(col_list=df_categ.columns)
+        categ_cols = dataset._get_categorical_cols(col_list=df_categ.columns)
 
         assert isinstance(categ_cols, set)
         assert categ_cols == expected_categ_cols
@@ -220,13 +220,13 @@ class Describe_Dataset:
     )
     def test_column_list_by_type(self, metadata_as_features, expected_column_list_type):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
-        df_info = Dataset(
+        dataset = Dataset(
             df_object=df_multi_type,
             metadata_cols=("metadata_num_col",),
             metadata_as_features=metadata_as_features,
         )
 
-        col_list_by_type = df_info.column_list_by_type
+        col_list_by_type = dataset.column_list_by_type
 
         assert isinstance(col_list_by_type, ColumnListByType)
         assert col_list_by_type == expected_column_list_type
@@ -259,13 +259,13 @@ class Describe_Dataset:
     )
     def test_med_exam_col_list(self, metadata_as_features, expected_med_exam_col_list):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
-        df_info = Dataset(
+        dataset = Dataset(
             df_object=df_multi_type,
             metadata_cols=("metadata_num_col",),
             metadata_as_features=metadata_as_features,
         )
 
-        med_exam_col_list = df_info.med_exam_col_list
+        med_exam_col_list = dataset.med_exam_col_list
 
         assert isinstance(med_exam_col_list, set)
         assert med_exam_col_list == expected_med_exam_col_list
@@ -281,9 +281,9 @@ class Describe_Dataset:
     )
     def test_least_nan_cols(self, request, nan_threshold, expected_least_nan_cols):
         df_multi_type = DataFrameMock.df_multi_nan_ratio(sample_size=200)
-        df_info = Dataset(df_object=df_multi_type)
+        dataset = Dataset(df_object=df_multi_type)
 
-        least_nan_cols = df_info.least_nan_cols(nan_threshold)
+        least_nan_cols = dataset.least_nan_cols(nan_threshold)
 
         assert isinstance(least_nan_cols, set)
         assert least_nan_cols == expected_least_nan_cols
@@ -296,9 +296,9 @@ class Describe_Dataset:
         self, request, duplicated_cols_count, expected_contains_dupl_cols_bool
     ):
         df_duplicated_cols = DataFrameMock.df_duplicated_columns(duplicated_cols_count)
-        df_info = Dataset(df_object=df_duplicated_cols)
+        dataset = Dataset(df_object=df_duplicated_cols)
 
-        contains_duplicated_features = df_info.check_duplicated_features()
+        contains_duplicated_features = dataset.check_duplicated_features()
 
         assert isinstance(contains_duplicated_features, bool)
         assert contains_duplicated_features is expected_contains_dupl_cols_bool
@@ -371,8 +371,9 @@ class Describe_Dataset:
         details,
     ):
         df = DataFrameMock.df_generic(10)
-        df_info = Dataset(
-            df_object=df, metadata_cols=("metadata_num_col", "metadata_str_col"),
+        dataset = Dataset(
+            df_object=df,
+            metadata_cols=("metadata_num_col", "metadata_str_col"),
         )
         feat_op = FeatureOperation(
             original_columns=original_columns,
@@ -383,23 +384,23 @@ class Describe_Dataset:
             details=details,
         )
 
-        df_info.add_operation(feat_op)
+        dataset.add_operation(feat_op)
 
         for orig_column in original_columns:
             # Check if the operation is added to each column
-            assert feat_op in df_info.feature_elaborations[orig_column]
+            assert feat_op in dataset.feature_elaborations[orig_column]
         for deriv_column in derived_columns:
             # Check that the derived_columns are inserted in the derived_columns
             # attribute of Dataset instance
-            assert deriv_column in df_info.derived_columns
+            assert deriv_column in dataset.derived_columns
             # Check if the operation is added to each column
-            assert feat_op in df_info.feature_elaborations[deriv_column]
+            assert feat_op in dataset.feature_elaborations[deriv_column]
             # If original cols are all metadata_cols, check if they are
             # added to metadata_cols
-            if original_columns == ["metadata_num_col", "metadata_str_col"]:
-                assert deriv_column in df_info.metadata_cols
+            if original_columns == ["dataset", "metadata_str_col"]:
+                assert deriv_column in dataset.metadata_cols
 
-    def test_add_operation_on_previous_one(self, request, df_info_with_operations):
+    def test_add_operation_on_previous_one(self, request, dataset_with_operations):
         # Test `add_operation` method when some columns already have other previous
         # FeatureOperation instances associated
         origin_column = "fop_original_col_0"
@@ -413,24 +414,24 @@ class Describe_Dataset:
             details={"key_2": "value_2", "key_3": "value_3"},
         )
 
-        df_info_with_operations.add_operation(feat_op)
+        dataset_with_operations.add_operation(feat_op)
 
         # Check if the previous operations are still present
-        assert len(df_info_with_operations.feature_elaborations[origin_column]) == 6
+        assert len(dataset_with_operations.feature_elaborations[origin_column]) == 6
         assert (
             FeatureOperation(
                 OperationTypeEnum.BIN_SPLITTING,
                 original_columns=["fop_original_col_0", "fop_original_col_1"],
                 derived_columns=["fop_derived_col_0", "fop_derived_col_1"],
             )
-            in df_info_with_operations.feature_elaborations[origin_column]
+            in dataset_with_operations.feature_elaborations[origin_column]
         )
         # Check if the operation is added to each column
-        assert feat_op in df_info_with_operations.feature_elaborations[origin_column]
+        assert feat_op in dataset_with_operations.feature_elaborations[origin_column]
         # Check that they are inserted in derived cols attribute
-        assert deriv_column in df_info_with_operations.derived_columns
+        assert deriv_column in dataset_with_operations.derived_columns
         # Check if the operation is added to each column
-        assert feat_op in df_info_with_operations.feature_elaborations[deriv_column]
+        assert feat_op in dataset_with_operations.feature_elaborations[deriv_column]
 
     @pytest.mark.parametrize(
         "searched_feat_op, expected_found_feat_op",
@@ -528,7 +529,7 @@ class Describe_Dataset:
         ],
     )
     def test_find_operation_in_column(
-        self, request, searched_feat_op, expected_found_feat_op, df_info_with_operations
+        self, request, searched_feat_op, expected_found_feat_op, dataset_with_operations
     ):
         feat_op = FeatureOperation(
             original_columns=searched_feat_op["original_columns"],
@@ -547,28 +548,28 @@ class Describe_Dataset:
             details=expected_found_feat_op["details"],
         )
 
-        found_feat_operat = df_info_with_operations.find_operation_in_column(
+        found_feat_operat = dataset_with_operations.find_operation_in_column(
             feat_operation=feat_op
         )
 
         assert isinstance(found_feat_operat, FeatureOperation)
         assert found_feat_operat == expected_found_feat_op
 
-    def test_find_operation_in_column_not_found(self, request, df_info_with_operations):
+    def test_find_operation_in_column_not_found(self, request, dataset_with_operations):
         feat_op = FeatureOperation(
             original_columns=("fop_original_col_0",),
             derived_columns=("fop_derived_col_0",),
             operation_type=OperationTypeEnum.BIN_SPLITTING,
         )
 
-        found_feat_operat = df_info_with_operations.find_operation_in_column(
+        found_feat_operat = dataset_with_operations.find_operation_in_column(
             feat_operation=feat_op
         )
 
         assert found_feat_operat is None
 
     def test_find_operation_in_column_raise_error(
-        self, request, df_info_with_operations
+        self, request, dataset_with_operations
     ):
         feat_op = FeatureOperation(
             OperationTypeEnum.BIN_SPLITTING,
@@ -576,7 +577,7 @@ class Describe_Dataset:
             derived_columns=None,
         )
         with pytest.raises(MultipleOperationsFoundError) as err:
-            df_info_with_operations.find_operation_in_column(feat_operation=feat_op)
+            dataset_with_operations.find_operation_in_column(feat_operation=feat_op)
 
         assert isinstance(err.value, MultipleOperationsFoundError)
         assert (
@@ -598,12 +599,12 @@ class Describe_Dataset:
     )
     def test_get_enc_column_from_original_one_col_found(
         self,
-        df_info_with_operations,
+        dataset_with_operations,
         original_column,
         encoder,
         expected_encoded_columns,
     ):
-        encoded_columns = df_info_with_operations.get_enc_column_from_original(
+        encoded_columns = dataset_with_operations.get_enc_column_from_original(
             column_name=original_column, encoder=encoder
         )
 
@@ -619,19 +620,21 @@ class Describe_Dataset:
         ],
     )
     def test_get_enc_column_from_original_not_found(
-        self, df_info_with_operations, original_column,
+        self,
+        dataset_with_operations,
+        original_column,
     ):
-        encoded_columns = df_info_with_operations.get_enc_column_from_original(
+        encoded_columns = dataset_with_operations.get_enc_column_from_original(
             column_name=original_column, encoder=None
         )
 
         assert encoded_columns is None
 
     def test_get_enc_column_from_original_raise_multicolfound_error(
-        self, df_info_with_operations
+        self, dataset_with_operations
     ):
         with pytest.raises(MultipleOperationsFoundError) as err:
-            df_info_with_operations.get_enc_column_from_original(
+            dataset_with_operations.get_enc_column_from_original(
                 column_name="fop_original_col_0"
             )
 
@@ -655,12 +658,12 @@ class Describe_Dataset:
     )
     def test_get_original_from_enc_column_one_col_found(
         self,
-        df_info_with_operations,
+        dataset_with_operations,
         encoded_column,
         encoder,
         expected_original_columns,
     ):
-        original_columns = df_info_with_operations.get_original_from_enc_column(
+        original_columns = dataset_with_operations.get_original_from_enc_column(
             column_name=encoded_column, encoder=encoder
         )
 
@@ -676,19 +679,21 @@ class Describe_Dataset:
         ],
     )
     def test_get_original_from_enc_column_not_found(
-        self, df_info_with_operations, encoded_column,
+        self,
+        dataset_with_operations,
+        encoded_column,
     ):
-        original_columns = df_info_with_operations.get_original_from_enc_column(
+        original_columns = dataset_with_operations.get_original_from_enc_column(
             column_name=encoded_column, encoder=None
         )
 
         assert original_columns is None
 
     def test_get_original_from_enc_column_raise_multicolfound_error(
-        self, df_info_with_operations
+        self, dataset_with_operations
     ):
         with pytest.raises(MultipleOperationsFoundError) as err:
-            df_info_with_operations.get_original_from_enc_column(
+            dataset_with_operations.get_original_from_enc_column(
                 column_name="fop_derived_col_0"
             )
 
@@ -814,26 +819,26 @@ def test_split_columns_by_type_parallel(request):
     )
 
 
-def test_copy_df_info_with_new_df(df_info_with_operations):
+def test_copy_dataset_with_new_df(dataset_with_operations):
     new_df = DataFrameMock.df_generic(10)
 
-    new_df_info = copy_df_info_with_new_df(
-        df_info=df_info_with_operations, new_pandas_df=new_df
+    new_dataset = copy_dataset_with_new_df(
+        dataset=dataset_with_operations, new_pandas_df=new_df
     )
 
-    assert isinstance(new_df_info, Dataset)
-    conserved_attributes = new_df_info.__dict__.keys() - {"df"}
+    assert isinstance(new_dataset, Dataset)
+    conserved_attributes = new_dataset.__dict__.keys() - {"df"}
     for k in conserved_attributes:
-        assert new_df_info.__dict__[k] == df_info_with_operations.__dict__[k]
-    assert new_df_info.df.equals(new_df)
+        assert new_dataset.__dict__[k] == dataset_with_operations.__dict__[k]
+    assert new_dataset.df.equals(new_df)
 
 
-def test_copy_df_info_with_new_df_log_warning(caplog, df_info_with_operations):
+def test_copy_dataset_with_new_df_log_warning(caplog, dataset_with_operations):
     new_df = DataFrameMock.df_generic(10)
     reduced_new_df = new_df.drop(["exam_num_col_0"], axis=1)
 
-    copy_df_info_with_new_df(
-        df_info=df_info_with_operations, new_pandas_df=reduced_new_df
+    copy_dataset_with_new_df(
+        dataset=dataset_with_operations, new_pandas_df=reduced_new_df
     )
 
     assert caplog.record_tuples == [
@@ -847,28 +852,28 @@ def test_copy_df_info_with_new_df_log_warning(caplog, df_info_with_operations):
     ]
 
 
-def test_to_file(df_info_with_operations, tmpdir):
+def test_to_file(dataset_with_operations, tmpdir):
     filename = tmpdir.join("export_raise_fileexistserr")
 
-    df_info_with_operations.to_file(filename)
+    dataset_with_operations.to_file(filename)
 
     my_shelf = shelve.open(str(filename))
     assert len(my_shelf.keys()) == 1
-    exported_df_info = list(my_shelf.values())[0]
+    exported_dataset = list(my_shelf.values())[0]
     my_shelf.close()
-    assert isinstance(exported_df_info, Dataset)
+    assert isinstance(exported_dataset, Dataset)
     # This is to identify attribute errors easier
-    conserved_attributes = exported_df_info.__dict__.keys() - {"df"}
+    conserved_attributes = exported_dataset.__dict__.keys() - {"df"}
     for k in conserved_attributes:
-        assert exported_df_info.__dict__[k] == df_info_with_operations.__dict__[k]
-    assert exported_df_info.df.equals(df_info_with_operations.df)
+        assert exported_dataset.__dict__[k] == dataset_with_operations.__dict__[k]
+    assert exported_dataset.df.equals(dataset_with_operations.df)
 
 
-def test_to_file_raise_fileexistserror(df_info_with_operations, create_generic_file):
+def test_to_file_raise_fileexistserror(dataset_with_operations, create_generic_file):
     filename = create_generic_file
 
     with pytest.raises(FileExistsError) as err:
-        df_info_with_operations.to_file(filename)
+        dataset_with_operations.to_file(filename)
 
     assert isinstance(err.value, FileExistsError)
     assert (
@@ -878,20 +883,20 @@ def test_to_file_raise_fileexistserror(df_info_with_operations, create_generic_f
     )
 
 
-def test_read_file(export_df_info_with_operations_to_file_fixture):
+def test_read_file(export_dataset_with_operations_to_file_fixture):
     (
-        expected_imported_df_info,
-        exported_df_info_path,
-    ) = export_df_info_with_operations_to_file_fixture
+        expected_imported_dataset,
+        exported_dataset_path,
+    ) = export_dataset_with_operations_to_file_fixture
 
-    imported_df_info = read_file(exported_df_info_path)
+    imported_dataset = read_file(exported_dataset_path)
 
-    assert isinstance(imported_df_info, Dataset)
+    assert isinstance(imported_dataset, Dataset)
     # This is to identify attribute errors easier
-    conserved_attributes = imported_df_info.__dict__.keys() - {"df"}
+    conserved_attributes = imported_dataset.__dict__.keys() - {"df"}
     for k in conserved_attributes:
-        assert imported_df_info.__dict__[k] == expected_imported_df_info.__dict__[k]
-    assert imported_df_info.df.equals(expected_imported_df_info.df)
+        assert imported_dataset.__dict__[k] == expected_imported_dataset.__dict__[k]
+    assert imported_dataset.df.equals(expected_imported_dataset.df)
 
 
 def test_read_file_raise_notshelvefileerror(create_generic_file):
@@ -979,7 +984,7 @@ def create_generic_shelve_file(tmpdir) -> Path:
 
 
 @pytest.fixture(scope="function")
-def df_info_with_operations() -> Dataset:
+def dataset_with_operations() -> Dataset:
     """
     Create Dataset instance with not empty ``feature_elaborations`` attribute.
 
@@ -992,7 +997,7 @@ def df_info_with_operations() -> Dataset:
         Dataset instance containing FeatureOperation instances
         in the `feature_elaborations` attribute
     """
-    df_info = Dataset(df_object=DataFrameMock.df_generic(10))
+    dataset = Dataset(df_object=DataFrameMock.df_generic(10))
 
     feat_operat_list = [
         FeatureOperation(
@@ -1041,37 +1046,37 @@ def df_info_with_operations() -> Dataset:
     ]
     for feat_op in feat_operat_list:
         for orig_col in feat_op.original_columns:
-            df_info.feature_elaborations[orig_col].append(feat_op)
+            dataset.feature_elaborations[orig_col].append(feat_op)
 
         for der_col in feat_op.derived_columns:
-            df_info.feature_elaborations[der_col].append(feat_op)
+            dataset.feature_elaborations[der_col].append(feat_op)
 
-    return df_info
+    return dataset
 
 
 @pytest.fixture
-def export_df_info_with_operations_to_file_fixture(
-    df_info_with_operations, tmpdir
+def export_dataset_with_operations_to_file_fixture(
+    dataset_with_operations, tmpdir
 ) -> Tuple[Dataset, Path]:
     """
     Export a Dataset instance to a file.
 
-    The Dataset instance is created by the fixture ``df_info_with_operations``
-    and it is exported using "shelve" module to a file named ``exported_df_info_ops_fixture`` inside
+    The Dataset instance is created by the fixture ``dataset_with_operations``
+    and it is exported using "shelve" module to a file named ``exported_dataset_ops_fixture`` inside
     the folder returned by the fixture ``tmpdir``.
 
     Returns
     -------
     Dataset
-        Dataset instance (created by ``df_info_with_operations`` fixture)
+        Dataset instance (created by ``dataset_with_operations`` fixture)
         that is exported to the file
     Path
         Path of the directory where the Dataset instance is saved
 
     """
-    exported_df_info_path = tmpdir / "exported_df_info_ops_fixture"
-    my_shelf = shelve.open(str(exported_df_info_path), "n")
-    my_shelf["df_info"] = df_info_with_operations
+    exported_dataset_path = tmpdir / "exported_dataset_ops_fixture"
+    my_shelf = shelve.open(str(exported_dataset_path), "n")
+    my_shelf["dataset"] = dataset_with_operations
     my_shelf.close()
 
-    return df_info_with_operations, exported_df_info_path
+    return dataset_with_operations, exported_dataset_path
