@@ -49,7 +49,7 @@ class FeatureOperation:
         details: Union[Dict, None] = None,
     ):
         """
-        Model to store the operations executed on a DataFrameWithInfo instance
+        Model to store the operations executed on a Dataset instance
 
         Parameters
         ----------

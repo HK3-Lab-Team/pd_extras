@@ -3,7 +3,7 @@ class MultipleOperationsFoundError(Exception):
     Exception raised when multiple operations are found when looking for a specific one.
 
     This exception is usually raised when the user looks into a
-    DataFrameWithInfo instance to find a specific FeatureOperation instance
+    Dataset instance to find a specific FeatureOperation instance
     (stored in the "feature_elaborations" argument), but too many attributes are
     left unspecified (set to None).
     """
@@ -16,7 +16,7 @@ class MultipleObjectsInFileError(Exception):
     Exception raised when multiple Python objects are found in the same file.
 
     This exception is usually raised when the file read by "shelve" package contains
-    multiple instances of DataFrameWithInfo (or other Python objects).
+    multiple instances of Dataset (or other Python objects).
     """
 
     pass

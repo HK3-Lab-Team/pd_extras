@@ -6,11 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-from .dataframe_with_info import (
-    DataFrameWithInfo,
-    FeatureOperation,
-    copy_df_info_with_new_df,
-)
+from .dataset import Dataset, FeatureOperation, copy_df_info_with_new_df
 from .feature_enum import ENCODED_COLUMN_SUFFIX, EncodingFunctions, OperationTypeEnum
 
 logger = logging.getLogger(__name__)
@@ -33,12 +29,10 @@ def convert_maps_from_tuple_to_str(group_id_to_tuple_map):
     return gr_id_to_string_map
 
 
-def split_continuous_column_into_bins(
-    df_info: DataFrameWithInfo, col_name, bin_threshold
-):
+def split_continuous_column_into_bins(df_info: Dataset, col_name, bin_threshold):
     """
     This function adds a column to DataFrame df_info called "[col_name]_bin_id" where we split the "col_name" into bins
-    :param df_info: DataFrameWithInfo -> DataFrameWithInfo instance containing the 'col_name' column to split
+    :param df_info: Dataset -> Dataset instance containing the 'col_name' column to split
     :param col_name: String -> Name of the column to be split into discrete intervals
     :param bin_threshold: List -> It contains the thresholds used to separate different groups
                                   (the threshold will be included in the bin with higher values)
@@ -98,8 +92,8 @@ def split_continuous_column_into_bins(
 
 
 def combine_categorical_columns_to_one(
-    df_info: DataFrameWithInfo, columns_list: Tuple[str], include_nan: bool = False
-) -> Tuple[DataFrameWithInfo, str]:
+    df_info: Dataset, columns_list: Tuple[str], include_nan: bool = False
+) -> Tuple[Dataset, str]:
     """
     This function generates and indexes the possible permutations of the unique values
     of the column list "col_names".
@@ -110,13 +104,13 @@ def combine_categorical_columns_to_one(
 
     Parameters
     ----------
-    df_info: DataFrameWithInfo
+    df_info: Dataset
     columns_list: Tuple[str]
     include_nan: bool
 
     Returns
     -------
-    df_info: DataFrameWithInfo
+    df_info: Dataset
         Same "df" passed with a new column that is the combination
         of "col_names" (separated by "-" and with suffix BIN_ID_COL_SUFFIX)
     new_column_name: str
@@ -263,7 +257,7 @@ def _ordinal_encode_column(df, column, drop_old_column: bool = False):
 
 
 def encode_single_categorical_column(
-    df_info: DataFrameWithInfo,
+    df_info: Dataset,
     col_name: str,
     encoding: EncodingFunctions = EncodingFunctions.ORDINAL,
     drop_one_new_column: bool = True,
@@ -284,7 +278,7 @@ def encode_single_categorical_column(
 
     Parameters
     ----------
-    df_info: DataFrameWithInfo
+    df_info: Dataset
     col_name
     encoding
     drop_one_new_column
@@ -368,7 +362,7 @@ def encode_single_categorical_column(
 
 
 def encode_multi_categorical_columns(
-    df_info: DataFrameWithInfo,
+    df_info: Dataset,
     columns: Tuple = None,
     encoding: EncodingFunctions = EncodingFunctions.ORDINAL,
     drop_one_new_column: bool = True,
@@ -415,9 +409,7 @@ def encode_multi_categorical_columns(
     return df_info
 
 
-def convert_features_from_bool_to_binary(
-    df_info: DataFrameWithInfo, col_names: Tuple = None
-):
+def convert_features_from_bool_to_binary(df_info: Dataset, col_names: Tuple = None):
     """
     Converting the boolean features from col_names argument
     @param df_info:
@@ -442,9 +434,7 @@ def convert_features_from_bool_to_binary(
     return df_info
 
 
-def make_categorical_columns_multiple_combinations(
-    df_info: DataFrameWithInfo, col_names
-):
+def make_categorical_columns_multiple_combinations(df_info: Dataset, col_names):
     """
     This function selects a number N of column from 1 to len(col_names).
     Then it combines the unique values of the first N columns from col_names in order to
@@ -457,7 +447,7 @@ def make_categorical_columns_multiple_combinations(
     So each level will define many different groups (defined by a different combination of the
     possible values of one or more partition cols)
 
-    @param df_input: DataFrameWithInfo containing the df
+    @param df_input: Dataset containing the df
     @param col_names: List of columns that will be combined to each other
     :return: pd.DataFrame -> DataFrame with new columns with group IDs for different partitioning levels
              Dict[Dict[Tuple]] -> This contains:

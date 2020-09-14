@@ -210,7 +210,7 @@ class ColumnListByType:
         )
 
 
-class DataFrameWithInfo:
+class Dataset:
     def __init__(
         self,
         metadata_cols: Tuple = (),
@@ -223,7 +223,7 @@ class DataFrameWithInfo:
         ] = None,
     ):
         """
-        Class containing useful methods and attributes related to the DataFrame.
+        Class containing useful methods and attributes related to the Dataset.
 
         It also keeps track of the operations performed on DataFrame, and returns
         subgroups of columns split by type.
@@ -696,7 +696,7 @@ class DataFrameWithInfo:
         Returns
         -------
         FeatureOperation
-            FeatureOperation instance that has been performed on the DataFrameWithInfo
+            FeatureOperation instance that has been performed on the Dataset
             instance, and that has the same specified attributes of ``feat_operation``.
             If no operation similar to ``feat_operation`` is found, None is returned.
             If more than one operation similar to ``feat_operation`` is found,
@@ -842,10 +842,10 @@ class DataFrameWithInfo:
 
     def to_file(self, filename: Union[Path, str], overwrite: bool = False) -> None:
         """
-        Export DataFrameWithInfo instance to ``filename``
+        Export Dataset instance to ``filename``
 
         This function uses "shelve" module that creates 3 files containing only
-        the DataFrameWithInfo object.
+        the Dataset object.
 
         Parameters
         ----------
@@ -906,33 +906,33 @@ class DataFrameWithInfo:
 
 
 def copy_df_info_with_new_df(
-    df_info: DataFrameWithInfo, new_pandas_df: pd.DataFrame
-) -> DataFrameWithInfo:
+    df_info: Dataset, new_pandas_df: pd.DataFrame
+) -> Dataset:
     """
-    Copy a DataFrameWithInfo instance using "shallow_copy"
+    Copy a Dataset instance using "shallow_copy"
 
-    Every attribute of the DataFrameWithInfo instance will be kept, except for ``df``
+    Every attribute of the Dataset instance will be kept, except for ``df``
     attribute that is replaced by ``new_pandas_df``.
     Use this carefully to avoid keeping information of previous operation
     associated with columns that are no longer present.
 
     Parameters
     ----------
-    df_info: DataFrameWithInfo
-        DataFrameWithInfo instance that will be copied
+    df_info: Dataset
+        Dataset instance that will be copied
     new_pandas_df: pd.DataFrame
         Pandas DataFrame instance that contains the new values of ``df`` attribute
-        of the new DataFrameWithInfo instance
+        of the new Dataset instance
 
     Returns
     -------
-    DataFrameWithInfo
-        DataFrameWithInfo instance with same attribute values as ``df_info`` argument,
+    Dataset
+        Dataset instance with same attribute values as ``df_info`` argument,
         but with ``new_pandas_df`` used as ``df`` attribute value.
     """
     if not set(df_info.df.columns).issubset(new_pandas_df.columns):
         logging.warning(
-            "Some columns of the previous DataFrameWithInfo instance "
+            "Some columns of the previous Dataset instance "
             "are being lost, but information about operation on them "
             "is still present"
         )
@@ -941,12 +941,12 @@ def copy_df_info_with_new_df(
     return new_df_info
 
 
-def read_file(filename: Union[Path, str]) -> DataFrameWithInfo:
+def read_file(filename: Union[Path, str]) -> Dataset:
     """
-    Import a DataFrameWithInfo instance stored inside ``filename`` file.
+    Import a Dataset instance stored inside ``filename`` file.
 
     This function uses 'shelve' module and it expects to find 3 files with
-    suffixes ".dat", ".bak", ".dir" that contain only one DataFrameWithInfo
+    suffixes ".dat", ".bak", ".dir" that contain only one Dataset
     instance.
 
     Parameters
@@ -956,13 +956,13 @@ def read_file(filename: Union[Path, str]) -> DataFrameWithInfo:
 
     Returns
     -------
-    DataFrameWithInfo
-        DataFrameWithInfo instance that was saved in ``filename`` path.
+    Dataset
+        Dataset instance that was saved in ``filename`` path.
 
     Raises
     ------
     TypeError
-        If no DataFrameWithInfo instances were found inside the ``filename`` file.
+        If no Dataset instances were found inside the ``filename`` file.
     MultipleObjectsInFileError
         If multiple objects were found inside the ``filename`` file.
     """
@@ -983,10 +983,10 @@ def read_file(filename: Union[Path, str]) -> DataFrameWithInfo:
         # Retrieve the single object
         df_info = list(my_shelf.values())[0]
 
-        # Check if the object is a DataFrameWithInfo instance
-        if not isinstance(df_info, DataFrameWithInfo):
+        # Check if the object is a Dataset instance
+        if not isinstance(df_info, Dataset):
             raise TypeError(
-                f"The object is not a DataFrameWithInfo "
+                f"The object is not a Dataset "
                 f"instance, but it is {df_info.__class__}"
             )
         my_shelf.close()

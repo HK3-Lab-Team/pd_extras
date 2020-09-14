@@ -6,9 +6,9 @@ from typing import Tuple
 import pandas as pd
 import pytest
 
-from trousse.dataframe_with_info import (
+from trousse.dataset import (
     ColumnListByType,
-    DataFrameWithInfo,
+    Dataset,
     FeatureOperation,
     _find_samples_by_type,
     _find_single_column_type,
@@ -20,12 +20,12 @@ from trousse.dataframe_with_info import (
 from trousse.exceptions import MultipleOperationsFoundError, NotShelveFileError
 from trousse.feature_enum import EncodingFunctions, OperationTypeEnum
 
-from ..dataframewithinfo_util import DataFrameMock, SeriesMock
+from ..dataset_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
 from ..fixtures import CSV
 
 
-class Describe_DataFrameWithInfo:
+class Describe_Dataset:
     @pytest.mark.parametrize(
         "nan_ratio, n_columns, expected_many_nan_columns",
         [
@@ -52,9 +52,7 @@ class Describe_DataFrameWithInfo:
         self, request, nan_ratio, n_columns, expected_many_nan_columns
     ):
         df = DataFrameMock.df_many_nans(nan_ratio, n_columns)
-        df_info = DataFrameWithInfo(
-            df_object=df, nan_percentage_threshold=nan_ratio - 0.01
-        )
+        df_info = Dataset(df_object=df, nan_percentage_threshold=nan_ratio - 0.01)
 
         many_nan_columns = df_info.many_nan_columns
 
@@ -68,7 +66,7 @@ class Describe_DataFrameWithInfo:
     )
     def test_same_value_columns(self, request, n_columns, expected_same_value_columns):
         df = DataFrameMock.df_same_value(n_columns)
-        df_info = DataFrameWithInfo(df_object=df)
+        df_info = Dataset(df_object=df)
 
         same_value_columns = df_info.same_value_cols
 
@@ -86,7 +84,7 @@ class Describe_DataFrameWithInfo:
     )
     def test_trivial_columns(self, request, n_columns, expected_trivial_columns):
         df = DataFrameMock.df_trivial(n_columns)
-        df_info = DataFrameWithInfo(df_object=df)
+        df_info = Dataset(df_object=df)
 
         trivial_columns = df_info.trivial_columns
 
@@ -154,7 +152,7 @@ class Describe_DataFrameWithInfo:
     )
     def test_get_categorical_cols(self, request, sample_size, expected_categ_cols):
         df_categ = DataFrameMock.df_categorical_cols(sample_size)
-        df_info = DataFrameWithInfo(df_object=df_categ)
+        df_info = Dataset(df_object=df_categ)
 
         categ_cols = df_info._get_categorical_cols(col_list=df_categ.columns)
 
@@ -222,7 +220,7 @@ class Describe_DataFrameWithInfo:
     )
     def test_column_list_by_type(self, metadata_as_features, expected_column_list_type):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
-        df_info = DataFrameWithInfo(
+        df_info = Dataset(
             df_object=df_multi_type,
             metadata_cols=("metadata_num_col",),
             metadata_as_features=metadata_as_features,
@@ -261,7 +259,7 @@ class Describe_DataFrameWithInfo:
     )
     def test_med_exam_col_list(self, metadata_as_features, expected_med_exam_col_list):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
-        df_info = DataFrameWithInfo(
+        df_info = Dataset(
             df_object=df_multi_type,
             metadata_cols=("metadata_num_col",),
             metadata_as_features=metadata_as_features,
@@ -283,7 +281,7 @@ class Describe_DataFrameWithInfo:
     )
     def test_least_nan_cols(self, request, nan_threshold, expected_least_nan_cols):
         df_multi_type = DataFrameMock.df_multi_nan_ratio(sample_size=200)
-        df_info = DataFrameWithInfo(df_object=df_multi_type)
+        df_info = Dataset(df_object=df_multi_type)
 
         least_nan_cols = df_info.least_nan_cols(nan_threshold)
 
@@ -298,7 +296,7 @@ class Describe_DataFrameWithInfo:
         self, request, duplicated_cols_count, expected_contains_dupl_cols_bool
     ):
         df_duplicated_cols = DataFrameMock.df_duplicated_columns(duplicated_cols_count)
-        df_info = DataFrameWithInfo(df_object=df_duplicated_cols)
+        df_info = Dataset(df_object=df_duplicated_cols)
 
         contains_duplicated_features = df_info.check_duplicated_features()
 
@@ -373,7 +371,7 @@ class Describe_DataFrameWithInfo:
         details,
     ):
         df = DataFrameMock.df_generic(10)
-        df_info = DataFrameWithInfo(
+        df_info = Dataset(
             df_object=df, metadata_cols=("metadata_num_col", "metadata_str_col"),
         )
         feat_op = FeatureOperation(
@@ -392,7 +390,7 @@ class Describe_DataFrameWithInfo:
             assert feat_op in df_info.feature_elaborations[orig_column]
         for deriv_column in derived_columns:
             # Check that the derived_columns are inserted in the derived_columns
-            # attribute of DataFrameWithInfo instance
+            # attribute of Dataset instance
             assert deriv_column in df_info.derived_columns
             # Check if the operation is added to each column
             assert feat_op in df_info.feature_elaborations[deriv_column]
@@ -823,7 +821,7 @@ def test_copy_df_info_with_new_df(df_info_with_operations):
         df_info=df_info_with_operations, new_pandas_df=new_df
     )
 
-    assert isinstance(new_df_info, DataFrameWithInfo)
+    assert isinstance(new_df_info, Dataset)
     conserved_attributes = new_df_info.__dict__.keys() - {"df"}
     for k in conserved_attributes:
         assert new_df_info.__dict__[k] == df_info_with_operations.__dict__[k]
@@ -842,7 +840,7 @@ def test_copy_df_info_with_new_df_log_warning(caplog, df_info_with_operations):
         (
             "root",
             logging.WARNING,
-            "Some columns of the previous DataFrameWithInfo instance "
+            "Some columns of the previous Dataset instance "
             + "are being lost, but information about operation on them "
             + "is still present",
         )
@@ -858,7 +856,7 @@ def test_to_file(df_info_with_operations, tmpdir):
     assert len(my_shelf.keys()) == 1
     exported_df_info = list(my_shelf.values())[0]
     my_shelf.close()
-    assert isinstance(exported_df_info, DataFrameWithInfo)
+    assert isinstance(exported_df_info, Dataset)
     # This is to identify attribute errors easier
     conserved_attributes = exported_df_info.__dict__.keys() - {"df"}
     for k in conserved_attributes:
@@ -888,7 +886,7 @@ def test_read_file(export_df_info_with_operations_to_file_fixture):
 
     imported_df_info = read_file(exported_df_info_path)
 
-    assert isinstance(imported_df_info, DataFrameWithInfo)
+    assert isinstance(imported_df_info, Dataset)
     # This is to identify attribute errors easier
     conserved_attributes = imported_df_info.__dict__.keys() - {"df"}
     for k in conserved_attributes:
@@ -912,9 +910,8 @@ def test_read_file_raise_typeerror(create_generic_shelve_file):
         read_file(create_generic_shelve_file)
 
     assert isinstance(err.value, TypeError)
-    assert (
-        "The object is not a DataFrameWithInfo instance, but it is <class 'str'>"
-        == str(err.value)
+    assert "The object is not a Dataset instance, but it is <class 'str'>" == str(
+        err.value
     )
 
 
@@ -982,20 +979,20 @@ def create_generic_shelve_file(tmpdir) -> Path:
 
 
 @pytest.fixture(scope="function")
-def df_info_with_operations() -> DataFrameWithInfo:
+def df_info_with_operations() -> Dataset:
     """
-    Create DataFrameWithInfo instance with not empty ``feature_elaborations`` attribute.
+    Create Dataset instance with not empty ``feature_elaborations`` attribute.
 
-    The returned DataFrameWithInfo will have ``feature_elaborations`` attribute
+    The returned Dataset will have ``feature_elaborations`` attribute
     initialized with ``feature_elaborations`` argument.
 
     Returns
     -------
-    DataFrameWithInfo
-        DataFrameWithInfo instance containing FeatureOperation instances
+    Dataset
+        Dataset instance containing FeatureOperation instances
         in the `feature_elaborations` attribute
     """
-    df_info = DataFrameWithInfo(df_object=DataFrameMock.df_generic(10))
+    df_info = Dataset(df_object=DataFrameMock.df_generic(10))
 
     feat_operat_list = [
         FeatureOperation(
@@ -1055,21 +1052,21 @@ def df_info_with_operations() -> DataFrameWithInfo:
 @pytest.fixture
 def export_df_info_with_operations_to_file_fixture(
     df_info_with_operations, tmpdir
-) -> Tuple[DataFrameWithInfo, Path]:
+) -> Tuple[Dataset, Path]:
     """
-    Export a DataFrameWithInfo instance to a file.
+    Export a Dataset instance to a file.
 
-    The DataFrameWithInfo instance is created by the fixture ``df_info_with_operations``
+    The Dataset instance is created by the fixture ``df_info_with_operations``
     and it is exported using "shelve" module to a file named ``exported_df_info_ops_fixture`` inside
     the folder returned by the fixture ``tmpdir``.
 
     Returns
     -------
-    DataFrameWithInfo
-        DataFrameWithInfo instance (created by ``df_info_with_operations`` fixture)
+    Dataset
+        Dataset instance (created by ``df_info_with_operations`` fixture)
         that is exported to the file
     Path
-        Path of the directory where the DataFrameWithInfo instance is saved
+        Path of the directory where the Dataset instance is saved
 
     """
     exported_df_info_path = tmpdir / "exported_df_info_ops_fixture"

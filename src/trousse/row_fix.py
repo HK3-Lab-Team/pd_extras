@@ -5,26 +5,30 @@ from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 
-from .dataframe_with_info import DataFrameWithInfo, copy_df_info_with_new_df
+from .dataset import Dataset, copy_df_info_with_new_df
 from .settings import (
-    CHAR_REPLACE_DICT, NAN_VALUE, NOT_NA_STRING_COL_THRESHOLD, PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
-    WHOLE_WORD_REPLACE_DICT)
+    CHAR_REPLACE_DICT,
+    NAN_VALUE,
+    NOT_NA_STRING_COL_THRESHOLD,
+    PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
+    WHOLE_WORD_REPLACE_DICT,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def _check_numeric_cols(df_info: DataFrameWithInfo, col_list: Tuple):
+def _check_numeric_cols(df_info: Dataset, col_list: Tuple):
     """
     This is to correct those columns that have mixed/string-only types containing numerical values.
     It will check if the ratio between numeric values (or convertible to ones) and the total count of
     not-NaN values is more than NOT_NA_STRING_COL_THRESHOLD (defined in feature_enum.py)
     Parameters
     ----------
-    df_info: DataFrameWithInfo
+    df_info: Dataset
 
     Returns
     -------
-    df_info: DataFrameWithInfo
+    df_info: Dataset
     """
     numeric_cols = []
     for col in col_list:
@@ -171,12 +175,12 @@ class RowFix:
             return NAN_VALUE
 
     def fix_typos(
-        self, df_info: DataFrameWithInfo, column_list: Tuple = (), verbose: int = 0
-    ) -> DataFrameWithInfo:
+        self, df_info: Dataset, column_list: Tuple = (), verbose: int = 0
+    ) -> Dataset:
         """ This function is to fix the common errors in the columns "column_list"
         of the pd.DataFrame 'df'
 
-        @param df_info: DataFrameWithInfo
+        @param df_info: Dataset
         @param column_list: List of columns that need fixes
         @param verbose: 0 -> No message displayed 1 -> to show performance,
             2 -> to show actual unique errors per column. Default set to 0
@@ -211,9 +215,7 @@ class RowFix:
 
         return copy_df_info_with_new_df(df_info=df_info, new_pandas_df=df_converted)
 
-    def cols_to_correct_dtype(
-        self, df_info: DataFrameWithInfo, verbose: int = 0
-    ) -> DataFrameWithInfo:
+    def cols_to_correct_dtype(self, df_info: Dataset, verbose: int = 0) -> Dataset:
         cols_by_type = df_info.column_list_by_type
 
         float_cols = set()
@@ -248,11 +250,8 @@ class RowFix:
         return df_info
 
     def fix_common_errors(
-        self,
-        df_info: DataFrameWithInfo,
-        set_to_correct_dtype: bool = True,
-        verbose: int = 0,
-    ) -> DataFrameWithInfo:
+        self, df_info: Dataset, set_to_correct_dtype: bool = True, verbose: int = 0,
+    ) -> Dataset:
         """ This function is to fix the common errors in the columns "column_list"
         of the pd.DataFrame 'df'.
         We try to fix:
@@ -262,7 +261,7 @@ class RowFix:
         convertible values they contain)
             b. convert the numerical columns as for mixed columns
 
-        @param df_info: DataFrameWithInfo
+        @param df_info: Dataset
         @param set_to_correct_dtype: Bool -> Option to choose whether to format every feature
             (int, float, bool columns) to appropriate dtype
         @param verbose: 0 -> No message displayed 1 -> to show performance,
