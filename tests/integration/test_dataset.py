@@ -753,6 +753,33 @@ class Describe_Dataset:
             in str(err.value)
         )
 
+    def test_to_be_fixed_cols():
+        df = DataFrameMock.df_multi_type(10)
+        dataset = Dataset(df_object=df)
+
+        to_be_fixed_cols = dataset.to_be_fixed_cols
+
+        assert type(to_be_fixed_cols) == set
+        assert len(to_be_fixed_cols) == 1
+        assert to_be_fixed_cols == {"mixed_type_col"}
+
+    @pytest.mark.parametrize(
+        "col_id_list, expected_columns_name",
+        [
+            ([0, 1, 2], {"string_col", "bool_col", "metadata_num_col"}),
+            ([0], {"metadata_num_col"}),
+            ([], set()),
+        ],
+    )
+    def test_convert_column_id_to_name(self, col_id_list, expected_columns_name):
+        df = DataFrameMock.df_multi_type(10)
+        dataset = Dataset(df_object=df)
+
+        columns_name = dataset.convert_column_id_to_name(col_id_list)
+
+        assert type(columns_name)
+        assert columns_name == expected_columns_name
+
 
 class Describe_FeatureOperation:
     @pytest.mark.parametrize(
@@ -986,17 +1013,6 @@ def test_df_from_csv_notfound():
     df = get_df_from_csv(csv_path)
 
     assert df is None
-
-
-def test_to_be_fixed_cols():
-    df = DataFrameMock.df_multi_type(10)
-    dataset = Dataset(df_object=df)
-
-    to_be_fixed_cols = dataset.to_be_fixed_cols
-
-    assert type(to_be_fixed_cols) == set
-    assert len(to_be_fixed_cols) == 1
-    assert to_be_fixed_cols == {"mixed_type_col"}
 
 
 # ====================
