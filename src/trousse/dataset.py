@@ -264,11 +264,11 @@ class Dataset:
         else:
             self.df = df_object
 
-        self.metadata_cols = set(metadata_cols)
+        self._metadata_cols = set(metadata_cols)
         if feature_cols is None:
-            self.feature_cols = set(self.df.columns) - self.metadata_cols
+            self._feature_cols = set(self.df.columns) - self.metadata_cols
         else:
-            self.feature_cols = set(feature_cols)
+            self._feature_cols = set(feature_cols)
         self.nan_percentage_threshold = nan_percentage_threshold
 
         # Dict of Lists ->
@@ -285,6 +285,28 @@ class Dataset:
     # =====================
     # =    PROPERTIES     =
     # =====================
+
+    @property
+    def metadata_cols(self) -> Set[str]:
+        """Return columns representing metadata
+
+        Returns
+        -------
+        Set[str]
+            Metadata columns
+        """
+        return self._metadata_cols
+
+    @property
+    def feature_cols(self) -> Set[str]:
+        """Return columns representing features
+
+        Returns
+        -------
+        Set[str]
+            Feature columns
+        """
+        return self._feature_cols
 
     @property
     def many_nan_columns(self) -> Set[str]:
@@ -661,7 +683,7 @@ class Dataset:
             # derived_columns is also derived by metadata_cols only and therefore
             # must be inserted in metadata_cols set, too
             if is_metadata_cols:
-                self.metadata_cols = self.metadata_cols.union(
+                self._metadata_cols = self.metadata_cols.union(
                     set(feature_operation.derived_columns)
                 )
             # Add the derived columns to the list of the instance
