@@ -78,8 +78,16 @@ def eq_featureoperation_combs():
     ):
         # Unpack tuples from itertools
         op_type_1, op_type_2, is_op_type_equal = op_type_tuple
-        orig_column_1, orig_column_2, is_orig_column_equal, = orig_column_tuple
-        deriv_column_1, deriv_column_2, is_deriv_column_equal, = deriv_column_tuple
+        (
+            orig_column_1,
+            orig_column_2,
+            is_orig_column_equal,
+        ) = orig_column_tuple
+        (
+            deriv_column_1,
+            deriv_column_2,
+            is_deriv_column_equal,
+        ) = deriv_column_tuple
         encoder_1, encoder_2, is_encoder_equal = encoder_tuple
 
         is_equal_label = (
