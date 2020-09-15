@@ -343,19 +343,9 @@ class Dataset:
         Set[str]
             Set of column names with only one repeated value
         """
-<<<<<<< 2aa1fa88d84a110178902dad4a495682399fe283
-        same_value_columns = set()
-        for c in self.feature_cols:
-            # Check number of unique values
-            if len(self.df[c].unique()) == 1:
-                same_value_columns.add(c)
-=======
-        df_constant = self.df.loc[
-            :, self.df.apply(pd.Series.nunique, dropna=False) == 1
-        ]
->>>>>>> Refactor 'same_value_cols' property of Dataset in 'constant_cols'
-
-        return set(df_constant.columns)
+        df_nunique = self.df[features].nunique(dropna=False)
+        constant_cols = df_nunique[df_nunique == 1].index
+        return set(constant_cols)
 
     @property
     def trivial_columns(self) -> Set[str]:
@@ -392,15 +382,8 @@ class Dataset:
 
         # TODO: Exclude NaN columns (self.nan_cols) from `col_list` too (so they will
         #  not be included in num_categorical_cols just for one not-Nan value)
-<<<<<<< 2aa1fa88d84a110178902dad4a495682399fe283
 
         col_list = self.feature_cols - same_value_cols
-=======
-        if self.metadata_as_features:
-            col_list = set(self.df.columns) - constant_cols
-        else:
-            col_list = set(self.df.columns) - constant_cols - self.metadata_cols
->>>>>>> Refactor 'same_value_cols' property of Dataset in 'constant_cols'
 
         (
             mixed_type_cols,
