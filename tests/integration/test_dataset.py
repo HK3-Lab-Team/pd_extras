@@ -160,16 +160,44 @@ class Describe_Dataset:
         assert categ_cols == expected_categ_cols
 
     @pytest.mark.parametrize(
-        "metadata_as_features, expected_column_list_type",
+        "feature_cols, expected_column_list_type",
         [
             (
-                True,
+                {"metadata_num_col"},
+                ColumnListByType(
+                    mixed_type_cols=set(),
+                    same_value_cols=set(),
+                    numerical_cols={
+                        "metadata_num_col",
+                    },
+                    med_exam_col_list={
+                        "metadata_num_col",
+                    },
+                    str_cols=set(),
+                    str_categorical_cols=set(),
+                    num_categorical_cols=set(),
+                    other_cols=set(),
+                    bool_cols=set(),
+                ),
+            ),
+            (
+                {
+                    "metadata_num_col",
+                    "mixed_type_col",
+                    "same_col",
+                    "numerical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                    "string_col",
+                    "str_categorical_col",
+                    "datetime_col",
+                },
                 ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
                     same_value_cols={"same_col"},
                     numerical_cols={
                         "numerical_col",
-                        "num_categorical_col",
                         "bool_col",
                         "interval_col",
                         "nan_col",
@@ -177,7 +205,6 @@ class Describe_Dataset:
                     },
                     med_exam_col_list={
                         "numerical_col",
-                        "num_categorical_col",
                         "bool_col",
                         "interval_col",
                         "nan_col",
@@ -185,13 +212,13 @@ class Describe_Dataset:
                     },
                     str_cols={"string_col", "str_categorical_col"},
                     str_categorical_cols={"str_categorical_col"},
-                    num_categorical_cols={"num_categorical_col", "nan_col"},
+                    num_categorical_cols={"nan_col"},
                     other_cols={"datetime_col"},
                     bool_cols={"bool_col"},
                 ),
             ),
             (
-                False,
+                None,
                 ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
                     same_value_cols={"same_col"},
@@ -218,12 +245,12 @@ class Describe_Dataset:
             ),
         ],
     )
-    def test_column_list_by_type(self, metadata_as_features, expected_column_list_type):
+    def test_column_list_by_type(self, feature_cols, expected_column_list_type):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
         dataset = Dataset(
             df_object=df_multi_type,
             metadata_cols=("metadata_num_col",),
-            metadata_as_features=metadata_as_features,
+            feature_cols=feature_cols,
         )
 
         col_list_by_type = dataset.column_list_by_type
@@ -232,10 +259,17 @@ class Describe_Dataset:
         assert col_list_by_type == expected_column_list_type
 
     @pytest.mark.parametrize(
-        "metadata_as_features, expected_med_exam_col_list",
+        "feature_cols, expected_med_exam_col_list",
         [
             (
-                True,
+                {
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                    "metadata_num_col",
+                },
                 {
                     "numerical_col",
                     "num_categorical_col",
@@ -246,7 +280,23 @@ class Describe_Dataset:
                 },
             ),
             (
-                False,
+                {
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                },
+                {
+                    "numerical_col",
+                    "num_categorical_col",
+                    "bool_col",
+                    "interval_col",
+                    "nan_col",
+                },
+            ),
+            (
+                None,
                 {
                     "numerical_col",
                     "num_categorical_col",
@@ -257,12 +307,12 @@ class Describe_Dataset:
             ),
         ],
     )
-    def test_med_exam_col_list(self, metadata_as_features, expected_med_exam_col_list):
+    def test_med_exam_col_list(self, feature_cols, expected_med_exam_col_list):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
         dataset = Dataset(
             df_object=df_multi_type,
             metadata_cols=("metadata_num_col",),
-            metadata_as_features=metadata_as_features,
+            feature_cols=feature_cols,
         )
 
         med_exam_col_list = dataset.med_exam_col_list
