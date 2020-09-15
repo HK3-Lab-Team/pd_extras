@@ -988,6 +988,17 @@ def test_df_from_csv_notfound():
     assert df is None
 
 
+def test_to_be_fixed_cols():
+    df = DataFrameMock.df_multi_type(10)
+    dataset = Dataset(df_object=df)
+
+    to_be_fixed_cols = dataset.to_be_fixed_cols
+
+    assert type(to_be_fixed_cols) == set
+    assert len(to_be_fixed_cols) == 1
+    assert to_be_fixed_cols == {"mixed_type_col"}
+
+
 # ====================
 #      FIXTURES
 # ====================
