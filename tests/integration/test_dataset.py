@@ -753,7 +753,7 @@ class Describe_Dataset:
             in str(err.value)
         )
 
-    def test_to_be_fixed_cols():
+    def test_to_be_fixed_cols(self):
         df = DataFrameMock.df_multi_type(10)
         dataset = Dataset(df_object=df)
 
