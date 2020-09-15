@@ -236,7 +236,7 @@ class Dataset:
             Default set to ()
         feature_cols: Tuple[str], optional
             Tuple with the name of the columns that contains sample features.
-            Default is None, meaning the all the columns but the metadata_cols will be
+            Default is None, meaning that all the columns but the ``metadata_cols`` will be
             considered as features.
         data_file: str, optional
             Path to the csv file containing data. Either this or ``df_object`` must be
@@ -625,7 +625,7 @@ class Dataset:
         ----------
         col_list: Tuple[str], optional
             Tuple of the name of columns that should be considered.
-            If set to None, every column of ``df`` attribute will be considered.
+            If set to None, only the columns in ``self.feature_cols`` property.
         """
         col_list = self.feature_cols if col_list is None else col_list
         column_type_dict_list = Parallel(n_jobs=-1)(
