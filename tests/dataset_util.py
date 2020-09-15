@@ -100,19 +100,20 @@ class DataFrameMock:
             and 5 columns with some different values.
         """
         random.seed(42)
-        same_value_dict = {}
+        constant_value_dict = {}
         sample_count = 100
         # Create n_columns columns with same repeated value
         for i in range(n_columns):
-            same_value_dict[f"same_{i}"] = [4] * sample_count
-        # Create not_same_value_columns with repeated values and random values
-        not_same_value_columns = 5
-        for j in range(not_same_value_columns):
-            same_value_sample_count = int(sample_count * (1 - 0.1 * (j + 1)))
-            same_value_dict[f"not_same_{j}"] = [4] * same_value_sample_count + [
-                random.random() for _ in range(sample_count - same_value_sample_count)
+            constant_value_dict[f"same_{i}"] = [4] * sample_count
+        # Create not_constant_columns with repeated values and random values
+        not_constant_columns = 5
+        for j in range(not_constant_columns):
+            constant_value_sample_count = int(sample_count * (1 - 0.1 * (j + 1)))
+            constant_value_dict[f"not_same_{j}"] = [4] * constant_value_sample_count + [
+                random.random()
+                for _ in range(sample_count - constant_value_sample_count)
             ]
-        return pd.DataFrame(same_value_dict)
+        return pd.DataFrame(constant_value_dict)
 
     @staticmethod
     def df_trivial(n_columns: int) -> pd.DataFrame:
@@ -139,26 +140,26 @@ class DataFrameMock:
         trivial_dict = {}
         sample_count = 100
         nan_columns = n_columns // 2
-        same_value_columns = n_columns - nan_columns
+        constant_value_columns = n_columns - nan_columns
         # Create half of n_columns columns with NaN
         for i in range(nan_columns):
             trivial_dict[f"nan_{i}"] = [pd.NA] * sample_count
         # Create half of n_columns columns with repeated value
-        for j in range(same_value_columns):
+        for j in range(constant_value_columns):
             trivial_dict[f"same_{j}"] = [4] * sample_count
         # Create 5 more columns with valid values (with NaN, repeated and random values)
         valid_values_columns = 5
         for k in range(valid_values_columns):
-            same_value_sample_count = int(sample_count * (1 - 0.05 * (k + 1)) / 2)
+            constant_value_sample_count = int(sample_count * (1 - 0.05 * (k + 1)) / 2)
             nan_sample_count = int(sample_count * (1 - 0.05 * (k + 1)) / 2)
             random_samples = [
                 random.random() * 100
                 for _ in range(
-                    sample_count - same_value_sample_count - nan_sample_count
+                    sample_count - constant_value_sample_count - nan_sample_count
                 )
             ]
             trivial_dict[f"not_nan_not_same_{k}"] = (
-                [4] * same_value_sample_count
+                [4] * constant_value_sample_count
                 + [pd.NA] * nan_sample_count
                 + random_samples
             )

@@ -61,18 +61,18 @@ class Describe_Dataset:
         assert many_nan_columns == expected_many_nan_columns
 
     @pytest.mark.parametrize(
-        "n_columns, expected_same_value_columns",
+        "n_columns, expected_constant_columns",
         [(2, {"same_0", "same_1"}), (1, {"same_0"}), (0, set())],
     )
-    def test_same_value_columns(self, request, n_columns, expected_same_value_columns):
+    def test_constant_columns(self, request, n_columns, expected_constant_columns):
         df = DataFrameMock.df_same_value(n_columns)
         dataset = Dataset(df_object=df)
 
-        same_value_columns = dataset.same_value_cols
+        constant_cols = dataset.constant_cols
 
-        assert len(same_value_columns) == len(expected_same_value_columns)
-        assert isinstance(same_value_columns, set)
-        assert same_value_columns == expected_same_value_columns
+        assert len(constant_cols) == len(expected_constant_columns)
+        assert isinstance(constant_cols, set)
+        assert constant_cols == expected_constant_columns
 
     @pytest.mark.parametrize(
         "n_columns, expected_trivial_columns",
@@ -195,7 +195,7 @@ class Describe_Dataset:
                 },
                 ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
-                    same_value_cols={"same_col"},
+                    constant_cols={"same_col"},
                     numerical_cols={
                         "numerical_col",
                         "bool_col",
@@ -221,7 +221,7 @@ class Describe_Dataset:
                 None,
                 ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
-                    same_value_cols={"same_col"},
+                    constant_cols={"same_col"},
                     numerical_cols={
                         "numerical_col",
                         "num_categorical_col",
