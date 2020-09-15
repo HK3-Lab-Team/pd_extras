@@ -184,7 +184,7 @@ class ColumnListByType:
     The columns are split according to the type of their values.
     """
 
-    same_value_cols: Set
+    constant_cols: Set
     mixed_type_cols: Set
     numerical_cols: Set
     med_exam_col_list: Set
@@ -206,7 +206,7 @@ class ColumnListByType:
             f"\n\t1.\tString categorical columns: {len(self.str_categorical_cols)}"
             f"\n\t2.\tNumeric categorical columns: {len(self.num_categorical_cols)}"
             f"\n\t3.\tMedical Exam columns (numerical, no metadata): {len(self.med_exam_col_list)}"
-            f"\n\t4.\tOne repeated value: {len(self.same_value_cols)}"
+            f"\n\t4.\tOne repeated value: {len(self.constant_cols)}"
         )
 
 
@@ -335,22 +335,27 @@ class Dataset:
         return many_nan_columns
 
     @property
-    def same_value_cols(self) -> Set[str]:
-        """
-        Return name of the columns containing only one repeated value.
+    def constant_cols(self) -> Set[str]:
+        """Return name of the columns containing only one repeated value.
 
         Returns
         -------
         Set[str]
             Set of column names with only one repeated value
         """
+<<<<<<< 2aa1fa88d84a110178902dad4a495682399fe283
         same_value_columns = set()
         for c in self.feature_cols:
             # Check number of unique values
             if len(self.df[c].unique()) == 1:
                 same_value_columns.add(c)
+=======
+        df_constant = self.df.loc[
+            :, self.df.apply(pd.Series.nunique, dropna=False) == 1
+        ]
+>>>>>>> Refactor 'same_value_cols' property of Dataset in 'constant_cols'
 
-        return same_value_columns
+        return set(df_constant.columns)
 
     @property
     def trivial_columns(self) -> Set[str]:
@@ -358,7 +363,7 @@ class Dataset:
         Return name of the columns containing many NaN or only one repeated value.
 
         This function return the name of the column that were included in
-        ``same_value_cols`` or ``many_nan_cols`` attributes
+        ``constant_cols`` or ``many_nan_cols`` attributes
 
         Returns
         -------
@@ -366,7 +371,7 @@ class Dataset:
             Set containing the name of the columns with many NaNs or with only
             one repeated value
         """
-        return self.many_nan_columns.union(self.same_value_cols)
+        return self.many_nan_columns.union(self.constant_cols)
 
     @property
     def column_list_by_type(self) -> ColumnListByType:
@@ -383,12 +388,19 @@ class Dataset:
         ColumnListByType
             ColumnListByType instance containing the column list split by type
         """
-        same_value_cols = self.same_value_cols
+        constant_cols = self.constant_cols
 
         # TODO: Exclude NaN columns (self.nan_cols) from `col_list` too (so they will
         #  not be included in num_categorical_cols just for one not-Nan value)
+<<<<<<< 2aa1fa88d84a110178902dad4a495682399fe283
 
         col_list = self.feature_cols - same_value_cols
+=======
+        if self.metadata_as_features:
+            col_list = set(self.df.columns) - constant_cols
+        else:
+            col_list = set(self.df.columns) - constant_cols - self.metadata_cols
+>>>>>>> Refactor 'same_value_cols' property of Dataset in 'constant_cols'
 
         (
             mixed_type_cols,
@@ -401,12 +413,12 @@ class Dataset:
         str_categorical_cols = self._get_categorical_cols(str_cols)
         num_categorical_cols = self._get_categorical_cols(numerical_cols)
         med_exam_col_list = (
-            numerical_cols | bool_cols - same_value_cols - self.metadata_cols
+            numerical_cols | bool_cols - constant_cols - self.metadata_cols
         )
 
         return ColumnListByType(
             mixed_type_cols=mixed_type_cols,
-            same_value_cols=same_value_cols,
+            constant_cols=constant_cols,
             numerical_cols=numerical_cols | bool_cols,  # TODO: Remove bool_cols
             med_exam_col_list=med_exam_col_list,
             str_cols=str_cols,
@@ -511,7 +523,7 @@ class Dataset:
         -------
         Set
             Set containing ``numerical_cols`` without ``metadata_cols`` and
-            ``same_value_cols``
+            ``constant_cols``
         """
         return self.column_list_by_type.med_exam_col_list
 
