@@ -12,5 +12,9 @@ output_data_dir = os.path.join(os.getcwd(), "data")
 df_sani = pd.read_csv(df_sani_dir)
 
 anonymize_data(
-    df_sani, "Sani_15300", private_cols_to_remove, private_cols_to_map, output_data_dir,
+    df_sani,
+    "Sani_15300",
+    private_cols_to_remove,
+    private_cols_to_map,
+    output_data_dir,
 )

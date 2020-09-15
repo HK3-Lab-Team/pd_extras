@@ -7,8 +7,7 @@ import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
 from .dataset import Dataset, FeatureOperation, copy_dataset_with_new_df
-from .feature_enum import (ENCODED_COLUMN_SUFFIX, EncodingFunctions,
-                           OperationTypeEnum)
+from .feature_enum import ENCODED_COLUMN_SUFFIX, EncodingFunctions, OperationTypeEnum
 
 logger = logging.getLogger(__name__)
 
