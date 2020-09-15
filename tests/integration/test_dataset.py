@@ -166,7 +166,7 @@ class Describe_Dataset:
                 {"metadata_num_col"},
                 ColumnListByType(
                     mixed_type_cols=set(),
-                    same_value_cols=set(),
+                    constant_cols=set(),
                     numerical_cols={
                         "metadata_num_col",
                     },

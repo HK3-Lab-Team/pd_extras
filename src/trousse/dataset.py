@@ -343,7 +343,7 @@ class Dataset:
         Set[str]
             Set of column names with only one repeated value
         """
-        df_nunique = self.df[features].nunique(dropna=False)
+        df_nunique = self.df[self.feature_cols].nunique(dropna=False)
         constant_cols = df_nunique[df_nunique == 1].index
         return set(constant_cols)
 
@@ -383,7 +383,7 @@ class Dataset:
         # TODO: Exclude NaN columns (self.nan_cols) from `col_list` too (so they will
         #  not be included in num_categorical_cols just for one not-Nan value)
 
-        col_list = self.feature_cols - same_value_cols
+        col_list = self.feature_cols - constant_cols
 
         (
             mixed_type_cols,
