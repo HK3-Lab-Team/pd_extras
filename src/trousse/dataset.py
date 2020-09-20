@@ -384,7 +384,7 @@ class Dataset:
         #  not be included in num_categorical_cols just for one not-Nan value)
 
         col_list = self.feature_cols - constant_cols
-
+        """
         (
             mixed_type_cols,
             numerical_cols,
@@ -392,6 +392,39 @@ class Dataset:
             bool_cols,
             other_cols,
         ) = _split_columns_by_type_parallel(self.df, col_list)
+        """
+        cols_type = []
+
+        mixed_type_cols = set()
+        numerical_cols = set()
+        str_cols = set()
+        bool_cols = set()
+        other_cols = set()
+
+        PD_INFER_TYPE_MAP = {
+            "string": str_cols,
+            "bytes": other_cols,
+            "floating": numerical_cols,
+            "integer": numerical_cols,
+            "mixed-integer": mixed_type_cols,
+            "mixed-integer-float": numerical_cols,
+            "decimal": numerical_cols,
+            "complex": numerical_cols,
+            "boolean": bool_cols,
+            "datetime64": other_cols,
+            "datetime": other_cols,
+            "date": other_cols,
+            "timedelta64": other_cols,
+            "timedelta": other_cols,
+            "time": other_cols,
+            "period": other_cols,
+            "mixed": mixed_type_cols,
+            "interval": numerical_cols,
+        }
+
+        for col in col_list:
+            col_type = pd.api.types.infer_dtype(self.df[col], skipna=True)
+            PD_INFER_TYPE_MAP[col_type].add(col)
 
         str_categorical_cols = self._get_categorical_cols(str_cols)
         num_categorical_cols = self._get_categorical_cols(numerical_cols)
