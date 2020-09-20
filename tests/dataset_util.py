@@ -211,11 +211,9 @@ class DataFrameMock:
             "str_categorical_col": pd.Series(
                 ["category_0", "category_1", "category_2", "category_3", "category_4"]
                 * (sample_size // 5),
-                dtype="category",
             ),
             "num_categorical_col": pd.Series(
                 [0, 1, 2, 3, 4] * (sample_size // 5),
-                dtype="category",
             ),
             "numerical_col": [0.05 * i for i in range(sample_size)],
             "datetime_col": [date(2000 + i, 8, 1) for i in range(sample_size)],
