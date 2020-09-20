@@ -384,16 +384,6 @@ class Dataset:
         #  not be included in num_categorical_cols just for one not-Nan value)
 
         col_list = self.feature_cols - constant_cols
-        """
-        (
-            mixed_type_cols,
-            numerical_cols,
-            str_cols,
-            bool_cols,
-            other_cols,
-        ) = _split_columns_by_type_parallel(self.df, col_list)
-        """
-        cols_type = []
 
         mixed_type_cols = set()
         numerical_cols = set()
