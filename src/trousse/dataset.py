@@ -6,7 +6,7 @@ import os
 import shelve
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import DefaultDict, Dict, List, Set, Tuple, Union
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple, Union
 
 import pandas as pd
 import sklearn
@@ -911,6 +911,72 @@ class Dataset:
                 logging.error(f"ERROR shelving: \n{e}")
             except KeyError as e:
                 logging.error(f"Exporting data unsuccessful: \n{e}")
+
+    def fillna(
+        self,
+        columns: Union[List[str], str],
+        value: Any,
+        derived_columns: Union[List[str], str] = None,
+        inplace: bool = False,
+    ) -> Optional["Dataset"]:
+        """Fill NaN values in ``columns`` columns with value ``value``.
+
+        By default NaNs are filled in the original columns. To store the result of filling
+        in other columns, ``derived_columns`` parameter has to be set with the name of
+        the corresponding column names.
+
+        Parameters
+        ----------
+        columns : Union[List[str], str]
+            Names of the columns with NaNs to be filled
+        value : Any
+            Value used to fill the NaNs
+        derived_columns : Union[List[str], str], optional
+            Names of the columns where to store the filling result. Default is None,
+            meaning that NaNs are filled in the original columns.
+        inplace : bool, optional
+            Whether to modify the current Dataset or return a new instance. Default False,
+            meanining that a new instance of Dataset will be returned.
+
+        Returns
+        -------
+        Optional[Dataset]
+            The new Dataset with NaNs filled if ``inplace=False`` or None otherwise.
+
+        Raises
+        ------
+        ValueError
+            If the number of columns to be filled is different from the number of the
+            columns where to store the result (if ``derived_columns`` is not None)
+        """
+        if not inplace:
+            dataset = self._dataset_copy
+        else:
+            dataset = self
+
+        if not isinstance(columns, list):
+            columns = [columns]
+
+        if derived_columns:
+            if not isinstance(derived_columns, list):
+                derived_columns = [derived_columns]
+
+            if len(columns) != len(derived_columns):
+                raise ValueError(
+                    f"The number of derived_columns ({len(derived_columns)}) "
+                    f"must be equal to the number of columns ({len(columns)})"
+                )
+
+            for column, derived_column in zip(columns, derived_columns):
+                filled_col = dataset.df[column].fillna(value, inplace=False)
+                dataset._df[derived_column] = filled_col
+
+        else:
+            for column in columns:
+                dataset.df[column].fillna(value, inplace=True)
+
+        if not inplace:
+            return dataset
 
     @property
     def _dataset_copy(self) -> "Dataset":
