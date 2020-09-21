@@ -10,9 +10,7 @@ from trousse.dataset import (
     Dataset,
     FeatureOperation,
     _ColumnListByType,
-    _find_samples_by_type,
     _find_single_column_type,
-    _split_columns_by_type_parallel,
     copy_dataset_with_new_df,
     get_df_from_csv,
     read_file,
@@ -846,54 +844,6 @@ def test_find_single_column_type(request, series_type, expected_col_type_dict):
     col_type_dict = _find_single_column_type(serie)
 
     assert col_type_dict == expected_col_type_dict
-
-
-@pytest.mark.parametrize(
-    "col_type, expected_column_single_type_set",
-    [
-        ("bool_col", {"bool_col_0", "bool_col_1"}),
-        ("string_col", {"string_col_0", "string_col_1", "string_col_2"}),
-        ("numerical_col", {"numerical_col_0"}),
-        ("other_col", {"other_col_0"}),
-        (
-            "mixed_type_col",
-            {
-                "mixed_type_col_0",
-                "mixed_type_col_1",
-                "mixed_type_col_2",
-                "mixed_type_col_3",
-            },
-        ),
-    ],
-)
-def test_find_columns_by_type(request, col_type, expected_column_single_type_set):
-    df_col_names_by_type = DataFrameMock.df_column_names_by_type()
-
-    column_single_type_set = _find_samples_by_type(df_col_names_by_type, col_type)
-
-    assert column_single_type_set == expected_column_single_type_set
-
-
-def test_split_columns_by_type_parallel(request):
-    df_by_type = DataFrameMock.df_multi_type(sample_size=10)
-    col_list = df_by_type.columns
-
-    cols_by_type_tuple = _split_columns_by_type_parallel(df_by_type, col_list)
-
-    assert cols_by_type_tuple == (
-        {"mixed_type_col"},
-        {
-            "numerical_col",
-            "interval_col",
-            "num_categorical_col",
-            "nan_col",
-            "metadata_num_col",
-            "same_col",
-        },
-        {"string_col", "str_categorical_col"},
-        {"bool_col"},
-        {"datetime_col"},
-    )
 
 
 def test_copy_dataset_with_new_df(dataset_with_operations):
