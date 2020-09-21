@@ -4,7 +4,7 @@ import dbm
 import logging
 import os
 import shelve
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import DefaultDict, Dict, List, Set, Tuple, Union
 
@@ -185,15 +185,15 @@ class _ColumnListByType:
     The columns are split according to the type of their values.
     """
 
-    constant_cols: Set
-    mixed_type_cols: Set
-    numerical_cols: Set
-    med_exam_col_list: Set
-    str_cols: Set
-    str_categorical_cols: Set
-    num_categorical_cols: Set
-    other_cols: Set
-    bool_cols: Set
+    constant_cols: Set = field(default_factory=set)
+    mixed_type_cols: Set = field(default_factory=set)
+    numerical_cols: Set = field(default_factory=set)
+    med_exam_col_list: Set = field(default_factory=set)
+    str_cols: Set = field(default_factory=set)
+    str_categorical_cols: Set = field(default_factory=set)
+    num_categorical_cols: Set = field(default_factory=set)
+    other_cols: Set = field(default_factory=set)
+    bool_cols: Set = field(default_factory=set)
 
     def __str__(self):
         return (
