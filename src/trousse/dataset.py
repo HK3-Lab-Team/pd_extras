@@ -141,7 +141,6 @@ class Dataset:
         feature_cols: Tuple = None,
         data_file: str = None,
         df_object: pd.DataFrame = None,
-        nan_percentage_threshold: float = 0.999,
         new_columns_encoding_maps: Union[
             DefaultDict[str, List[FeatureOperation]], None
         ] = None,
@@ -170,9 +169,6 @@ class Dataset:
             Pandas DataFrame instance containing the data. Either this or data_file
             must be provided. In case ``data_file`` is provided, only this will
             be considered as data. Default set to None.
-        nan_percentage_threshold: float, optional
-            Float value in the range [0,1] describing the threshold of
-            NaN values count to decide if the column is relevant or not.
         new_columns_encoding_maps: Union[
             DefaultDict[str, List[FeatureOperation]], None
         ], optional
@@ -193,7 +189,6 @@ class Dataset:
             self._feature_cols = set(self.df.columns) - self.metadata_cols
         else:
             self._feature_cols = set(feature_cols)
-        self.nan_percentage_threshold = nan_percentage_threshold
 
         # Dict of Lists ->
         #         key: column_name,
@@ -232,31 +227,31 @@ class Dataset:
         """
         return self._feature_cols
 
-    @property
-    def many_nan_columns(self) -> Set[str]:
-        """
-        Return name of the columns containing many NaN.
+    def nan_columns(self, nan_ratio: float = 1) -> Set[str]:
+        """Return name of the columns containing at least a ``nan_ratio`` ratio of NaNs.
 
-        This property selects the columns where the ratio of NaN values over the
-        sample count is higher than ``nan_percentage_threshold`` attribute
-        (in range [0,1]).
+        Select the columns where the nan_ratio of NaN values over the
+        sample count is higher than ``nan_ratio`` (in range [0,1]).
+
+        Parameters
+        ----------
+        nan_ratio : float, optional
+            Minimum ratio “nan samples”/”total samples” for the column to be considered
+            a “nan column”. Default is 1, meaning that only the columns entirely composed
+            by NaNs will be returned.
 
         Returns
         -------
         Set[str]
-            Set of column names with NaN ratio higher than
-            ``nan_percentage_threshold`` attribute.
+            Set of column names with NaN ratio higher than ``nan_ratio`` parameter.
         """
-        many_nan_columns = set()
+        nan_columns = set()
         for c in self.feature_cols:
             # Check number of NaN
-            if (
-                sum(self.df[c].isna())
-                > self.nan_percentage_threshold * self.df.shape[0]
-            ):
-                many_nan_columns.add(c)
+            if sum(self.df[c].isna()) > nan_ratio * self.df.shape[0]:
+                nan_columns.add(c)
 
-        return many_nan_columns
+        return nan_columns
 
     @property
     def constant_cols(self) -> Set[str]:
@@ -276,8 +271,8 @@ class Dataset:
         """
         Return name of the columns containing many NaN or only one repeated value.
 
-        This function return the name of the column that were included in
-        ``constant_cols`` or ``many_nan_cols`` attributes
+        This function return the name of the column that were returned by
+        ``constant_cols`` property or ``nan_columns`` method.
 
         Returns
         -------
@@ -285,7 +280,7 @@ class Dataset:
             Set containing the name of the columns with many NaNs or with only
             one repeated value
         """
-        return self.many_nan_columns.union(self.constant_cols)
+        return self.nan_columns(nan_ratio=0.999).union(self.constant_cols)
 
     @lazy_property
     def _columns_type(self) -> _ColumnListByType:
@@ -551,30 +546,6 @@ class Dataset:
     # =====================
     # =    METHODS        =
     # =====================
-
-    def least_nan_cols(self, threshold: int) -> Set:
-        """
-        Get the features with a count of NaN values lower than the ``threshold`` argument.
-
-        Parameters
-        ----------
-        threshold: int
-            Number of samples that have a NaN value. If the count of NaN values
-            from a column is lower than ``threshold`` value, the name of the column
-            will be in the returned set
-
-        Returns
-        -------
-        Set
-            Set of column names with a NaN count lower than the ``threshold`` argument
-        """
-        best_feature_list = set()
-        # TODO: Add argument col_list to select the columns to analyze
-        for c in self.med_exam_col_list:
-            if sum(self.df[c].isna()) < threshold:
-                best_feature_list.add(c)
-
-        return best_feature_list
 
     def get_encoded_string_values_map(
         self, column_name: str
@@ -941,8 +912,7 @@ class Dataset:
             ``df`` attribute.
         """
         return (
-            f"{self._columns_type}"
-            f"\nColumns with many NaN: {len(self.many_nan_columns)}"
+            f"{self._columns_type}" f"\nColumns with many NaN: {len(self.nan_columns)}"
         )
 
     def __call__(self) -> pd.DataFrame:
