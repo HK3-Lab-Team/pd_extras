@@ -335,7 +335,7 @@ class Dataset:
             "period": other_cols,
             "mixed": mixed_type_cols,
             "interval": numerical_cols,
-            "category": categorical_cols,  # TODO: handle already categorical
+            "category": categorical_cols,
             "categorical": categorical_cols,
         }
 
@@ -348,6 +348,14 @@ class Dataset:
         med_exam_col_list = (
             numerical_cols | bool_cols - constant_cols - self.metadata_cols
         )
+
+        for categorical_col in categorical_cols:
+            if categorical_col.dtype.categories.inferred_type == "integer":
+                num_categorical_cols.add(categorical_col)
+            elif categorical_col.dtype.categories.inferred_type == "string":
+                str_categorical_cols.add(categorical_col)
+            else:
+                raise RuntimeError("there is something wrong with the type guessing...")
 
         return _ColumnListByType(
             mixed_type_cols=mixed_type_cols,
