@@ -3,7 +3,7 @@ import pytest
 from trousse.dataset import Dataset, _ColumnListByType
 
 from ..dataset_util import DataFrameMock
-from ..unitutil import initializer_mock, instance_mock, property_mock
+from ..unitutil import initializer_mock, property_mock
 
 
 class DescribeDataset:
@@ -72,7 +72,7 @@ class DescribeDataset:
         _columns_type = property_mock(request, Dataset, "_columns_type")
         column_list_by_type = _ColumnListByType(mixed_type_cols={"mixed0", "mixed1"})
         _columns_type.return_value = column_list_by_type
-        _init = initializer_mock(request, Dataset)
+        initializer_mock(request, Dataset)
         dataset = Dataset(data_file="fake/path")
 
         mixed_type_columns_ = dataset.mixed_type_columns
@@ -86,7 +86,7 @@ class DescribeDataset:
             numerical_cols={"numerical0", "numerical1"}
         )
         _columns_type.return_value = column_list_by_type
-        _init = initializer_mock(request, Dataset)
+        initializer_mock(request, Dataset)
         dataset = Dataset(data_file="fake/path")
 
         numerical_columns_ = dataset.numerical_columns
@@ -98,7 +98,7 @@ class DescribeDataset:
         _columns_type = property_mock(request, Dataset, "_columns_type")
         column_list_by_type = _ColumnListByType(med_exam_col_list={"med0", "med1"})
         _columns_type.return_value = column_list_by_type
-        _init = initializer_mock(request, Dataset)
+        initializer_mock(request, Dataset)
         dataset = Dataset(data_file="fake/path")
 
         med_exam_col_list_ = dataset.med_exam_col_list
@@ -110,7 +110,7 @@ class DescribeDataset:
         _columns_type = property_mock(request, Dataset, "_columns_type")
         column_list_by_type = _ColumnListByType(str_cols={"str0", "str1"})
         _columns_type.return_value = column_list_by_type
-        _init = initializer_mock(request, Dataset)
+        initializer_mock(request, Dataset)
         dataset = Dataset(data_file="fake/path")
 
         str_columns_ = dataset.str_columns
@@ -124,7 +124,7 @@ class DescribeDataset:
             str_categorical_cols={"strcat0", "strcat1"}
         )
         _columns_type.return_value = column_list_by_type
-        _init = initializer_mock(request, Dataset)
+        initializer_mock(request, Dataset)
         dataset = Dataset(data_file="fake/path")
 
         str_categorical_columns_ = dataset.str_categorical_columns
@@ -138,7 +138,7 @@ class DescribeDataset:
             num_categorical_cols={"numcat0", "numcat1"}
         )
         _columns_type.return_value = column_list_by_type
-        _init = initializer_mock(request, Dataset)
+        initializer_mock(request, Dataset)
         dataset = Dataset(data_file="fake/path")
 
         num_categorical_columns_ = dataset.num_categorical_columns
@@ -150,7 +150,7 @@ class DescribeDataset:
         _columns_type = property_mock(request, Dataset, "_columns_type")
         column_list_by_type = _ColumnListByType(bool_cols={"bool0", "bool1"})
         _columns_type.return_value = column_list_by_type
-        _init = initializer_mock(request, Dataset)
+        initializer_mock(request, Dataset)
         dataset = Dataset(data_file="fake/path")
 
         bool_columns_ = dataset.bool_columns
@@ -162,7 +162,7 @@ class DescribeDataset:
         _columns_type = property_mock(request, Dataset, "_columns_type")
         column_list_by_type = _ColumnListByType(other_cols={"other0", "other1"})
         _columns_type.return_value = column_list_by_type
-        _init = initializer_mock(request, Dataset)
+        initializer_mock(request, Dataset)
         dataset = Dataset(data_file="fake/path")
 
         other_type_columns_ = dataset.other_type_columns
