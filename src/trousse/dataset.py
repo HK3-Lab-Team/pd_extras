@@ -363,10 +363,24 @@ class Dataset:
 
     @property
     def mixed_type_columns(self) -> Set[str]:
+        """Return the name of the columns with mixed type.
+
+        Returns
+        -------
+        Set[str]
+            The names of the columns with mixed type
+        """
         return self._columns_type.mixed_type_cols
 
     @property
     def numerical_columns(self) -> Set[str]:
+        """Return the name of the columns with numerical type.
+
+        Returns
+        -------
+        Set[str]
+            The names of the columns with numerical type
+        """
         return self._columns_type.numerical_cols
 
     @property
@@ -388,22 +402,60 @@ class Dataset:
 
     @property
     def str_columns(self) -> Set[str]:
+        """Return the name of the columns with string type.
+
+        Returns
+        -------
+        Set[str]
+            The names of the columns with string type
+        """
         return self._columns_type.str_cols
 
     @property
     def str_categorical_columns(self) -> Set[str]:
+        """Return the name of the columns with string categorical type.
+
+        Returns
+        -------
+        Set[str]
+            The names of the columns with string categorical type
+        """
         return self._columns_type.str_categorical_cols
 
     @property
     def num_categorical_columns(self) -> Set[str]:
+        """Return the name of the columns with numerical categorical type.
+
+        Returns
+        -------
+        Set[str]
+            The names of the columns with numerical categorical type
+        """
         return self._columns_type.num_categorical_cols
 
     @property
     def bool_columns(self) -> Set[str]:
+        """Return the name of the columns with boolean type.
+
+        Returns
+        -------
+        Set[str]
+            The names of the columns with boolean type
+        """
         return self._columns_type.bool_cols
 
     @property
     def other_type_columns(self) -> Set[str]:
+        """Return the name of the columns with non-conventional type.
+
+        Types that are included in this category are: bytes, datetime64, datetime, date,
+        timedelta64, timedelta, time, period.
+
+        Returns
+        -------
+        Set[str]
+            The names of the columns with non-conventional type
+        """
         return self._columns_type.other_cols
 
     def _get_categorical_cols(self, col_list: Tuple[str]) -> Set[str]:
