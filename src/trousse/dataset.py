@@ -20,6 +20,7 @@ from .exceptions import (
 from .feature_enum import OperationTypeEnum
 from .feature_operation import FeatureOperation
 from .settings import CATEG_COL_THRESHOLD
+from .util import lazy_property
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +179,7 @@ def _split_columns_by_type_parallel(
 
 
 @dataclass
-class ColumnListByType:
+class _ColumnListByType:
     """
     This dataclass is to gather the different column types inside a pd.DataFrame.
     The columns are split according to the type of their values.
@@ -363,8 +364,8 @@ class Dataset:
         """
         return self.many_nan_columns.union(self.constant_cols)
 
-    @property
-    def column_list_by_type(self) -> ColumnListByType:
+    @lazy_property
+    def _columns_type(self) -> _ColumnListByType:
         """
         Analyze the instance and return an object with the column list split by type.
 
@@ -375,8 +376,8 @@ class Dataset:
 
         Returns
         -------
-        ColumnListByType
-            ColumnListByType instance containing the column list split by type
+        _ColumnListByType
+            _ColumnListByType instance containing the column list split by type
         """
         constant_cols = self.constant_cols
 
@@ -390,6 +391,7 @@ class Dataset:
         str_cols = set()
         bool_cols = set()
         other_cols = set()
+        categorical_cols = set()
 
         PD_INFER_TYPE_MAP = {
             "string": str_cols,
@@ -410,6 +412,8 @@ class Dataset:
             "period": other_cols,
             "mixed": mixed_type_cols,
             "interval": numerical_cols,
+            "category": categorical_cols,  # TODO: handle already categorical
+            "categorical": categorical_cols,
         }
 
         for col in col_list:
@@ -422,7 +426,7 @@ class Dataset:
             numerical_cols | bool_cols - constant_cols - self.metadata_cols
         )
 
-        return ColumnListByType(
+        return _ColumnListByType(
             mixed_type_cols=mixed_type_cols,
             constant_cols=constant_cols,
             numerical_cols=numerical_cols | bool_cols,  # TODO: Remove bool_cols
@@ -433,6 +437,51 @@ class Dataset:
             bool_cols=bool_cols,
             other_cols=other_cols,
         )
+
+    @property
+    def mixed_type_columns(self) -> Set[str]:
+        return self._columns_type.mixed_type_cols
+
+    @property
+    def numerical_columns(self) -> Set[str]:
+        return self._columns_type.numerical_cols
+
+    @property
+    def med_exam_col_list(self) -> Set[str]:
+        """
+        Get the name of the columns containing numerical values (metadata excluded).
+
+        The method will exclude from numerical columns the ones that have the same
+        repeated value, and the ones that contain metadata, but it will include columns
+        with many NaN
+
+        Returns
+        -------
+        Set
+            Set containing ``numerical_cols`` without ``metadata_cols`` and
+            ``constant_cols``
+        """
+        return self._columns_type.med_exam_col_list
+
+    @property
+    def str_columns(self) -> Set[str]:
+        return self._columns_type.str_cols
+
+    @property
+    def str_categorical_columns(self) -> Set[str]:
+        return self._columns_type.str_categorical_cols
+
+    @property
+    def num_categorical_columns(self) -> Set[str]:
+        return self._columns_type.num_categorical_cols
+
+    @property
+    def bool_columns(self) -> Set[str]:
+        return self._columns_type.bool_cols
+
+    @property
+    def other_type_columns(self) -> Set[str]:
+        return self._columns_type.other_cols
 
     def _get_categorical_cols(self, col_list: Tuple[str]) -> Set[str]:
         """
@@ -488,7 +537,7 @@ class Dataset:
         Set[str]
             Set of columns with values of different types
         """
-        return self.column_list_by_type.mixed_type_cols
+        return self._columns_type.mixed_type_cols
 
     @property
     def to_be_encoded_cat_cols(self):
@@ -504,7 +553,7 @@ class Dataset:
 
         """
         to_be_encoded_categorical_cols = set()
-        cols_by_type = self.column_list_by_type
+        cols_by_type = self._columns_type
         # TODO: Check this because maybe categorical columns that are numerical, do
         #  not need encoding probably!
         categorical_cols = (
@@ -515,23 +564,6 @@ class Dataset:
                 to_be_encoded_categorical_cols.add(categ_col)
 
         return to_be_encoded_categorical_cols
-
-    @property
-    def med_exam_col_list(self) -> Set:
-        """
-        Get the name of the columns containing numerical values (metadata excluded).
-
-        The method will exclude from numerical columns the ones that have the same
-        repeated value, and the ones that contain metadata, but it will include columns
-        with many NaN
-
-        Returns
-        -------
-        Set
-            Set containing ``numerical_cols`` without ``metadata_cols`` and
-            ``constant_cols``
-        """
-        return self.column_list_by_type.med_exam_col_list
 
     # =====================
     # =    METHODS        =
@@ -926,7 +958,7 @@ class Dataset:
             ``df`` attribute.
         """
         return (
-            f"{self.column_list_by_type}"
+            f"{self._columns_type}"
             f"\nColumns with many NaN: {len(self.many_nan_columns)}"
         )
 
