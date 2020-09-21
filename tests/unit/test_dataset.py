@@ -1,15 +1,9 @@
 import pytest
 
-from trousse.dataset import ColumnListByType, Dataset, _ColumnListByType
+from trousse.dataset import Dataset, _ColumnListByType
 
 from ..dataset_util import DataFrameMock
 from ..unitutil import initializer_mock, method_mock, property_mock
-
-<<<<<<< ef59f35ea144ff6b379c955797857a0e081d2639
-
-=======
-
->>>>>>> fix nan_columns call and add unit and integration tests for __str__ method for Dataset and ColumnListByType
 
 
 class DescribeDataset:
@@ -183,8 +177,9 @@ class DescribeDataset:
         assert type(other_type_columns_) == set
         assert other_type_columns_ == {"other0", "other1"}
         _columns_type.assert_called_once()
+
     def it_knows_its_str(self, request):
-        column_list_by_type = ColumnListByType(
+        column_list_by_type = _ColumnListByType(
             mixed_type_cols={"mixed0", "mixed1"},
             constant_cols={"constant"},
             numerical_cols={"numerical0", "numerical1"},
@@ -218,10 +213,10 @@ class DescribeColumnListByType:
             "columns: 2\n\t2.\tNumeric categorical columns: 2\n\t3.\tMedical Exam columns "
             "(numerical, no metadata): 3\n\t4.\tOne repeated value: 1"
         )
-        _column_list_by_type_str = method_mock(request, ColumnListByType, "__str__")
+        _column_list_by_type_str = method_mock(request, _ColumnListByType, "__str__")
         _column_list_by_type_str.return_value = column_list_by_type_str
-        _column_list_by_type = property_mock(request, Dataset, "column_list_by_type")
-        column_list_by_type = ColumnListByType(
+        _column_list_by_type = property_mock(request, Dataset, "_columns_type")
+        column_list_by_type = _ColumnListByType(
             mixed_type_cols={"mixed0", "mixed1"},
             constant_cols={"constant"},
             numerical_cols={"numerical0", "numerical1"},
