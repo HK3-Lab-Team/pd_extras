@@ -25,7 +25,7 @@ from ..fixtures import CSV
 
 class Describe_Dataset:
     @pytest.mark.parametrize(
-        "nan_ratio, n_columns, expected_many_nan_columns",
+        "nan_ratio, n_columns, expected_nan_columns",
         [
             (0.8, 2, {"nan_0", "nan_1"}),
             (0.8, 1, {"nan_0"}),
@@ -46,17 +46,15 @@ class Describe_Dataset:
             (1.0, 2, {"nan_0", "nan_1"}),
         ],
     )
-    def test_many_nan_columns(
-        self, request, nan_ratio, n_columns, expected_many_nan_columns
-    ):
+    def test_nan_columns(self, request, nan_ratio, n_columns, expected_nan_columns):
         df = DataFrameMock.df_many_nans(nan_ratio, n_columns)
-        dataset = Dataset(df_object=df, nan_percentage_threshold=nan_ratio - 0.01)
+        dataset = Dataset(df_object=df)
 
-        many_nan_columns = dataset.many_nan_columns
+        nan_columns = dataset.nan_columns(nan_ratio - 0.01)
 
-        assert len(many_nan_columns) == len(expected_many_nan_columns)
-        assert isinstance(many_nan_columns, set)
-        assert many_nan_columns == expected_many_nan_columns
+        assert len(nan_columns) == len(expected_nan_columns)
+        assert isinstance(nan_columns, set)
+        assert nan_columns == expected_nan_columns
 
     @pytest.mark.parametrize(
         "n_columns, expected_constant_columns",
@@ -317,24 +315,6 @@ class Describe_Dataset:
 
         assert isinstance(med_exam_col_list, set)
         assert med_exam_col_list == expected_med_exam_col_list
-
-    @pytest.mark.parametrize(
-        "nan_threshold, expected_least_nan_cols",
-        [
-            (10, {"0nan_col"}),
-            (101, {"0nan_col", "50nan_col"}),
-            (199, {"0nan_col", "50nan_col"}),
-            (200, {"0nan_col", "50nan_col", "99nan_col"}),
-        ],
-    )
-    def test_least_nan_cols(self, request, nan_threshold, expected_least_nan_cols):
-        df_multi_type = DataFrameMock.df_multi_nan_ratio(sample_size=200)
-        dataset = Dataset(df_object=df_multi_type)
-
-        least_nan_cols = dataset.least_nan_cols(nan_threshold)
-
-        assert isinstance(least_nan_cols, set)
-        assert least_nan_cols == expected_least_nan_cols
 
     @pytest.mark.parametrize(
         "duplicated_cols_count, expected_contains_dupl_cols_bool",
