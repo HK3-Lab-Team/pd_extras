@@ -79,6 +79,7 @@ class DescribeDataset:
 
         assert type(mixed_type_columns_) == set
         assert mixed_type_columns_ == {"mixed0", "mixed1"}
+        _columns_type.assert_called_once()
 
     def it_knows_its_numerical_columns(self, request):
         _columns_type = property_mock(request, Dataset, "_columns_type")
@@ -93,6 +94,7 @@ class DescribeDataset:
 
         assert type(numerical_columns_) == set
         assert numerical_columns_ == {"numerical0", "numerical1"}
+        _columns_type.assert_called_once()
 
     def it_knows_its_med_exam_col_list(self, request):
         _columns_type = property_mock(request, Dataset, "_columns_type")
@@ -105,6 +107,7 @@ class DescribeDataset:
 
         assert type(med_exam_col_list_) == set
         assert med_exam_col_list_ == {"med0", "med1"}
+        _columns_type.assert_called_once()
 
     def it_knows_its_str_columns(self, request):
         _columns_type = property_mock(request, Dataset, "_columns_type")
@@ -117,6 +120,7 @@ class DescribeDataset:
 
         assert type(str_columns_) == set
         assert str_columns_ == {"str0", "str1"}
+        _columns_type.assert_called_once()
 
     def it_knows_its_str_categorical_columns(self, request):
         _columns_type = property_mock(request, Dataset, "_columns_type")
@@ -131,6 +135,7 @@ class DescribeDataset:
 
         assert type(str_categorical_columns_) == set
         assert str_categorical_columns_ == {"strcat0", "strcat1"}
+        _columns_type.assert_called_once()
 
     def it_knows_its_num_categorical_columns(self, request):
         _columns_type = property_mock(request, Dataset, "_columns_type")
@@ -145,6 +150,7 @@ class DescribeDataset:
 
         assert type(num_categorical_columns_) == set
         assert num_categorical_columns_ == {"numcat0", "numcat1"}
+        _columns_type.assert_called_once()
 
     def it_knows_its_bool_columns(self, request):
         _columns_type = property_mock(request, Dataset, "_columns_type")
@@ -157,6 +163,7 @@ class DescribeDataset:
 
         assert type(bool_columns_) == set
         assert bool_columns_ == {"bool0", "bool1"}
+        _columns_type.assert_called_once()
 
     def it_knows_its_other_type_columns(self, request):
         _columns_type = property_mock(request, Dataset, "_columns_type")
@@ -169,3 +176,4 @@ class DescribeDataset:
 
         assert type(other_type_columns_) == set
         assert other_type_columns_ == {"other0", "other1"}
+        _columns_type.assert_called_once()
