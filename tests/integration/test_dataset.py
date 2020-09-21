@@ -851,7 +851,7 @@ def test_copy_dataset_with_new_df(dataset_with_operations):
     )
 
     assert isinstance(new_dataset, Dataset)
-    conserved_attributes = new_dataset.__dict__.keys() - {"df"}
+    conserved_attributes = new_dataset.__dict__.keys() - {"_df"}
     for k in conserved_attributes:
         assert new_dataset.__dict__[k] == dataset_with_operations.__dict__[k]
     assert new_dataset.df.equals(new_df)
@@ -887,7 +887,7 @@ def test_to_file(dataset_with_operations, tmpdir):
     my_shelf.close()
     assert isinstance(exported_dataset, Dataset)
     # This is to identify attribute errors easier
-    conserved_attributes = exported_dataset.__dict__.keys() - {"df"}
+    conserved_attributes = exported_dataset.__dict__.keys() - {"_df"}
     for k in conserved_attributes:
         assert exported_dataset.__dict__[k] == dataset_with_operations.__dict__[k]
     assert exported_dataset.df.equals(dataset_with_operations.df)
@@ -917,7 +917,7 @@ def test_read_file(export_dataset_with_operations_to_file_fixture):
 
     assert isinstance(imported_dataset, Dataset)
     # This is to identify attribute errors easier
-    conserved_attributes = imported_dataset.__dict__.keys() - {"df"}
+    conserved_attributes = imported_dataset.__dict__.keys() - {"_df"}
     for k in conserved_attributes:
         assert imported_dataset.__dict__[k] == expected_imported_dataset.__dict__[k]
     assert imported_dataset.df.equals(expected_imported_dataset.df)

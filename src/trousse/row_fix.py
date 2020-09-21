@@ -32,13 +32,13 @@ def _check_numeric_cols(dataset: Dataset, col_list: Tuple):
     """
     numeric_cols = []
     for col in col_list:
-        numeric_col_serie = pd.to_numeric(dataset.df[col], errors="coerce")
+        numeric_col_serie = pd.to_numeric(dataset._df[col], errors="coerce")
         notna_num_count = numeric_col_serie.count()
-        num_valuecount_ratio = notna_num_count / dataset.df[col].count()
+        num_valuecount_ratio = notna_num_count / dataset._df[col].count()
         if num_valuecount_ratio > NOT_NA_STRING_COL_THRESHOLD:
             # Find values that are NaN after conversion (and that were not NaN before)
             lost_values = set(
-                dataset.df[col][dataset.df[col].notna() & numeric_col_serie.isna()]
+                dataset._df[col][dataset._df[col].notna() & numeric_col_serie.isna()]
             )
             logger.info(
                 f"{col} can be converted from String to Numeric. "
@@ -192,18 +192,18 @@ class RowFix:
         if column_list == ():
             column_list = dataset.to_be_fixed_cols
 
-        df_converted = copy.copy(dataset.df)
+        df_converted = copy.copy(dataset._df)
 
         for c in column_list:
             # Initialize the column key of the dictionaries used to store the errors
             self.errors_before_correction_dict[c] = []
             self.errors_after_correction_dict[c] = []
             # Analyze how many errors are in DF
-            dataset.df.apply(
+            dataset._df.apply(
                 self._populate_non_float_convertible_errors_dict, column=c, axis=1
             )
             # Fix the errors
-            df_converted[c] = dataset.df.apply(
+            df_converted[c] = dataset._df.apply(
                 self._convert_to_float_value, column=c, axis=1
             )
             # Progress bar
@@ -223,25 +223,25 @@ class RowFix:
         bool_cols = set()
 
         for col in cols_by_type.numerical_cols:
-            col_type = str(type(dataset.df[col].iloc[0]))
-            unique_values = dataset.df[col].unique()
+            col_type = str(type(dataset._df[col].iloc[0]))
+            unique_values = dataset._df[col].unique()
             if "bool" in col_type or (
                 len(unique_values) == 2
                 and unique_values[0] in [0, 1]
                 and unique_values[1] in [0, 1]
             ):
-                dataset.df[col] = dataset.df[col].astype(np.bool)
+                dataset._df[col] = dataset._df[col].astype(np.bool)
                 bool_cols.add(col)
 
             if "float" in col_type:
-                dataset.df[col] = dataset.df[col].astype(np.float64)
+                dataset._df[col] = dataset._df[col].astype(np.float64)
                 float_cols.add(col)
             elif "int" in col_type:
-                dataset.df[col] = dataset.df[col].astype("Int32")
+                dataset._df[col] = dataset._df[col].astype("Int32")
                 int_cols.add(col)
 
         bool_cols = bool_cols.union(cols_by_type.bool_cols)
-        dataset.df[list(bool_cols)] = dataset.df[list(bool_cols)].astype(np.bool)
+        dataset._df[list(bool_cols)] = dataset._df[list(bool_cols)].astype(np.bool)
         if verbose:
             logger.info(
                 f"Casted to INT32: {int_cols}\n Casted to FLOAT64: {float_cols}\n"

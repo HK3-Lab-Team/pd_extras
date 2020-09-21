@@ -12,7 +12,7 @@ CWD = os.path.abspath(os.path.dirname("__file__"))
 # SEGMENTATION_DATA = os.path.join(CWD, '..', 'segmentation', 'resources', 'dense_areas_percentage.csv')
 DB_CORRECT = os.path.join(CWD, "..", "..", "data", "Sani_15300_anonym.csv")
 dataset = Dataset(metadata_cols=(), data_file=DB_CORRECT)
-print(dataset.df.columns)
+print(dataset._df.columns)
 col = "SEX"
 dataset = encode_single_categorical_column(
     dataset, col_name=col, encoding=EncodingFunctions.ONEHOT
