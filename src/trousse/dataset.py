@@ -912,7 +912,8 @@ class Dataset:
             ``df`` attribute.
         """
         return (
-            f"{self._columns_type}" f"\nColumns with many NaN: {len(self.nan_columns)}"
+            f"{self._columns_type}"
+            f"\nColumns with many NaN: {len(self.nan_columns(0.999))}"
         )
 
     def __call__(self) -> pd.DataFrame:

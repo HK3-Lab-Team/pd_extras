@@ -10,7 +10,9 @@ from trousse.dataset import (
     Dataset,
     FeatureOperation,
     _ColumnListByType,
+    _find_samples_by_type,
     _find_single_column_type,
+    _split_columns_by_type_parallel,
     copy_dataset_with_new_df,
     get_df_from_csv,
     read_file,
@@ -757,6 +759,23 @@ class Describe_Dataset:
 
         assert type(columns_name)
         assert columns_name == expected_columns_name
+
+    def test_str(self):
+        df = DataFrameMock.df_multi_type(10)
+        dataset = Dataset(df_object=df)
+        expected_str = (
+            "Columns with:\n\t1.\tMixed types: "
+            "\t\t1\n\t2.\tNumerical types (float/int): \t6\n\t3.\tString types: "
+            "\t\t2\n\t4.\tBool types: \t\t1\n\t5.\tOther types: \t\t1\nAmong these "
+            "categories:\n\t1.\tString categorical columns: 1\n\t2.\tNumeric categorical"
+            " columns: 2\n\t3.\tMedical Exam columns (numerical, no metadata): 6\n\t4."
+            "\tOne repeated value: 1\nColumns with many NaN: 0"
+        )
+
+        str_ = str(dataset)
+
+        assert type(str_) == str
+        assert expected_str == str_
 
 
 class Describe_FeatureOperation:

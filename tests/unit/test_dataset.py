@@ -1,9 +1,15 @@
 import pytest
 
-from trousse.dataset import Dataset, _ColumnListByType
+from trousse.dataset import ColumnListByType, Dataset, _ColumnListByType
 
 from ..dataset_util import DataFrameMock
-from ..unitutil import initializer_mock, property_mock
+from ..unitutil import initializer_mock, method_mock, property_mock
+
+<<<<<<< ef59f35ea144ff6b379c955797857a0e081d2639
+
+=======
+
+>>>>>>> fix nan_columns call and add unit and integration tests for __str__ method for Dataset and ColumnListByType
 
 
 class DescribeDataset:
@@ -177,3 +183,65 @@ class DescribeDataset:
         assert type(other_type_columns_) == set
         assert other_type_columns_ == {"other0", "other1"}
         _columns_type.assert_called_once()
+    def it_knows_its_str(self, request):
+        column_list_by_type = ColumnListByType(
+            mixed_type_cols={"mixed0", "mixed1"},
+            constant_cols={"constant"},
+            numerical_cols={"numerical0", "numerical1"},
+            med_exam_col_list={"med0", "med1", "med2"},
+            str_cols={"str0", "str1"},
+            str_categorical_cols={"strcat0", "strcat1"},
+            num_categorical_cols={"numcat0", "numcat1"},
+            bool_cols={"bool0", "bool1"},
+            other_cols={"other0", "other1"},
+        )
+        expected_str = (
+            "Columns with:\n\t1.\tMixed types: \t\t2\n\t2.\tNumerical types"
+            " (float/int): \t2\n\t3.\tString types: \t\t2\n\t4.\tBool types: \t\t2\n\t5."
+            "\tOther types: \t\t2\nAmong these categories:\n\t1.\tString categorical "
+            "columns: 2\n\t2.\tNumeric categorical columns: 2\n\t3.\tMedical Exam columns "
+            "(numerical, no metadata): 3\n\t4.\tOne repeated value: 1"
+        )
+
+        str_ = str(column_list_by_type)
+
+        assert type(str_) == str
+        assert str_ == expected_str
+
+
+class DescribeColumnListByType:
+    def it_knows_its_str(self, request):
+        column_list_by_type_str = (
+            "Columns with:\n\t1.\tMixed types: \t\t2\n\t2.\tNumerical types"
+            " (float/int): \t2\n\t3.\tString types: \t\t2\n\t4.\tBool types: \t\t2\n\t5."
+            "\tOther types: \t\t2\nAmong these categories:\n\t1.\tString categorical "
+            "columns: 2\n\t2.\tNumeric categorical columns: 2\n\t3.\tMedical Exam columns "
+            "(numerical, no metadata): 3\n\t4.\tOne repeated value: 1"
+        )
+        _column_list_by_type_str = method_mock(request, ColumnListByType, "__str__")
+        _column_list_by_type_str.return_value = column_list_by_type_str
+        _column_list_by_type = property_mock(request, Dataset, "column_list_by_type")
+        column_list_by_type = ColumnListByType(
+            mixed_type_cols={"mixed0", "mixed1"},
+            constant_cols={"constant"},
+            numerical_cols={"numerical0", "numerical1"},
+            med_exam_col_list={"med0", "med1", "med2"},
+            str_cols={"str0", "str1"},
+            str_categorical_cols={"strcat0", "strcat1"},
+            num_categorical_cols={"numcat0", "numcat1"},
+            bool_cols={"bool0", "bool1"},
+            other_cols={"other0", "other1"},
+        )
+        _column_list_by_type.return_value = column_list_by_type
+        _nan_columns = method_mock(request, Dataset, "nan_columns")
+        _nan_columns.return_value = {"nan0", "nan1"}
+        initializer_mock(request, Dataset)
+        dataset = Dataset(data_file="fake/path")
+        expected_str = column_list_by_type_str + "\nColumns with many NaN: 2"
+
+        str_ = str(dataset)
+
+        assert type(str_) == str
+        assert str_ == expected_str
+        _column_list_by_type.assert_called_once
+        _nan_columns.assert_called_once_with(dataset, 0.999)
