@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 
 from trousse.dataset import (
-    ColumnListByType,
     Dataset,
     FeatureOperation,
+    _ColumnListByType,
     _find_samples_by_type,
     _find_single_column_type,
     _split_columns_by_type_parallel,
@@ -164,7 +164,7 @@ class Describe_Dataset:
         [
             (
                 {"metadata_num_col"},
-                ColumnListByType(
+                _ColumnListByType(
                     mixed_type_cols=set(),
                     constant_cols=set(),
                     numerical_cols={
@@ -193,7 +193,7 @@ class Describe_Dataset:
                     "str_categorical_col",
                     "datetime_col",
                 },
-                ColumnListByType(
+                _ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
                     constant_cols={"same_col"},
                     numerical_cols={
@@ -219,7 +219,7 @@ class Describe_Dataset:
             ),
             (
                 None,
-                ColumnListByType(
+                _ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
                     constant_cols={"same_col"},
                     numerical_cols={
@@ -253,9 +253,9 @@ class Describe_Dataset:
             feature_cols=feature_cols,
         )
 
-        col_list_by_type = dataset.column_list_by_type
+        col_list_by_type = dataset._columns_type
 
-        assert isinstance(col_list_by_type, ColumnListByType)
+        assert isinstance(col_list_by_type, _ColumnListByType)
         assert col_list_by_type == expected_column_list_type
 
     @pytest.mark.parametrize(
