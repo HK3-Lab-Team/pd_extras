@@ -1,9 +1,10 @@
+import pandas as pd
 import pytest
 
 from trousse.dataset import Dataset, _ColumnListByType
 
 from ..dataset_util import DataFrameMock
-from ..unitutil import initializer_mock, method_mock, property_mock
+from ..unitutil import function_mock, initializer_mock, method_mock, property_mock
 
 
 class DescribeDataset:
@@ -202,6 +203,17 @@ class DescribeDataset:
 
         assert type(str_) == str
         assert str_ == expected_str
+
+    def it_knows_its_df(self, request):
+        expected_df = DataFrameMock.df_generic(10)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = expected_df
+        dataset = Dataset(data_file="fake/path")
+
+        df = dataset.df
+
+        assert isinstance(df, pd.DataFrame)
+        pd.testing.assert_frame_equal(df, expected_df)
 
 
 class DescribeColumnListByType:

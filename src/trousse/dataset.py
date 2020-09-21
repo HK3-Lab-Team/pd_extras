@@ -180,13 +180,13 @@ class Dataset:
             if data_file is None:
                 logging.error("Provide either data_file or df_object as argument")
             else:
-                self.df = get_df_from_csv(data_file)
+                self._df = get_df_from_csv(data_file)
         else:
-            self.df = df_object
+            self._df = df_object
 
         self._metadata_cols = set(metadata_cols)
         if feature_cols is None:
-            self._feature_cols = set(self.df.columns) - self.metadata_cols
+            self._feature_cols = set(self._df.columns) - self.metadata_cols
         else:
             self._feature_cols = set(feature_cols)
 
@@ -248,7 +248,7 @@ class Dataset:
         nan_columns = set()
         for c in self.feature_cols:
             # Check number of NaN
-            if sum(self.df[c].isna()) > nan_ratio * self.df.shape[0]:
+            if sum(self._df[c].isna()) > nan_ratio * self._df.shape[0]:
                 nan_columns.add(c)
 
         return nan_columns
@@ -262,7 +262,7 @@ class Dataset:
         Set[str]
             Set of column names with only one repeated value
         """
-        df_nunique = self.df[self.feature_cols].nunique(dropna=False)
+        df_nunique = self._df[self.feature_cols].nunique(dropna=False)
         constant_cols = df_nunique[df_nunique == 1].index
         return set(constant_cols)
 
@@ -335,7 +335,7 @@ class Dataset:
         }
 
         for col in col_list:
-            col_type = pd.api.types.infer_dtype(self.df[col], skipna=True)
+            col_type = pd.api.types.infer_dtype(self._df[col], skipna=True)
             PD_INFER_TYPE_MAP[col_type].add(col)
 
         str_categorical_cols = self._get_categorical_cols(str_cols)
@@ -461,6 +461,17 @@ class Dataset:
         """
         return self._columns_type.other_cols
 
+    @property
+    def df(self) -> pd.DataFrame:
+        """Return data as a pd.DataFrame
+
+        Returns
+        -------
+        pd.DataFrame
+            Data
+        """
+        return self._df
+
     def _get_categorical_cols(self, col_list: Tuple[str]) -> Set[str]:
         """
         Identify every categorical column in dataset.
@@ -496,11 +507,11 @@ class Dataset:
         categorical_cols = set()
 
         for col in col_list:
-            unique_val_nb = len(self.df[col].unique())
+            unique_val_nb = len(self._df[col].unique())
             if unique_val_nb < 7 or (
-                unique_val_nb < self.df[col].count() // CATEG_COL_THRESHOLD
+                unique_val_nb < self._df[col].count() // CATEG_COL_THRESHOLD
             ):
-                self.df[col] = self.df[col].astype("category")
+                self._df[col] = self._df[col].astype("category")
                 categorical_cols.add(col)
 
         return categorical_cols
@@ -592,7 +603,7 @@ class Dataset:
         """
         col_names = set()
         for c in col_id_list:
-            col_names.add(self.df.columns[c])
+            col_names.add(self._df.columns[c])
         return col_names
 
     def check_duplicated_features(self) -> bool:
@@ -609,7 +620,7 @@ class Dataset:
         #  values are the same too and inform the user appropriately
         logger.info("Checking duplicated columns")
         # Check if there are duplicates in the df columns
-        if len(self.df.columns) != len(set(self.df.columns)):
+        if len(self._df.columns) != len(set(self._df.columns)):
             logger.error("There are duplicated columns")
             return True
         else:
@@ -633,7 +644,7 @@ class Dataset:
         """
         col_list = self.feature_cols if col_list is None else col_list
         column_type_dict_list = Parallel(n_jobs=-1)(
-            delayed(_find_single_column_type)(df_col=self.df[col]) for col in col_list
+            delayed(_find_single_column_type)(df_col=self._df[col]) for col in col_list
         )
         for i, col_type_dict in enumerate(column_type_dict_list):
             print(
@@ -925,7 +936,7 @@ class Dataset:
         pd.DataFrame
             Pandas DataFrame ``df`` attribute of this instance
         """
-        return self.df
+        return self._df
 
 
 def copy_dataset_with_new_df(dataset: Dataset, new_pandas_df: pd.DataFrame) -> Dataset:
@@ -951,14 +962,14 @@ def copy_dataset_with_new_df(dataset: Dataset, new_pandas_df: pd.DataFrame) -> D
         Dataset instance with same attribute values as ``dataset`` argument,
         but with ``new_pandas_df`` used as ``df`` attribute value.
     """
-    if not set(dataset.df.columns).issubset(new_pandas_df.columns):
+    if not set(dataset._df.columns).issubset(new_pandas_df.columns):
         logging.warning(
             "Some columns of the previous Dataset instance "
             "are being lost, but information about operation on them "
             "is still present"
         )
     new_dataset = copy.copy(dataset)
-    new_dataset.df = new_pandas_df
+    new_dataset._df = new_pandas_df
     return new_dataset
 
 
