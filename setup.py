@@ -32,6 +32,7 @@ install_requires = [
     "pandas",
     "scikit-learn",
     "joblib",
+    "typing_extensions",
 ]
 
 test_requires = ["pytest", "coverage", "pytest-cov", "coveralls"]
