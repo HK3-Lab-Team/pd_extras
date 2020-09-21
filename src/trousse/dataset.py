@@ -53,31 +53,6 @@ _COL_NAME_COLUMN = "col_name"
 _COL_TYPE_COLUMN = "col_type"
 
 
-def _find_samples_by_type(df: pd.DataFrame, samples_type: str) -> Set[str]:
-    """
-    Return names of the sample that share the same value ``samples_type``
-
-    This function accepts a pandas DataFrame ``df`` with two columns: "col_name",
-    "col_type". Then it finds the rows with "col_type" value == ``samples_type`` and
-    returns a set with the "col_name" values of those rows.
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Pandas DataFrame with 2 columns: "col_name" and "col_type"
-    samples_type: str
-        Value of "col_type" column of ``df``. The "col_name" of the samples with
-        this value will be included in the returned set
-
-    Returns
-    -------
-    set
-        Set with "col_name" value of the rows that have "col_type"
-        value == ``samples_type``
-    """
-    return set(df[df[_COL_TYPE_COLUMN] == samples_type][_COL_NAME_COLUMN].values)
-
-
 def _find_single_column_type(df_col: pd.Series) -> Dict[str, str]:
     """
     Analyze the ``df_col`` to find the type of its values.
@@ -124,58 +99,6 @@ def _find_single_column_type(df_col: pd.Series) -> Dict[str, str]:
             return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "other_col"}
     else:
         return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "mixed_type_col"}
-
-
-def _split_columns_by_type_parallel(
-    df: pd.DataFrame, col_list: List[str]
-) -> Tuple[Set[str]]:
-    """
-    Find column types of DataFrame ``df``
-
-    For performance reasons, joblib is employed to analyze columns in parallel
-    processes.
-    For each column, after computing each value type, the function compares
-    them to check if they are different (in this case the column type is
-    "mixed_type_col"). If not, the based on the type of the column first element,
-    the function returns a column type as follows:
-    - float/int -> "numerical_col"
-    - bool -> "bool_col"
-    - str -> "string_col"
-    - other types -> "other_col"
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        DataFrame containing columns to be analyzed
-    col_list: List[str]
-        List of the column names that will be analyzed
-
-    Returns
-    -------
-    set:
-        Set of columns containing values of different types
-    set:
-        Set of columns containing numerical values
-    set:
-        Set of columns containing string values
-    set:
-        Set of columns containing boolean values
-    set:
-        Set of the remaining columns that are in ``col_list`` but do not belong to any
-        other set
-    """
-    column_type_dict = Parallel(n_jobs=-1)(
-        delayed(_find_single_column_type)(df_col=df[col]) for col in col_list
-    )
-    column_type_df = pd.DataFrame(column_type_dict)
-
-    mixed_type_cols = _find_samples_by_type(column_type_df, "mixed_type_col")
-    numerical_cols = _find_samples_by_type(column_type_df, "numerical_col")
-    str_cols = _find_samples_by_type(column_type_df, "string_col")
-    other_cols = _find_samples_by_type(column_type_df, "other_col")
-    bool_cols = _find_samples_by_type(column_type_df, "bool_col")
-
-    return mixed_type_cols, numerical_cols, str_cols, bool_cols, other_cols
 
 
 @dataclass
