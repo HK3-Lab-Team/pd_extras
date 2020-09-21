@@ -215,6 +215,15 @@ class DescribeDataset:
         assert isinstance(df, pd.DataFrame)
         pd.testing.assert_frame_equal(df, expected_df)
 
+    def it_can_get_dataset_copy(self, request):
+        initializer_mock(request, Dataset)
+        dataset = Dataset(data_file="fake/path")
+
+        dataset_copy = dataset._dataset_copy
+
+        assert isinstance(dataset_copy, Dataset)
+        assert id(dataset) != id(dataset_copy)
+
 
 class DescribeColumnListByType:
     def it_knows_its_str(self, request):

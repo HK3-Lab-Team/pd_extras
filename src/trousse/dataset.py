@@ -912,6 +912,17 @@ class Dataset:
             except KeyError as e:
                 logging.error(f"Exporting data unsuccessful: \n{e}")
 
+    @property
+    def _dataset_copy(self) -> "Dataset":
+        """Return a deep copy of the Dataset instance.
+
+        Returns
+        -------
+        Dataset
+            Deep copy of the Dataset instance.
+        """
+        return copy.deepcopy(self)
+
     def __str__(self) -> str:
         """
         Return text with the number of columns for every variable type
