@@ -228,21 +228,24 @@ class DescribeDataset:
         assert id(dataset) != id(dataset_copy)
 
     @pytest.mark.parametrize(
-        "columns, derived_columns, expected_new_columns",
+        "columns, derived_columns, expected_new_columns, expected_inplace",
         [
             (
                 ["nan_0", "nan_1"],
                 ["filled_nan_0", "filled_nan_1"],
                 ["filled_nan_0", "filled_nan_1"],
+                False,
             ),
-            (["nan_0"], ["filled_nan_0"], ["filled_nan_0"]),
-            (["nan_0", "nan_1"], None, []),
-            (["nan_0"], None, []),
+            (["nan_0"], ["filled_nan_0"], ["filled_nan_0"], False),
+            (["nan_0", "nan_1"], None, [], True),
+            (["nan_0"], None, [], True),
         ],
     )
     def it_can_fillna_not_inplace_list(
-        self, request, columns, derived_columns, expected_new_columns
+        self, request, columns, derived_columns, expected_new_columns, expected_inplace
     ):
+        pd_fillna_ = method_mock(request, pd.Series, "fillna")
+        pd_fillna_.return_value = pd.Series([0] * 100)
         _dataset_copy_ = property_mock(request, Dataset, "_dataset_copy")
         df = DataFrameMock.df_many_nans(nan_ratio=0.5, n_columns=3)
         get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
@@ -264,21 +267,23 @@ class DescribeDataset:
             call("fake/path1"),
             call("fake/path0"),
         ]
+        assert len(pd_fillna_.call_args_list) == len(columns)
+        for i, col in enumerate(columns):
+            pd.testing.assert_series_equal(pd_fillna_.call_args_list[i][0][0], df[col])
+            assert pd_fillna_.call_args_list[i][1] == {"inplace": expected_inplace}
 
     @pytest.mark.parametrize(
-        "columns, derived_columns, expected_new_columns",
+        "column, derived_column, expected_new_column, expected_inplace",
         [
-            (
-                "nan_0",
-                "filled_nan_0",
-                ["filled_nan_0"],
-            ),
-            ("nan_0", None, []),
+            ("nan_0", "filled_nan_0", ["filled_nan_0"], False),
+            ("nan_0", None, [], True),
         ],
     )
     def it_can_fillna_not_inplace_str(
-        self, request, columns, derived_columns, expected_new_columns
+        self, request, column, derived_column, expected_new_column, expected_inplace
     ):
+        pd_fillna_ = method_mock(request, pd.Series, "fillna")
+        pd_fillna_.return_value = pd.Series([0] * 100)
         _dataset_copy_ = property_mock(request, Dataset, "_dataset_copy")
         df = DataFrameMock.df_many_nans(nan_ratio=0.5, n_columns=3)
         get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
@@ -287,19 +292,25 @@ class DescribeDataset:
         dataset = Dataset(data_file="fake/path0")
 
         filled_dataset = dataset.fillna(
-            columns=columns, derived_columns=derived_columns, value=0, inplace=False
+            columns=column,
+            derived_columns=derived_column,
+            value=0,
+            inplace=False,
         )
 
         assert filled_dataset is not None
         assert filled_dataset is not dataset
         assert isinstance(filled_dataset, Dataset)
-        for col in expected_new_columns:
+        for col in expected_new_column:
             assert col in filled_dataset.df.columns
         _dataset_copy_.assert_called_once()
         assert get_df_from_csv_.call_args_list == [
             call("fake/path1"),
             call("fake/path0"),
         ]
+        assert len(pd_fillna_.call_args_list) == 1
+        pd.testing.assert_series_equal(pd_fillna_.call_args_list[0][0][0], df[column])
+        assert pd_fillna_.call_args_list[0][1] == {"inplace": expected_inplace}
 
     @pytest.mark.parametrize(
         "columns",
