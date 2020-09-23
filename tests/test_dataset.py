@@ -68,8 +68,8 @@ class _TestColumn:
         This class uses ``column`` to initialize the values of two pandas Series
         that will be contemporarily modified by the applied
         ReverseFeatureOperation:
-        - ``values_to_fix`` -> keeps track of the modified values
-        - ``values_after_fix`` -> keeps track of the values that are
+        - ``_values_to_fix`` -> keeps track of the modified values
+        - ``_values_after_fix`` -> keeps track of the values that are
             expected to be found when the user will apply the appropriate
             correction (e.g. result of a test)
         Infact, since the process of properly correcting ``values_to_fix`` cannot
@@ -87,22 +87,13 @@ class _TestColumn:
             the values to be fixed in the same samples.
             Otherwise we may end up having samples with invalid values only.
 
-        Attributes
-        ----------
-        values_to_fix: pd.Series
-            Column values where possible ReverseFeatureOperation introduced
-            values to fix.
-
-        values_after_fix: pd.Series
-            Column values resulting after applying proper correction to
-            ``values_to_fix`` attribute of the instance.
         """
         self._name = column.name
         self._col_id = col_id
         self._dtype = column.dtype
 
-        self.values_to_fix = pd.Series(column.original_values, dtype=column.dtype)
-        self.values_after_fix = self.values_to_fix.copy()
+        self._values_to_fix = pd.Series(column.original_values, dtype=column.dtype)
+        self._values_after_fix = self._values_to_fix.copy()
 
     @property
     def name(self):
@@ -135,10 +126,84 @@ class _TestColumn:
     def __len__(self) -> int:
         return len(self.values_to_fix)
 
+    @property
+    def values_to_fix(self) -> pd.Series:
+        """
+        Return the column values where ReverseFeatureOperation introduced values to fix.
+
+        These are the column values on which the user (or a test)
+        is supposed to apply the proper correction in order to go back to
+        the original dataset (with clean values).
+        Since this process cannot always be fully reversible, the expected values
+        after the process will be ``values_after_fix`` property.
+
+        Returns
+        -------
+        pd.Series
+            Column values where possible ReverseFeatureOperation introduced
+            values to fix.
+        """
+        return self._values_to_fix
+
+    @property
+    def values_after_fix(self) -> pd.Series:
+        """
+        Return the column values resulting after applying proper correction.
+
+        These are modified along with ``values_to_fix`` to keep
+        track of the values inserted.
+        Since the process of properly correcting ``values_to_fix`` cannot always
+        be fully reversible, these are the column values that the column
+        will contain after that process.
+
+        Returns
+        -------
+        pd.Series
+            Column values resulting after applying proper correction to
+            ``values_to_fix`` property of the instance.
+        """
+        return self._values_after_fix
+
+    def update_sample(self, index: int, value_to_fix: Any, value_after_fix: Any):
+        """
+        Update a single column sample with new values
+
+        Parameters
+        ----------
+        index: int
+            Index of the column sample that is updated
+        value_to_fix: Any
+            Raw value that needs a fix (usually an error simulated by a
+            ReverseFeatureOperation).
+        value_to_fix: Any
+            Value that is supposed to be found after that the proper correction
+            is applied to ``value_to_fix`` argument.
+        """
+        self._values_to_fix[index] = value_to_fix
+        self._values_after_fix[index] = value_after_fix
+
+    def update_column_values(
+        self, values_to_fix: Iterable[Any], values_after_fix: Iterable[Any]
+    ):
+        """
+        Update a single column sample with new values
+
+        Parameters
+        ----------
+        values_to_fix: Any
+            Raw values that need a fix (usually values containing errors that have
+            been simulated by a ReverseFeatureOperation).
+        values_to_fix: Any
+            Values that are supposed to be found after that the proper correction
+            is applied to ``values_to_fix`` argument.
+        """
+        self._values_to_fix = values_to_fix
+        self._values_after_fix = values_after_fix
+
 
 class TestDataSet:
     def __init__(self, sample_size: int = None):
-        # Creating two dicts with the same elements (passex by address), so that
+        # Creating two dicts with the same elements (passed by address), so that
         # retrieving an element by name or index takes the same time
         self._columns_by_index = []
         self._sample_size = sample_size
@@ -435,16 +500,13 @@ class InsertNaNs(ReverseFeatureOperation):
                 list_length=dataset.sample_size,
             )
 
-            col_values_to_fix = column.values_to_fix
-            col_values_after_fix = column.values_after_fix
             # For different sample_id, replacing different elements from the list of
             # possible strings (invalid values)
             for sample_id in nan_sample_ids:
-                col_values_to_fix[sample_id] = pd.NA
-                col_values_after_fix[sample_id] = pd.NA
+                column.update_sample(
+                    sample_id, value_to_fix=pd.NA, value_after_fix=pd.NA
+                )
 
-            column.values_to_fix = col_values_to_fix
-            column.values_after_fix = col_values_after_fix
             dataset[col_name] = column
 
         return dataset
@@ -515,19 +577,18 @@ class InsertInvalidStrings(ReverseFeatureOperation):
             )
 
             invalid_string_list = list(self._replacement_map.keys())
-            col_values_to_fix = column.values_to_fix
-            col_values_after_fix = column.values_after_fix
             # For different sample_id, replacing different elements from the list of
             # possible strings (invalid values)
             for sample_id in invalid_string_sample_ids:
                 error_to_insert = invalid_string_list[
                     sample_id % len(invalid_string_list)
                 ]
-                col_values_to_fix[sample_id] = error_to_insert
-                col_values_after_fix[sample_id] = self._replacement_map[error_to_insert]
+                column.update_sample(
+                    sample_id,
+                    value_to_fix=error_to_insert,
+                    value_after_fix=self._replacement_map[error_to_insert],
+                )
 
-            column.values_to_fix = col_values_to_fix
-            column.values_after_fix = col_values_after_fix
             dataset[col_name] = column
 
         return dataset
@@ -571,9 +632,6 @@ class InsertInvalidSubStrings(ReverseFeatureOperation):
     def _validate_replacement_map(self, replacement_map: Dict[str, str]):
         """
         Validate ``replacement_map`` argument used to initialize the instances
-
-        This is to check that all the substrings that get replaced and
-        the new values are strings
 
         Parameters
         ----------
@@ -621,7 +679,6 @@ class InsertInvalidSubStrings(ReverseFeatureOperation):
             )
 
             substrings_to_insert = list(self._replacement_map.keys())
-            col_values_to_fix = column.values_to_fix
             # For different sample_id, replacing different elements from the list of
             # possible strings (invalid values)
             for sample_id in invalid_substring_sample_ids:
@@ -629,21 +686,26 @@ class InsertInvalidSubStrings(ReverseFeatureOperation):
                     sample_id % len(substrings_to_insert)
                 ]
                 correct_substring = self._replacement_map[substring_to_insert]
+                # Value that will be modified by inserting a substring
+                old_value = column.values_to_fix[sample_id]
                 # If the correct substring is an empty string (i.e. the substring
                 # should not be present), the invalid substring is placed at
                 # the end of the value, otherwise it replaces the correct value
                 if correct_substring == "":
-                    new_value = str(col_values_to_fix[sample_id]) + substring_to_insert
+                    new_value = str(old_value) + substring_to_insert
                 else:
-                    new_value = str(col_values_to_fix[sample_id]).replace(
+                    new_value = str(column.values_to_fix[sample_id]).replace(
                         correct_substring, substring_to_insert
                     )
-                col_values_to_fix[sample_id] = new_value
 
-            # No need to change column.values_after_fix, because after the correction
-            # the dataset should be fully corrected (as if this operation was
-            # not performed)
-            column.values_to_fix = col_values_to_fix
+                # No need to change column.values_after_fix, because after the correction
+                # the dataset should be fully corrected (as if this operation was
+                # not performed)
+                column.update_sample(
+                    sample_id,
+                    value_to_fix=new_value,
+                    value_after_fix=column.values_after_fix[sample_id],
+                )
             dataset[col_name] = column
 
         return dataset
