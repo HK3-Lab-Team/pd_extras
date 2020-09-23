@@ -135,73 +135,6 @@ class _TestColumn:
     def __len__(self) -> int:
         return len(self.values_to_fix)
 
-    # @property
-    # def values_to_fix(self) -> pd.Series:
-    #     """
-    #     Return the column values where ReverseFeatureOperation introduced values to fix.
-
-    #     These values have been modified starting from ``original_values``
-    #     argument of the constructor by applying ReverseFeatureOperation instances.
-    #     These are modified along with ``values_after_fix`` to keep
-    #     track of the values inserted.
-    #     Particularly these are the column values on which the user (or a test)
-    #     is supposed to apply the proper correction in order to go back to
-    #     the original dataset (with clean values).
-    #     Since this process cannot always be fully reversible, the expected values
-    #     after the process will be ``values_after_fix``.
-
-    #     Returns
-    #     -------
-    #     pd.Series
-    #         Column values where possible ReverseFeatureOperation introduced
-    #         values to fix.
-    #     """
-    #     return self._values_to_fix
-
-    # @property
-    # def values_after_fix(self) -> pd.Series:
-    #     """
-    #     Return the column values resulting after applying proper correction.
-
-    #     These values have been modified starting from ``original_values``
-    #     argument of the constructor by applying ReverseFeatureOperation instances.
-    #     These are modified along with ``values_to_fix`` to keep
-    #     track of the values inserted.
-    #     Since the process of properly correcting ``values_to_fix`` cannot always
-    #     be fully reversible, these are the column values that the column
-    #     will contain after that process.
-
-    #     Returns
-    #     -------
-    #     pd.Series
-    #         Column values resulting after applying proper correction to
-    #         ``values_to_fix`` property of the instance.
-    #     """
-    #     return self._values_after_fix
-
-    # @values_to_fix.setter
-    # def values_to_fix(self, value):
-    #     self._values_to_fix = value
-
-    # @values_after_fix.setter
-    # def values_after_fix(self, value):
-    #     self._values_after_fix = value
-
-    # def __setitem__(self, key: int, value: Tuple[Any, Any]):
-    #     """
-    #     Parameters
-    #     ----------
-    #     key: int
-    #         Index of the sample in the column
-    #     value: Tuple[Any, Any]
-    #         Tuple where the first element corresponds to the raw value
-    #         (usually an error simulated by the ReverseFeatureOperation), and the
-    #         second element is the one that is supposed to be found after that the
-    #         corresponding FeatureOperation is applied.
-    #     """
-    #     self._values_to_fix[key] = value[0]
-    #     self._values_after_fix[key] = value[1]
-
 
 class TestDataSet:
     def __init__(self, sample_size: int = None):
@@ -218,7 +151,7 @@ class TestDataSet:
     def _validate_testcolumn_to_add(self, column: TestColumn):
         """
         Check the TestColumn instance ``column`` before inserting it in the dataset
-        
+
         This method checks that:
         - ``column`` is an instance of TestColumn
         - another column with the same name is not present in the dataset
