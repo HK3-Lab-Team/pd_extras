@@ -190,10 +190,10 @@ class _TestColumn:
 
         Parameters
         ----------
-        values_to_fix: Any
+        values_to_fix: Iterable[Any]
             Raw values that need a fix (usually values containing errors that have
             been simulated by a ReverseFeatureOperation).
-        values_to_fix: Any
+        values_to_fix: Iterable[Any]
             Values that are supposed to be found after that the proper correction
             is applied to ``values_to_fix`` argument.
         """
@@ -213,7 +213,9 @@ class TestDataSet:
     def sample_size(self) -> Union[int, None]:
         return self._sample_size
 
-    def _validate_testcolumn_to_add(self, column: TestColumn):
+    def _validate_testcolumn(
+        self, column: Union[TestColumn, _TestColumn], is_updating: bool = False
+    ):
         """
         Check the TestColumn instance ``column`` before inserting it in the dataset
 
@@ -221,17 +223,33 @@ class TestDataSet:
         - ``column`` is an instance of TestColumn
         - another column with the same name is not present in the dataset
         - the ``column`` has the same number of samples as the others
+
+        Parameters
+        ----------
+        column: Union[TestColumn, _TestColumn]
+            Column that needs to be validated. If ``is_updating`` is True,
+            a `_TestColumn` instance is required, a `TestColumn` otherwise
+        is_updating: bool
+            Option to select if the column is being updated or if it will be
+            appended to the TestDataSet as a new column
         """
-        if not isinstance(column, TestColumn):
-            raise TypeError(
-                "The 'column' argument must be a TestColumn instance, instead"
-                + f" its type is {type(column)}"
-            )
-        if column.name in self._name_to_index_map:
-            raise ValueError(
-                "The name and/or the column id is already present"
-                " in the Dataset. If this is expected, set ``overwrite`` to True"
-            )
+        if is_updating:
+            if not isinstance(column, _TestColumn):
+                raise TypeError(
+                    "The 'column' argument must be a _TestColumn instance, instead"
+                    + f" its type is {type(column)}"
+                )
+        else:
+            if not isinstance(column, TestColumn):
+                raise TypeError(
+                    "The 'column' argument must be a TestColumn instance, instead"
+                    + f" its type is {type(column)}"
+                )
+            if column.name in self._name_to_index_map:
+                raise ValueError(
+                    "The name and/or the column id is already present in the "
+                    "Dataset. If an update is required, use __setitem__ by indexing"
+                )
         if len(column) != self.sample_size:
             raise ValueError(
                 f'`column` argument named "{column.name}" has {len(column)}'
@@ -249,7 +267,13 @@ class TestDataSet:
             Column (TestColumn instance) that is added to this
             TestDataSet instance.
         """
-        self._validate_testcolumn_to_add(column)
+        # If the sample size is not initialized, set it to the length of the first
+        # added column
+        if self.sample_size is None:
+            self._sample_size = len(column)
+
+        self._validate_testcolumn(column, is_updating=False)
+
         # Assign the new column ID (it will be used by ReverseFeatureOperation
         # instances in order to avoid replacing the values to be fixed
         # in the same samples)
@@ -342,18 +366,12 @@ class TestDataSet:
             New _TestColumn instance that replaces the column identified
             by ``column_name_id``.
         """
-        if isinstance(value, _TestColumn):
-            if isinstance(column_name_id, int):
-                self._columns_by_index[column_name_id] = value
-            else:
-                self._columns_by_index[
-                    self._name_to_index_map[str(column_name_id)]
-                ] = value
+        self._validate_testcolumn(value, is_updating=True)
+
+        if isinstance(column_name_id, int):
+            self._columns_by_index[column_name_id] = value
         else:
-            raise TypeError(
-                "The ``value`` argument must be a _TestColumn instance, instead"
-                + f" its type is {type(value)}"
-            )
+            self._columns_by_index[self._name_to_index_map[str(column_name_id)]] = value
 
     def __contains__(self, column_name_id: Union[int, str]) -> bool:
         """
@@ -374,6 +392,18 @@ class TestDataSet:
     def __len__(self):
         """Return number of columns in this instance"""
         return len(self._columns_by_index)
+
+    def shape(self) -> Tuple[Union[int, None], int]:
+        """Return the Dataset shape
+
+        Returns
+        -------
+        int
+            Number of samples in this instance
+        int
+            Number of columns in this instance
+        """
+        return (self.sample_size, len(self._columns_by_index))
 
 
 class ReverseFeatureOperation(ABC):
