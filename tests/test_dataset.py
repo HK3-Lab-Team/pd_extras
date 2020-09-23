@@ -572,6 +572,9 @@ class InsertInvalidSubStrings(ReverseFeatureOperation):
         """
         Validate ``replacement_map`` argument used to initialize the instances
 
+        This is to check that all the substrings that get replaced and
+        the new values are strings
+
         Parameters
         ----------
         replacement_map: Dict
