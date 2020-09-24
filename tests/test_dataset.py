@@ -390,7 +390,7 @@ class TestDataSet:
         """Return number of columns in this instance"""
         return len(self._columns_by_index)
 
-    def shape(self) -> Tuple[Union[int, None], int]:
+    def shape(self) -> Tuple[Optional[int], int]:
         """Return the Dataset shape
 
         Returns
