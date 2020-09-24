@@ -221,7 +221,7 @@ class _TestColumn:
 
 class TestDataSet:
     def __init__(self, sample_size: int = None):
-        # Creating two dicts with the same elements (passed by address), so that
+        # Creating two dicts with the same elements, so that
         # retrieving an element by name or index takes the same time
         self._columns_by_index = []
         self._sample_size = sample_size
