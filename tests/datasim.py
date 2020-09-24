@@ -454,6 +454,12 @@ class TestDataSet:
         ----------
         column_name_id : Union[int, str]
             Name or ID of the column whose presence needs to be checked.
+
+        Returns
+        -------
+        bool
+            Returns True if the column identified by ``column_name_id`` is present
+            in TestDataSet, False otherwise.
         """
         if isinstance(column_name_id, str):
             return column_name_id in self._name_to_index_map
