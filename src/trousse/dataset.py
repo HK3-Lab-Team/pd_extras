@@ -6,7 +6,7 @@ import os
 import shelve
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, DefaultDict, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import pandas as pd
 import sklearn
@@ -20,7 +20,7 @@ from .exceptions import (
 from .feature_enum import OperationTypeEnum
 from .feature_operation import FeatureOperation
 from .settings import CATEG_COL_THRESHOLD
-from .util import lazy_property
+from .util import lazy_property, tolist
 
 logger = logging.getLogger(__name__)
 
