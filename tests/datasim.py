@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Tuple, Union, Sequence
+from typing import Any, Dict, List, Tuple, Union, Sequence
 
 import numpy as np
 import pandas as pd
@@ -300,7 +300,7 @@ class TestDataSet:
                 "The 'column' argument must be a _TestColumn instance, instead"
                 + f" its type is {type(column)}"
             )
-        if not column.name in self._name_to_index_map:
+        if column.name not in self._name_to_index_map:
             raise ValueError(
                 "The name and/or the column id is not present in the "
                 "Dataset. If a new column must be added, use `add_column` method"
