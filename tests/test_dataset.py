@@ -22,16 +22,13 @@ def _sample_index_in_list(
     with "id_counter" in 0 .. ``element_id_count``.
     The function also takes into account that the list length is finite, and when
     element_id > ``list_length`` the element_id will be calculated at the beginning
-    of the list, as if the list was a loop. This allows the function to always
+    of the list, as if the list was a circular list. This allows the function to always
     return ``element_id_count`` elements.
     """
     element_ids = []
     for id_counter in range(element_id_count):
         element_id = slope * id_counter + bias
-        if element_id > list_length:
-            element_ids.append(element_id - list_length)
-        else:
-            element_ids.append(element_id)
+        element_ids.append(element_id % list_length)
 
     return element_ids
 
@@ -43,11 +40,11 @@ class TestColumn:
 
     Parameters
     ----------
-    name: str
+    name : str
         Name of the column.
-    original_values: Union[pd.Series, np.ndarray, List, Tuple]
+    original_values : Union[pd.Series, np.ndarray, List, Tuple]
         Values of the column.
-    dtype: Union[type, str]
+    dtype : Union[type, str]
         Data type for the output Series. This must be a dtype supported
         by pandas/numpy.
     """
@@ -72,17 +69,17 @@ class _TestColumn:
         - ``_values_after_fix`` -> keeps track of the values that are
             expected to be found when the user will apply the appropriate
             correction (e.g. result of a test)
-        Infact, since the process of properly correcting ``values_to_fix`` cannot
+        In fact, since the process of properly correcting ``values_to_fix`` cannot
         always be fully reverted (e.g. inserting NaN), each ReverseFeatureOperation
         takes care of providing the modification and the expected correction by
         modifying ``values_to_fix`` and ``values_after_fix``.
 
         Parameters
         ----------
-        column: TestColumn
+        column : TestColumn
             TestColumn instance whose values are used to create the instance
-        col_id: int
-            Integer identifying the number of the column considered. This will be
+        col_id : int
+            Integer identifying the index of the column considered. This will be
             used by ReverseFeatureOperation instances in order to avoid replacing
             the values to be fixed in the same samples.
             Otherwise we may end up having samples with invalid values only.
@@ -202,7 +199,7 @@ class _TestColumn:
 
 
 class TestDataSet:
-    def __init__(self, sample_size: int = None):
+    def __init__(self, sample_size: Optional[int] = None):
         # Creating two dicts with the same elements (passed by address), so that
         # retrieving an element by name or index takes the same time
         self._columns_by_index = []
@@ -210,7 +207,7 @@ class TestDataSet:
         self._name_to_index_map = {}
 
     @property
-    def sample_size(self) -> Union[int, None]:
+    def sample_size(self) -> Optional[int]:
         return self._sample_size
 
     def _validate_testcolumn(
@@ -354,15 +351,15 @@ class TestDataSet:
         else:
             return self._columns_by_index[self._name_to_index_map[str(item)]]
 
-    def __setitem__(self, column_name_id: Union[int, str], value: _TestColumn):
+    def __setitem__(self, column_name_id: Union[int, str], value: _TestColumn) -> None:
         """
         Set a new ``value`` to column identified by ``column_name_id``
 
         Parameters
         ----------
-        column_name_id: Union[int, str]
+        column_name_id : Union[int, str]
             Name or Id of the column whose value is being set.
-        value: _TestColumn
+        value : _TestColumn
             New _TestColumn instance that replaces the column identified
             by ``column_name_id``.
         """
@@ -418,7 +415,7 @@ class ReverseFeatureOperation(ABC):
 
         Parameters
         ----------
-        columns: Union[List[str], List[int]]
+        columns : Union[List[str], List[int]]
             List of the names/column IDs of the columns on which the
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.
@@ -439,7 +436,7 @@ class ReverseFeatureOperation(ABC):
         Raises
         ------
         ValueError
-            This error is raised when `column_names` attribute contains a mix of
+            If `column_names` attribute contains a mix of
             names (string) and IDs (integer) of the columns, which is not accepted.
         """
         if all([isinstance(col, str) for col in column_names]) or all(
@@ -491,11 +488,11 @@ class InsertNaNs(ReverseFeatureOperation):
 
         Parameters
         ----------
-        column_names: Union[List[str], List[int]]
+        column_names : Union[List[str], List[int]]
             List of the names/column IDs of the columns on which the
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.
-        error_count: int
+        error_count : int
             Number of values that will be replaced with NaNs in each column
         """
         super().__init__(column_names=column_names)
@@ -510,7 +507,7 @@ class InsertNaNs(ReverseFeatureOperation):
 
         Parameters
         ----------
-        dataset: TestDataSet
+        dataset : TestDataSet
             TestDataSet instance containing the values of a dataset where some
             invalid substrings will be inserted in the columns ``self._columns``.
 
