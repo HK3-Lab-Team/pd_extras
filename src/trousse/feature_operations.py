@@ -3,10 +3,12 @@ try:
 except ImportError:
     from typing_extensions import Protocol, runtime_checkable
 
+import collections
 from abc import abstractmethod
 from typing import Any, List
 
 from .dataset import Dataset
+from .util import tolist
 
 
 @runtime_checkable
@@ -23,6 +25,56 @@ class FeatureOperation(Protocol):
     @abstractmethod
     def is_similar(self, other: "FeatureOperation"):
         raise NotImplementedError
+
+
+class _OperationsList:
+    def __init__(self):
+        self._operations_list = []
+        self._operations_by_column = collections.defaultdict(list)
+
+    def __iadd__(self, feat_op: FeatureOperation):
+        self._operations_list.append(feat_op)
+
+        columns = tolist(feat_op.columns)
+        derived_columns = (
+            tolist(feat_op.derived_columns) if feat_op.derived_columns else None
+        )
+
+        for column in columns + derived_columns:
+            self._operations_by_column[column].append(feat_op)
+
+        return self
+
+    def __getitem__(
+        self, label: Union[int, str]
+    ) -> Union[FeatureOperation, List[FeatureOperation]]:
+        """Retrieve FeatureOperation element.
+
+        Parameters
+        ----------
+        label : Union[int, str]
+            Label used to retrieve the element. If int: get the label-th FeatureOperation.
+            If str: ``label`` will be treated as the name of a column and it will get all
+            the FeatureOperation associated with that column.
+
+        Returns
+        -------
+        Union[FeatureOperation, List[FeatureOperation]]
+            Requested FeatureOperation(s)
+
+        Raises
+        ------
+        TypeError
+            If ``label`` is not either an integer or a string.
+        """
+        if isinstance(label, int):
+            return self._operations_list[label]
+        elif isinstance(label, str):
+            return self._operations_by_column[label]
+        else:
+            raise TypeError(
+                f"Cannot get FeatureOperation with a label of type {type(label)}"
+            )
 
 
 class FillNA(FeatureOperation):
