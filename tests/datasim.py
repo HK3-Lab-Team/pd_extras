@@ -69,7 +69,6 @@ class TestColumn:
         Data type for the output Series. This must be a dtype supported
         by pandas/numpy.
     """
-
     name: str
     original_values: Union[pd.Series, np.ndarray, List, Tuple]
     dtype: Union[type, str, None]
