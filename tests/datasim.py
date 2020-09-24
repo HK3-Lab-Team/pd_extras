@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union, Sequence
+from typing import Any, Dict, List, Tuple, Union, Sequence, Optional
 
 import numpy as np
 import pandas as pd
@@ -69,6 +69,7 @@ class TestColumn:
         Data type for the output Series. This must be a dtype supported
         by pandas/numpy.
     """
+
     name: str
     original_values: Union[pd.Series, np.ndarray, List, Tuple]
     dtype: Union[type, str, None]
@@ -89,7 +90,7 @@ class _TestColumn:
         - ``_values_after_fix`` -> keeps track of the values that are
             expected to be found when the user will apply the appropriate
             correction (e.g. result of a test)
-        Infact, since the process of properly correcting ``values_to_fix`` cannot
+        In fact, since the process of properly correcting ``values_to_fix`` cannot
         always be fully reverted (e.g. inserting NaN), each ReverseFeatureOperation
         takes care of providing the modification and the expected correction by
         modifying ``values_to_fix`` and ``values_after_fix``.
@@ -99,7 +100,7 @@ class _TestColumn:
         column : TestColumn
             TestColumn instance whose values are used to create the instance
         col_id : int
-            Integer identifying the number of the column considered. This will be
+            Integer identifying the index of the column considered. This will be
             used by ReverseFeatureOperation instances in order to avoid replacing
             the values to be fixed in the same samples.
             Otherwise we may end up having samples with invalid values only.
@@ -219,7 +220,7 @@ class _TestColumn:
 
 
 class TestDataSet:
-    def __init__(self, sample_size: int = None):
+    def __init__(self, sample_size: Optional[int] = None):
         # Creating two dicts with the same elements, so that
         # retrieving an element by name or index takes the same time
         self._columns_by_index = []
@@ -227,7 +228,7 @@ class TestDataSet:
         self._name_to_index_map = {}
 
     @property
-    def sample_size(self) -> Union[int, None]:
+    def sample_size(self) -> Optional[int]:
         return self._sample_size
 
     def _validate_testcolumn_to_create(self, column: TestColumn):
@@ -313,7 +314,7 @@ class TestDataSet:
 
     def add_column(self, column: TestColumn):
         """
-        Add single TestColumn instance ``column`` to the instance
+        Add a new single TestColumn instance ``column`` to the instance
 
         Parameters
         ----------
@@ -417,7 +418,7 @@ class TestDataSet:
         else:
             return self._columns_by_index[self._name_to_index_map[str(item)]]
 
-    def __setitem__(self, column_name_id: Union[int, str], value: _TestColumn):
+    def __setitem__(self, column_name_id: Union[int, str], value: _TestColumn) -> None:
         """
         Set a new ``value`` to existing column identified by ``column_name_id``
 
@@ -465,7 +466,7 @@ class TestDataSet:
         """Return number of columns in this instance"""
         return len(self._columns_by_index)
 
-    def shape(self) -> Tuple[Union[int, None], int]:
+    def shape(self) -> Tuple[Optional[int], int]:
         """
         Return the Dataset shape
 
