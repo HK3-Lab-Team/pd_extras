@@ -11,12 +11,17 @@ PyTrousse helps to handle tabular data with many features/columns and to automat
 This will help the data scientist to easily reproduce the entire preprocessing pipeline.
 
 ## Getting started
-git pull
-setup
+The user can install PyTrousse in his/her python virtual environment (using conda, pipenv, pyenv, virtualenv, etc...) by cloning this repository over SSH:
 
-## Motivation
-Data is the foundation of...
-Many packages are available ... but (this provides an easy API for simple preprocessing steps)
+```bash
+git clone git@github.com:HK3-Lab-Team/pytrousse.git
+```
+
+and by running the following command:
+
+```bash
+pip install .
+```
 
 ## Features
 
