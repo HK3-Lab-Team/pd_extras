@@ -11,10 +11,10 @@ PyTrousse helps to handle tabular data with many features/columns and to automat
 This will help the data scientist to easily reproduce the entire preprocessing pipeline.
 
 ## Getting started
-The user can install PyTrousse in his/her python virtual environment (using conda, pipenv, pyenv, virtualenv, etc...) by cloning this repository:
+The user can install PyTrousse in his/her Python virtual environment by cloning this repository:
 
 ```bash
-$ git clone git@github.com:HK3-Lab-Team/pytrousse.git
+$ git clone https://github.com/HK3-Lab-Team/pytrousse.git
 ```
 
 and by running the following command:
@@ -81,13 +81,13 @@ Along with the common preprocessing utilities (for encoding, binning, scaling, e
 ```
 
 ### Preprocessing pipeline tracking and export
-How many times did they ask you "which are the modifications you applied to the dataset"?
 
-Good data is one of the necessary keys for good AI model results.
-PyTrousse automagically tracks every dataset transformation and provides the full pipeline that may be applied on external datasets.
+Every stage in the transformation process from raw data to clean data should be linked to prior stages. 
+This helps you to document how you performed the analysis, in order to reproduce it in the future. Also, it allows you to address questions about how the analysis was carried out months, years after the fact.
+
+PyTrousse automagically tracks every dataset transformation which can be inspected through `operation_history` attribute.
 
 ```python
-
 >>> dataset.operations_history
 ```
 ```bash
