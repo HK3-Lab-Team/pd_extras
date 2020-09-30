@@ -14,7 +14,7 @@ class DescribeDataset:
         "metadata_cols",
         [
             (("metadata_num_col")),
-            (("metadata_num_col, string_col")),
+            (("metadata_num_col", "string_col")),
             (()),
         ],
     )
