@@ -252,6 +252,74 @@ class ReplaceSamples(ReverseFeatureOperation, ABC):
         return dataset
 
 
+class InsertNewValues(ReverseFeatureOperation):
+    def __init__(
+        self,
+        error_count: int,
+        replacement_map: Dict[str, str],
+        column_names: Union[Tuple[str], Tuple[int]],
+    ):
+        """
+        Insert invalid values into the column and store the related correct values.
+        The function inserts an ``error_count`` number of
+        equally-spaced invalid values into the column. These values are create
+        by using ``replacement_map`` dictionary that connects the original
+        substring with the invalid one that is replaced.
+        Parameters
+        ----------
+        column_names : Union[List[str], List[int]]
+            List of the names/column IDs of the columns on which the
+            ReverseFeatureOperation is applied. A mix of names and column IDs
+            is not accepted.
+        error_count : int
+            Number of invalid values that are inserted in column.
+        replacement_map : Dict[str, str]
+            Dictionary where the keys are the invalid string that will replace
+            some elements of ``values`` argument. The dictionary values are the
+            values that will replace those invalid values in the `correct_column`
+            property.
+        """
+        super().__init__(column_names=column_names)
+        self._error_count = error_count
+        self._replacement_map = replacement_map
+
+    def __call__(self, dataset: TestDataSet) -> TestDataSet:
+        """
+        Insert invalid values into the column and store the related correct values.
+        The function inserts an ``error_count`` number of
+        equally-spaced invalid values into the column. These values are create
+        by using ``replacement_map`` dictionary that connects the original
+        substring with the invalid one that is replaced.
+        Parameters
+        ----------
+        dataset : TestDataSet
+            TestDataSet instance containing the columns ``column_names`` used to
+            initialize this instance and where some invalid substrings will be inserted.
+
+        Returns
+        -------
+        TestDataSet
+            TestDataSet instance where some invalid substrings were inserted
+        """
+        for col_name in self._column_names:
+            column = dataset[col_name]
+            # Create list of sample IDs that will be modified
+            invalid_sample_ids = _sample_index_in_list(
+                sample_count=self._error_count,
+                step=dataset.sample_size // self._error_count,
+                # This BIAS prevents the function to insert invalid substrings for
+                # the same samples/ids where it may insert other type of errors
+                bias=column.col_id + dataset.last_operation_index,
+                list_length=dataset.sample_size,
+            )
+
+            dataset.update_column(
+                col_name, self.replace_samples(column, invalid_sample_ids), self
+            )
+
+        return dataset
+
+
 class InsertNaNs(ReplaceSamples):
     def __init__(
         self,
@@ -308,74 +376,6 @@ class InsertNaNs(ReplaceSamples):
                 value_to_fix=self._nan_value_to_insert,
                 value_after_fix=self._nan_value_after_fix,
             )
-        return column
-
-
-class InsertNewValues(ReplaceSamples):
-    def __init__(
-        self,
-        error_count: int,
-        replacement_map: Dict[str, str],
-        column_names: Union[Sequence[str], Sequence[int]],
-    ):
-        """
-        Insert invalid values into the column and store the related correct values.
-
-        The function inserts an ``error_count`` number of
-        equally-spaced invalid values into the column. These values are create
-        by using ``replacement_map`` dictionary that connects the original
-        substring with the invalid one that is replaced.
-
-        Parameters
-        ----------
-        column_names : Union[Sequence[str], Sequence[int]]
-            List of the names/column IDs of the columns on which the
-            ReverseFeatureOperation is applied. A mix of names and column IDs
-            is not accepted.
-        error_count : int
-            Number of invalid values that are inserted in column.
-        replacement_map : Dict[str, str]
-            Dictionary where the keys are the invalid string that will replace
-            some elements of ``values`` argument. The dictionary values are the
-            values that will replace those invalid values in the `correct_column`
-            property.
-        """
-        super().__init__(column_names, error_count)
-        self._replacement_map = replacement_map
-
-    def replace_samples(
-        self, column: _TestColumn, invalid_sample_ids: List[int]
-    ) -> _TestColumn:
-        """
-        Insert invalid values into the ``column`` and store the related correct values.
-
-        The function inserts an ``error_count`` number of
-        equally-spaced invalid values into the ``column``. These values are created
-        by using ``replacement_map`` dictionary that connects the original
-        substring with the invalid one that is replaced.
-
-        Parameters
-        ----------
-        column : _TestColumn
-            _TestColumn instance whose values are being replaced/modified
-        invalid_sample_ids : List[int]
-            List of indexes of the samples that are being replaced
-
-        Returns
-        -------
-        _TestColumn
-            _TestColumn instance where some values have been replaced/modified
-        """
-        invalid_string_list = list(self._replacement_map.keys())
-
-        for sample_id in invalid_sample_ids:
-            error_to_insert = invalid_string_list[sample_id % len(invalid_string_list)]
-            column.update_sample(
-                sample_id,
-                value_to_fix=error_to_insert,
-                value_after_fix=self._replacement_map[error_to_insert],
-            )
-
         return column
 
 
@@ -563,10 +563,6 @@ class SubstringReplacementMap(ABC):
                 f"The `fix_with_substring` argument is {fix_with_substring}"
                 f" and it is not boolean, but it is {type(fix_with_substring)}"
             )
-
-    @abstractmethod
-    def _validate(self):
-        pass
 
 
 class SubstringReplaceMapByValue(SubstringReplacementMap):
@@ -942,7 +938,6 @@ class ReplaceSubstringsByValue(TransformSubstrings):
         Implementation of the method of the abstract class that describes
         the behavior of the class when it replaces values (by calling it).
         The method replaces the sample ``previous_value`` with the new substring
-        from ``replacement_map`` argument and it stores the new value that will be
         present after the appropriate correction.
 
         Parameters

@@ -7,17 +7,11 @@ import numpy as np
 import pandas as pd
 
 from .datasim import TestDataSet, from_tuples
-from .datasim_util import (
-    ChangeColumnDType,
-    Compose,
-    InsertNaNs,
-    InsertNewValues,
-    InsertOutOfScaleValues,
-    InsertSubstringsByIndex,
-    ReplaceSubstringsByValue,
-    SubstringReplaceMapByIndex,
-    SubstringReplaceMapByValue,
-)
+from .datasim_util import (ChangeColumnDType, Compose, InsertNaNs,
+                           InsertNewValues, InsertOutOfScaleValues,
+                           InsertSubstringsByIndex, ReplaceSubstringsByValue,
+                           SubstringReplaceMapByIndex,
+                           SubstringReplaceMapByValue)
 
 WHOLE_WORD_REPLACE_DICT = {
     "---": np.nan,

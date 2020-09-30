@@ -218,8 +218,8 @@ class _TestColumn:
             Values that are supposed to be found after that the proper correction
             is applied to ``values_to_fix`` argument.
         """
-        self._values_to_fix = values_to_fix
-        self._values_after_fix = values_after_fix
+        self._values_to_fix = pd.Series(values_to_fix, dtype=self._dtype)
+        self._values_after_fix = pd.Series(values_after_fix, dtype=self._dtype)
 
 
 class TestDataSet:
