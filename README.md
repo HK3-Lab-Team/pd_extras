@@ -65,13 +65,13 @@ Along with the common preprocessing utilities (for encoding, binning, scaling, e
 >>> fillna_replacestrings = Compose(
     [
         FillNA(
-            columns=["column_with_nan"],
-            derived_columns=["column_filled"],
+            column="column_with_nan",
+            derived_column="column_filled",
             value=0,
         ),
         ReplaceSubstrings(
-            columns=["column_invalid_values"],
-            derived_columns=["column_valid_values"],
+            column="column_invalid_values",
+            derived_column="column_valid_values",
             replacement_map={",": ".", "°": ""},
         ),
     ]
@@ -93,13 +93,13 @@ PyTrousse automagically tracks every dataset transformation which can be inspect
 ```bash
 [
     FillNA(
-        columns=["column_with_nan"],
-        derived_columns=["column_filled"],
+        column="column_with_nan",
+        derived_column="column_filled",
         value=0,
     ),
     ReplaceSubstrings(
-        columns=["column_invalid_values"],
-        derived_columns=["column_valid_values"],
+        column="column_invalid_values",
+        derived_column="column_valid_values",
         replacement_map={",": ".", "°": ""},
     ),
 ]
