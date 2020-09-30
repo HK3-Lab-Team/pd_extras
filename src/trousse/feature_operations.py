@@ -73,7 +73,7 @@ class _OperationsList:
             return self._operations_by_column[label]
         else:
             raise TypeError(
-                f"Cannot get FeatureOperation with a label of type {type(label)}"
+                f"Cannot get FeatureOperation with a label of type {type(label).__name__}"
             )
 
 

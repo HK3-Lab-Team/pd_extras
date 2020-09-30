@@ -166,3 +166,12 @@ class DescribeOperationsList:
         assert isinstance(feat_op_col1, list)
         assert feat_op_col0 == [feat_op0]
         assert feat_op_col1 == [feat_op0, feat_op1]
+
+    def but_it_raisestypeerror_with_wrong_type(self):
+        op_list = fop._OperationsList()
+
+        with pytest.raises(TypeError) as err:
+            op_list[{"wrong"}]
+
+        assert isinstance(err.value, TypeError)
+        assert "Cannot get FeatureOperation with a label of type set" == str(err.value)
