@@ -11,16 +11,17 @@ PyTrousse helps to handle tabular data with many features/columns and to automat
 This will help the data scientist to easily reproduce the entire preprocessing pipeline.
 
 ## Getting started
-The user can install PyTrousse in his/her python virtual environment (using conda, pipenv, pyenv, virtualenv, etc...) by cloning this repository over SSH:
+The user can install PyTrousse in his/her python virtual environment (using conda, pipenv, pyenv, virtualenv, etc...) by cloning this repository:
 
 ```bash
-git clone git@github.com:HK3-Lab-Team/pytrousse.git
+$ git clone git@github.com:HK3-Lab-Team/pytrousse.git
 ```
 
 and by running the following command:
 
 ```bash
-pip install .
+$ cd pytrousse
+$ pip install .
 ```
 
 ## Features
@@ -59,9 +60,9 @@ What about having an easy API for all those boring data preprocessing steps?
 Along with the common preprocessing utilities (for encoding, binning, scaling, etc.), PyTrousse provides tools for noisy data handling and for data anonymization.
 
 ```python
-from trousse.feature_operations import Compose, FillNA, ReplaceSubstrings
+>>> from trousse.feature_operations import Compose, FillNA, ReplaceSubstrings
 
-fillna_replacestrings = Compose(
+>>> fillna_replacestrings = Compose(
     [
         FillNA(
             columns=["column_with_nan"],
@@ -76,7 +77,7 @@ fillna_replacestrings = Compose(
     ]
 )
 
-dataset = fillna_replacestrings(dataset)
+>>> dataset = fillna_replacestrings(dataset)
 ```
 
 ### Preprocessing pipeline tracking and export
