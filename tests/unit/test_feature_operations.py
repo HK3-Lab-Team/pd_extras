@@ -9,19 +9,17 @@ def it_calls_fillna(request):
     fillna_ = method_mock(request, Dataset, "fillna")
     fillna_.return_value = Dataset("fake/path")
     dataset = Dataset("fake/path")
-    columns = ["nan_0", "nan_1"]
-    derived_columns = ["filled_0", "filled_1"]
+    column = "nan_0"
+    derived_column = "filled_0"
     value = 0
-    fillna_fop = fop.FillNA(
-        columns=columns, derived_columns=derived_columns, value=value
-    )
+    fillna_fop = fop.FillNA(column=column, derived_column=derived_column, value=value)
 
     filled_dataset = fillna_fop(dataset)
 
     fillna_.assert_called_once_with(
         dataset,
-        columns=columns,
-        derived_columns=derived_columns,
+        column=column,
+        derived_column=derived_column,
         value=value,
         inplace=False,
     )
