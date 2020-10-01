@@ -61,7 +61,6 @@ class _TestColumn:
         """
         self._name = column.name
         self._col_id = col_id
-        self._dtype = column.dtype
 
         self._values_to_fix = pd.Series(column.original_values, dtype=column.dtype)
         self._values_after_fix = self._values_to_fix.copy()
@@ -89,10 +88,6 @@ class _TestColumn:
                 "The instance has already a specific ``col_id``."
                 " Changing it is forbidden"
             )
-
-    @property
-    def dtype(self):
-        return self._dtype
 
     def __len__(self) -> int:
         return len(self.values_to_fix)
@@ -155,23 +150,23 @@ class _TestColumn:
 
     def update_column_values(
         self,
-        values_to_fix: MutableSequence[Any],
-        values_after_fix: MutableSequence[Any],
+        values_to_fix: pd.Series,
+        values_after_fix: pd.Series,
     ):
         """
         Update a single column sample with new values
 
         Parameters
         ----------
-        values_to_fix : MutableSequence[Any]
+        values_to_fix : pandas.Series
             Raw values that need a fix (usually values containing errors that have
             been simulated by a ReverseFeatureOperation).
-        values_to_fix : MutableSequence[Any]
+        values_to_fix : pandas.Series
             Values that are supposed to be found after that the proper correction
             is applied to ``values_to_fix`` argument.
         """
-        self._values_to_fix = pd.Series(values_to_fix, dtype=self._dtype)
-        self._values_after_fix = pd.Series(values_after_fix, dtype=self._dtype)
+        self._values_to_fix = values_to_fix
+        self._values_after_fix = values_after_fix
 
 
 class TestDataSet:

@@ -73,7 +73,6 @@ def _insert_substring_by_index(
 
 
 class ReverseFeatureOperation(ABC):
-
     def __init__(self, column_names: Union[Sequence[str], Sequence[int]]):
         """
         Abstract Class that revert preprocessing operations on TestDataSets
@@ -169,6 +168,64 @@ class Compose(ReverseFeatureOperation):
         return dataset
 
 
+class ChangeColumnDType(ReverseFeatureOperation):
+    def __init__(
+        self,
+        column_names: Union[Sequence[str], Sequence[int]],
+        new_dtype: Union[str, type],
+        dtype_after_fix: Union[str, type],
+    ):
+        """
+        Callable class for changing dtype of the columns in a TestDataSet
+
+        Parameters
+        ----------
+        column_names : Union[Sequence[str], Sequence[int]]
+            List of the names/column IDs of the columns whose dtype will be
+            changed. A mix of names and column IDs is not accepted.
+        new_dtype : Union[str, type]
+            New type that will be set as column dtype for each column in
+            dataset named ``column_names``.
+        dtype_after_fix : Union[str, type]
+            Type of the column that will be found after appropriate correction
+            is applied to the column
+        """
+        super().__init__(column_names)
+        self._new_dtype = new_dtype
+        self._dtype_after_fix = dtype_after_fix
+
+    def __call__(self, dataset: TestDataSet) -> TestDataSet:
+        """
+        Change the dtype of some ``dataset`` columns.
+
+        This method will convert the columns of ``dataset`` to new dtypes,
+        according to the parameters which this instance was initialized with.
+
+        Parameters
+        ----------
+        dataset : TestDataSet
+            TestDataSet instance containing the columns ``column_names`` used to
+            initialize this instance, whose columns will converted to a new dtype.
+
+        Returns
+        -------
+        TestDataSet
+            TestDataSet instance where the columns have been converted to
+            the new dtype.
+        """
+        for col_name in self._column_names:
+            column = dataset[col_name]
+
+            column.update_column_values(
+                column.values_to_fix.astype(self._new_dtype),
+                column.values_after_fix.astype(self._dtype_after_fix),
+            )
+
+            dataset.update_column(col_name, column, self)
+
+        return dataset
+
+
 class ReplaceSamples(ReverseFeatureOperation, ABC):
     def __init__(
         self,
@@ -229,7 +286,7 @@ class ReplaceSamples(ReverseFeatureOperation, ABC):
 
         Parameters
         ----------
-        column : TestDataSet
+        dataset : TestDataSet
             TestDataSet instance containing the columns ``column_names`` used to
             initialize this instance and where some invalid substrings will be inserted.
 
