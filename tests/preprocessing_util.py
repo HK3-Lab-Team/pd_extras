@@ -8,7 +8,7 @@ import pandas as pd
 
 from .datasim import TestDataSet, from_tuples
 from .datasim_util import (ChangeColumnDType, Compose, InsertNaNs,
-                           InsertNewValues, InsertOutOfScaleValues,
+                           InsertInvalidValues, InsertOutOfScaleValues,
                            InsertSubstringsByIndex, ReplaceSubstringsByValue,
                            SubstringReplaceMapByIndex,
                            SubstringReplaceMapByValue)
@@ -300,7 +300,7 @@ class CSVMock:
                     dtype_after_fix="float",
                 ),
                 InsertNaNs(column_names=column_list, error_count=wrong_values_count),
-                InsertNewValues(
+                InsertInvalidValues(
                     column_names=tuple(set(column_list) - set(only_string_columns)),
                     error_count=wrong_values_count,
                     replacement_map=WHOLE_WORD_REPLACE_DICT,
