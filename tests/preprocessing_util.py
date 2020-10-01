@@ -7,11 +7,17 @@ import numpy as np
 import pandas as pd
 
 from .datasim import TestDataSet, from_tuples
-from .datasim_util import (ChangeColumnDType, Compose, InsertNaNs,
-                           InsertInvalidValues, InsertOutOfScaleValues,
-                           InsertSubstringsByIndex, ReplaceSubstringsByValue,
-                           SubstringReplaceMapByIndex,
-                           SubstringReplaceMapByValue)
+from .datasim_util import (
+    ChangeColumnDType,
+    Compose,
+    InsertNaNs,
+    InsertNewValues,
+    InsertOutOfScaleValues,
+    InsertSubstringsByIndex,
+    ReplaceSubstringsByValue,
+    SubstringReplaceMapByIndex,
+    SubstringReplaceMapByValue,
+)
 
 WHOLE_WORD_REPLACE_DICT = {
     "---": np.nan,
@@ -300,7 +306,7 @@ class CSVMock:
                     dtype_after_fix="float",
                 ),
                 InsertNaNs(column_names=column_list, error_count=wrong_values_count),
-                InsertInvalidValues(
+                InsertNewValues(
                     column_names=tuple(set(column_list) - set(only_string_columns)),
                     error_count=wrong_values_count,
                     replacement_map=WHOLE_WORD_REPLACE_DICT,
