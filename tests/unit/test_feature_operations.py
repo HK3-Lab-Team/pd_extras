@@ -26,8 +26,10 @@ class DescribeFillNa:
         ],
     )
     def but_it_raises_valueerror_with_columns_length_different_than_1(
-        self, columns, expected_length
+        self, columns, expected_length, is_sequence_and_not_str_
     ):
+        is_sequence_and_not_str_.return_value = True
+
         with pytest.raises(ValueError) as err:
             fop.FillNA(columns=columns, value=0)
 
@@ -42,13 +44,32 @@ class DescribeFillNa:
         ],
     )
     def but_it_raises_valueerror_with_derived_columns_length_different_than_1(
-        self, derived_columns, expected_length
+        self, derived_columns, expected_length, is_sequence_and_not_str_
     ):
+        is_sequence_and_not_str_.return_value = True
+
         with pytest.raises(ValueError) as err:
             fop.FillNA(columns=["nan"], derived_columns=derived_columns, value=0)
 
         assert isinstance(err.value, ValueError)
         assert f"Length of derived_columns must be 1, found {expected_length}" == str(
+            err.value
+        )
+
+    @pytest.mark.parametrize(
+        "columns, expected_type",
+        [("nan", "str"), (dict(), "dict"), (set(), "set")],
+    )
+    def but_it_raises_typeerror_with_columns_not_list(
+        self, columns, expected_type, is_sequence_and_not_str_
+    ):
+        is_sequence_and_not_str_.return_value = False
+
+        with pytest.raises(TypeError) as err:
+            fop.FillNA(columns=columns, value=0)
+
+        assert isinstance(err.value, TypeError)
+        assert f"columns parameter must be a list, found {expected_type}" == str(
             err.value
         )
 
@@ -74,6 +95,16 @@ class DescribeFillNa:
             inplace=False,
         )
         assert isinstance(filled_dataset, Dataset)
+
+    # ====================
+    #      FIXTURES
+    # ====================
+
+    @pytest.fixture
+    def is_sequence_and_not_str_(self, request):
+        return function_mock(
+            request, "trousse.feature_operations.is_sequence_and_not_str"
+        )
 
 
 class DescribeOperationsList:
