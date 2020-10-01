@@ -1,10 +1,70 @@
+from abc import ABC
 from dataclasses import dataclass
-from typing import Any, List, MutableSequence, Optional, Tuple, Union
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
-from .datasim_util import ReverseFeatureOperation
+
+class ReverseFeatureOperation(ABC):
+    def __init__(self, column_names: Union[Sequence[str], Sequence[int]]):
+        """
+        Abstract Class that revert preprocessing operations on TestDataSets
+
+        Its subclasses apply operations to simulated synthetic data that revert
+        the behaviour of the FeatureOperation classes.
+        This is an abstract class so the abstract method "apply" needs to be reimplemented
+        in subclasses in order to work.
+
+        Parameters
+        ----------
+        columns : Union[Sequence[str], Sequence[int]]
+            List of the names/column IDs of the columns on which the
+            ReverseFeatureOperation is applied. A mix of names and column IDs
+            is not accepted.
+        """
+        self._validate_column_names(column_names)
+        self._column_names = column_names
+
+    @staticmethod
+    def _validate_column_names(column_names: Union[Sequence[str], Sequence[int]]):
+        """
+        Check if ``column_names`` does not contain a mix of strings and integers
+
+        Parameters
+        ----------
+        column_names : Union[Sequence[str], Sequence[int]]
+            List of names (string) and IDs (integer) of the columns on which the
+            ReverseFeatureOperation will be applied, that will be validated.
+
+        Raises
+        ------
+        ValueError
+            If `column_names` attribute contains a mix of names (string) and
+            IDs (integer) of the columns, which is not accepted.
+        """
+        if not all([isinstance(col, str) for col in column_names]) and not all(
+            [isinstance(col, int) for col in column_names]
+        ):
+            raise ValueError(
+                "`column_names` attribute contains a mix of names (string)"
+                "and column IDs (integer), which is not accepted."
+            )
+
+    def __call__(self, dataset: "TestDataSet") -> "TestDataSet":
+        """
+        Apply the operation to ``column``
+
+        This method performs an operation on ``column`` values that revert the
+        behavior of a corresponding "pytrousse" FeatureOperation. Since this is meant
+        to be used for checking the behavior of pytrousse FeatureOperation, it
+        also keeps track of the related correction (because some Operations like
+        inserting NaNs are not fully reversible). For this reason ``column`` keeps
+        track of the original raw values (simulated by this ReverseFeatureOperation)
+        and of the values that are supposed to be found after the corresponding
+        FeatureOperation is applied.
+        """
+        raise NotImplementedError
 
 
 @dataclass

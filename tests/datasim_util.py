@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Sequence, Tuple, Union
 
-import numpy as np
 import pandas as pd
 
-from .datasim import TestDataSet, _TestColumn
+from .datasim import ReverseFeatureOperation, TestDataSet, _TestColumn
 
 
 def _sample_index_in_list(
@@ -70,67 +69,6 @@ def _insert_substring_by_index(
         + substring_to_insert
         + original_string[substr_position_id:]
     )
-
-
-class ReverseFeatureOperation(ABC):
-    def __init__(self, column_names: Union[Sequence[str], Sequence[int]]):
-        """
-        Abstract Class that revert preprocessing operations on TestDataSets
-
-        Its subclasses apply operations to simulated synthetic data that revert
-        the behaviour of the FeatureOperation classes.
-        This is an abstract class so the abstract method "apply" needs to be reimplemented
-        in subclasses in order to work.
-
-        Parameters
-        ----------
-        columns : Union[Sequence[str], Sequence[int]]
-            List of the names/column IDs of the columns on which the
-            ReverseFeatureOperation is applied. A mix of names and column IDs
-            is not accepted.
-        """
-        self._validate_column_names(column_names)
-        self._column_names = column_names
-
-    @staticmethod
-    def _validate_column_names(column_names: Union[Sequence[str], Sequence[int]]):
-        """
-        Check if ``column_names`` does not contain a mix of strings and integers
-
-        Parameters
-        ----------
-        column_names : Union[Sequence[str], Sequence[int]]
-            List of names (string) and IDs (integer) of the columns on which the
-            ReverseFeatureOperation will be applied, that will be validated.
-
-        Raises
-        ------
-        ValueError
-            If `column_names` attribute contains a mix of names (string) and
-            IDs (integer) of the columns, which is not accepted.
-        """
-        if not all([isinstance(col, str) for col in column_names]) and not all(
-            [isinstance(col, int) for col in column_names]
-        ):
-            raise ValueError(
-                "`column_names` attribute contains a mix of names (string)"
-                "and column IDs (integer), which is not accepted."
-            )
-
-    def __call__(self, dataset: TestDataSet) -> TestDataSet:
-        """
-        Apply the operation to ``column``
-
-        This method performs an operation on ``column`` values that revert the
-        behavior of a corresponding "pytrousse" FeatureOperation. Since this is meant
-        to be used for checking the behavior of pytrousse FeatureOperation, it
-        also keeps track of the related correction (because some Operations like
-        inserting NaNs are not fully reversible). For this reason ``column`` keeps
-        track of the original raw values (simulated by this ReverseFeatureOperation)
-        and of the values that are supposed to be found after the corresponding
-        FeatureOperation is applied.
-        """
-        raise NotImplementedError
 
 
 class Compose(ReverseFeatureOperation):
@@ -469,6 +407,37 @@ class InsertOutOfScaleValues(ReplaceSamples):
         self._upperbound_increase = upperbound_increase
         self._lowerbound_increase = lowerbound_increase
 
+    @staticmethod
+    def _compute_column_min_max(column: _TestColumn) -> Tuple[float, float]:
+        """
+        Return the minimum and maximum values in a ``column``.
+
+        Parameters
+        ----------
+        column : _TestColumn
+            _TestColumn instance whose values are being evaluated
+
+        Returns
+        -------
+        float
+            Minimum value in ``column``
+        float
+            Maximum value in ``column``
+
+        Raises
+        ------
+        TypeError
+            If no numeric values are found in the ``column``
+        """
+        column_series = pd.to_numeric(column.values_to_fix, errors="coerce")
+        if column_series.count() == 0:
+            raise TypeError(f"No numeric values were found in column {column.name}")
+        else:
+            min_col_value = column_series.min()
+            max_col_value = column_series.max()
+
+        return min_col_value, max_col_value
+
     def replace_samples(
         self, column: _TestColumn, invalid_sample_ids: List[int]
     ) -> _TestColumn:
@@ -498,8 +467,7 @@ class InsertOutOfScaleValues(ReplaceSamples):
         _TestColumn
             _TestColumn instance where some values have been replaced/modified
         """
-        min_col_value = column.values_to_fix.min()
-        max_col_value = column.values_to_fix.max()
+        min_col_value, max_col_value = self._compute_column_min_max(column)
 
         for sample_id in invalid_sample_ids:
             if sample_id % 2:
@@ -557,13 +525,13 @@ class SubstringReplacementMap(ABC):
             must be a generic value (also specified by the third element of
             each tuple in ``replacement_map``).
         """
-        self._validate(new_substring, fix_with_substring)
+        self._validate_new_and_fix_substrings(new_substring, fix_with_substring)
         self.new_substring = new_substring
         self.value_after_fix = value_after_fix
         self.fix_with_substring = fix_with_substring
 
     @staticmethod
-    def _validate(new_substring: str, fix_with_substring: bool):
+    def _validate_new_and_fix_substrings(new_substring: str, fix_with_substring: bool):
         """
         Validate the arguments used to initialize the instance
 
@@ -644,11 +612,11 @@ class SubstringReplaceMapByValue(SubstringReplacementMap):
             ``new_substring`` argument is not a string value
         """
         super().__init__(new_substring, value_after_fix, fix_with_substring)
-        self._validate(substr_to_replace)
+        self._validate_substr_to_replace(substr_to_replace)
         self.substr_to_replace = substr_to_replace
 
     @staticmethod
-    def _validate(substr_to_replace: str):
+    def _validate_substr_to_replace(substr_to_replace: str):
         """
         Validate the ``substr_to_replace`` argument used to initialize the instance
 

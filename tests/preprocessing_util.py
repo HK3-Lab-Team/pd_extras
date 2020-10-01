@@ -6,11 +6,13 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
-from .datasim import TestColumn, TestDataSet, from_tuples
+from .datasim import TestDataSet, from_tuples
 from .datasim_util import (
+    ChangeColumnDType,
     Compose,
-    InsertInvalidValues,
     InsertNaNs,
+    InsertNewValues,
+    InsertOutOfScaleValues,
     InsertSubstringsByIndex,
     ReplaceSubstringsByValue,
     SubstringReplaceMapByIndex,
@@ -298,11 +300,22 @@ class CSVMock:
 
         insert_nan_str_substr = Compose(
             [
+                ChangeColumnDType(
+                    column_names=["feature_bigfloat_col_0", "feature_smallfloat_col_0"],
+                    new_dtype="object",
+                    dtype_after_fix="float",
+                ),
                 InsertNaNs(column_names=column_list, error_count=wrong_values_count),
-                InsertInvalidValues(
+                InsertNewValues(
                     column_names=tuple(set(column_list) - set(only_string_columns)),
                     error_count=wrong_values_count,
                     replacement_map=WHOLE_WORD_REPLACE_DICT,
+                ),
+                InsertOutOfScaleValues(
+                    column_names=float_columns,
+                    error_count=wrong_values_count,
+                    upperbound_increase=0.15,
+                    lowerbound_increase=0.15,
                 ),
                 ReplaceSubstringsByValue(
                     column_names=float_columns,
