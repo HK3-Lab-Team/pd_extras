@@ -5,8 +5,6 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from .datasim_util import ReverseFeatureOperation
-
 
 class ReverseFeatureOperation(ABC):
     def __init__(self, column_names: Union[Sequence[str], Sequence[int]]):
@@ -220,8 +218,8 @@ class _TestColumn:
             Values that are supposed to be found after that the proper correction
             is applied to ``values_to_fix`` argument.
         """
-        self._values_to_fix = pd.Series(values_to_fix, dtype=self._dtype)
-        self._values_after_fix = pd.Series(values_after_fix, dtype=self._dtype)
+        self._values_to_fix = values_to_fix
+        self._values_after_fix = values_after_fix
 
 
 class TestDataSet:
