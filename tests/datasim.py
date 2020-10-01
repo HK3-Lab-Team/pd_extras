@@ -5,6 +5,8 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 
+from .datasim_util import ReverseFeatureOperation
+
 
 class ReverseFeatureOperation(ABC):
     def __init__(self, column_names: Union[Sequence[str], Sequence[int]]):

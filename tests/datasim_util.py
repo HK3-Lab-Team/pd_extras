@@ -311,7 +311,7 @@ class InsertNaNs(ReplaceSamples):
         return column
 
 
-class InsertInvalidValues(ReplaceSamples):
+class InsertNewValues(ReplaceSamples):
     def __init__(
         self,
         error_count: int,
@@ -320,10 +320,12 @@ class InsertInvalidValues(ReplaceSamples):
     ):
         """
         Insert invalid values into the column and store the related correct values.
+
         The function inserts an ``error_count`` number of
         equally-spaced invalid values into the column. These values are create
         by using ``replacement_map`` dictionary that connects the original
         substring with the invalid one that is replaced.
+
         Parameters
         ----------
         column_names : Union[Sequence[str], Sequence[int]]
