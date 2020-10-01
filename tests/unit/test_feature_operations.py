@@ -27,7 +27,7 @@ class DescribeFillNa:
         self, columns, expected_length
     ):
         with pytest.raises(ValueError) as err:
-            fillna = fop.FillNA(columns=columns, value=0)
+            fop.FillNA(columns=columns, value=0)
 
         assert isinstance(err.value, ValueError)
         assert f"Length of columns must be 1, found {expected_length}" == str(err.value)
@@ -43,9 +43,7 @@ class DescribeFillNa:
         self, derived_columns, expected_length
     ):
         with pytest.raises(ValueError) as err:
-            fillna = fop.FillNA(
-                columns=["nan"], derived_columns=derived_columns, value=0
-            )
+            fop.FillNA(columns=["nan"], derived_columns=derived_columns, value=0)
 
         assert isinstance(err.value, ValueError)
         assert f"Length of derived_columns must be 1, found {expected_length}" == str(
