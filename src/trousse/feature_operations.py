@@ -32,6 +32,28 @@ class _OperationsList:
         self._operations_list = []
         self._operations_by_column = collections.defaultdict(list)
 
+    def derived_columns_from_col(self, column: str) -> List[str]:
+        """Return name of the columns created by FeatureOperations applied on ``column``
+
+        Parameters
+        ----------
+        column : str
+            The column on which the FeatureOperation has been applied on.
+
+        Returns
+        -------
+        List[str]
+            Name of the columns created by FeatureOperations applied on ``column``.
+        """
+        derived_columns = []
+        operations = self[column]
+
+        for operation in operations:
+            if column in operation.columns and operation.derived_columns is not None:
+                derived_columns.extend(operation.derived_columns)
+
+        return derived_columns
+
     def __iadd__(self, feat_op: FeatureOperation):
         self._operations_list.append(feat_op)
 

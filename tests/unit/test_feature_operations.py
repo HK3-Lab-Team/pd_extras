@@ -116,77 +116,73 @@ class DescribeOperationsList:
         _init_.assert_called_once_with(ANY)
         assert isinstance(operations_list, fop._OperationsList)
 
-    def it_can_iadd_first_featop(self, request):
+    def it_can_iadd_first_featop(self, request, fillna_col0_col1):
         tolist_ = function_mock(request, "trousse.feature_operations.tolist")
         tolist_.side_effect = ["col0"], ["col1"]
         op_list = fop._OperationsList()
-        feat_op = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
 
-        op_list += feat_op
+        op_list += fillna_col0_col1
 
-        assert op_list._operations_list == [feat_op]
+        assert op_list._operations_list == [fillna_col0_col1]
         for column in ["col0", "col1"]:
-            assert op_list._operations_by_column[column] == [feat_op]
+            assert op_list._operations_by_column[column] == [fillna_col0_col1]
         assert tolist_.call_args_list == [
             call(["col0"]),
             call(["col1"]),
         ]
 
-    def it_can_iadd_next_featop(self, request):
+    def it_can_iadd_next_featop(self, request, fillna_col0_col1, fillna_col1_col4):
         tolist_ = function_mock(request, "trousse.feature_operations.tolist")
         tolist_.side_effect = [["col1"], ["col4"]]
         op_list = fop._OperationsList()
-        feat_op0 = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
-        feat_op1 = fop.FillNA(columns=["col1"], derived_columns=["col4"], value=1)
-        op_list._operations_list = [feat_op0]
+        op_list._operations_list = [fillna_col0_col1]
         for column in ["col0", "col1"]:
-            op_list._operations_by_column[column] = [feat_op0]
+            op_list._operations_by_column[column] = [fillna_col0_col1]
 
-        op_list += feat_op1
+        op_list += fillna_col1_col4
 
-        assert op_list._operations_list == [feat_op0, feat_op1]
+        assert op_list._operations_list == [fillna_col0_col1, fillna_col1_col4]
 
-        assert op_list._operations_by_column["col0"] == [feat_op0]
-        assert op_list._operations_by_column["col1"] == [feat_op0, feat_op1]
-        assert op_list._operations_by_column["col4"] == [feat_op1]
+        assert op_list._operations_by_column["col0"] == [fillna_col0_col1]
+        assert op_list._operations_by_column["col1"] == [
+            fillna_col0_col1,
+            fillna_col1_col4,
+        ]
+        assert op_list._operations_by_column["col4"] == [fillna_col1_col4]
         assert tolist_.call_args_list == [
             call(["col1"]),
             call(["col4"]),
         ]
 
-    def it_can_getitem_from_int(self):
+    def it_can_getitem_from_int(self, fillna_col0_col1, fillna_col1_col4):
         op_list = fop._OperationsList()
-        feat_op0 = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
-        feat_op1 = fop.FillNA(columns=["col1"], derived_columns=["col4"], value=1)
-        op_list._operations_list = [feat_op0, feat_op1]
-        op_list._operations_by_column["col0"] = [feat_op0]
-        op_list._operations_by_column["col1"] = [feat_op0, feat_op1]
-        op_list._operations_by_column["col4"] = [feat_op1]
+        op_list._operations_list = [fillna_col0_col1, fillna_col1_col4]
+        op_list._operations_by_column["col0"] = [fillna_col0_col1]
+        op_list._operations_by_column["col1"] = [fillna_col0_col1, fillna_col1_col4]
+        op_list._operations_by_column["col4"] = [fillna_col1_col4]
 
         feat_op0_ = op_list[0]
         feat_op1_ = op_list[1]
 
         assert isinstance(feat_op0_, fop.FillNA)
         assert isinstance(feat_op1_, fop.FillNA)
-        assert feat_op0_ == feat_op0
-        assert feat_op1_ == feat_op1
+        assert feat_op0_ == fillna_col0_col1
+        assert feat_op1_ == fillna_col1_col4
 
-    def it_can_getitem_from_str(self):
+    def it_can_getitem_from_str(self, fillna_col0_col1, fillna_col1_col4):
         op_list = fop._OperationsList()
-        feat_op0 = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
-        feat_op1 = fop.FillNA(columns=["col1"], derived_columns=["col4"], value=1)
-        op_list._operations_list = [feat_op0, feat_op1]
-        op_list._operations_by_column["col0"] = [feat_op0]
-        op_list._operations_by_column["col1"] = [feat_op0, feat_op1]
-        op_list._operations_by_column["col4"] = [feat_op1]
+        op_list._operations_list = [fillna_col0_col1, fillna_col1_col4]
+        op_list._operations_by_column["col0"] = [fillna_col0_col1]
+        op_list._operations_by_column["col1"] = [fillna_col0_col1, fillna_col1_col4]
+        op_list._operations_by_column["col4"] = [fillna_col1_col4]
 
         feat_op_col0 = op_list["col0"]
         feat_op_col1 = op_list["col1"]
 
         assert isinstance(feat_op_col0, list)
         assert isinstance(feat_op_col1, list)
-        assert feat_op_col0 == [feat_op0]
-        assert feat_op_col1 == [feat_op0, feat_op1]
+        assert feat_op_col0 == [fillna_col0_col1]
+        assert feat_op_col1 == [fillna_col0_col1, fillna_col1_col4]
 
     def but_it_raisestypeerror_with_wrong_type(self):
         op_list = fop._OperationsList()
@@ -196,3 +192,62 @@ class DescribeOperationsList:
 
         assert isinstance(err.value, TypeError)
         assert "Cannot get FeatureOperation with a label of type set" == str(err.value)
+
+    @pytest.mark.parametrize(
+        "columns, getitem_return_value, expected_derived_columns",
+        [
+            (
+                "col0",
+                [fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)],
+                ["col1"],
+            ),
+            (
+                "col1",
+                [
+                    fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0),
+                    fop.FillNA(columns=["col1"], derived_columns=["col2"], value=0),
+                ],
+                ["col4", "col2"],
+            ),
+            (
+                "col4",
+                [
+                    fop.FillNA(columns=["col1"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                ],
+                [],
+            ),
+        ],
+    )
+    def it_can_get_derived_columns_from_col(
+        self, request, columns, getitem_return_value, expected_derived_columns
+    ):
+        op_list = fop._OperationsList()
+        getitem_ = method_mock(request, fop._OperationsList, "__getitem__")
+        getitem_.return_value = getitem_return_value
+
+        derived_columns = op_list.derived_columns_from_col(columns)
+
+        assert type(derived_columns) == list
+        assert derived_columns == expected_derived_columns
+
+    # ====================
+    #      FIXTURES
+    # ====================
+
+    @pytest.fixture
+    def fillna_col0_col1(self, request):
+        return fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
+
+    @pytest.fixture
+    def fillna_col1_col4(self, request):
+        return fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0)
+
+    @pytest.fixture
+    def fillna_col4_none(self, request):
+        return fop.FillNA(columns=["col4"], derived_columns=None, value=0)
+
+    @pytest.fixture
+    def fillna_col1_col2(self, request):
+        return fop.FillNA(columns=["col1"], derived_columns=["col2"], value=0)
