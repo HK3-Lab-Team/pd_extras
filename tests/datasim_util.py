@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
-from .datasim import TestDataSet
+from .datasim import TestDataSet, _TestColumn
 
 INVALID_NAN_BIAS = 0
 INVALID_STRING_BIAS = 1
@@ -78,7 +77,7 @@ def _insert_substring_by_index(
 
 
 class ReverseFeatureOperation(ABC):
-    def __init__(self, column_names: Union[List[str], List[int]]):
+    def __init__(self, column_names: Union[Sequence[str], Sequence[int]]):
         """
         Abstract Class that revert preprocessing operations on TestDataSets
 
@@ -89,7 +88,7 @@ class ReverseFeatureOperation(ABC):
 
         Parameters
         ----------
-        columns : Union[List[str], List[int]]
+        columns : Union[Sequence[str], Sequence[int]]
             List of the names/column IDs of the columns on which the
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.
@@ -98,13 +97,13 @@ class ReverseFeatureOperation(ABC):
         self._column_names = column_names
 
     @staticmethod
-    def _validate_column_names(column_names: Union[List[str], List[int]]):
+    def _validate_column_names(column_names: Union[Sequence[str], Sequence[int]]):
         """
         Check if ``column_names`` does not contain a mix of strings and integers
 
         Parameters
         ----------
-        column_names : Union[List[str], List[int]]
+        column_names : Union[Sequence[str], Sequence[int]]
             List of names (string) and IDs (integer) of the columns on which the
             ReverseFeatureOperation will be applied, that will be validated.
 
@@ -173,8 +172,96 @@ class Compose(ReverseFeatureOperation):
         return dataset
 
 
-class InsertNaNs(ReverseFeatureOperation):
-    def __init__(self, error_count: int, column_names: Union[List[str], List[int]]):
+class ReplaceSamples(ReverseFeatureOperation, ABC):
+    def __init__(
+        self,
+        column_names: Union[Sequence[str], Sequence[int]],
+        error_count: int,
+    ):
+        """
+        Abstract Class for inserting invalid substrings into column values.
+
+        This class is the abstract class for callables that insert an
+        ``error_count`` of invalid substrings into equally-spaced samples of
+        the columns named ``column_names``.
+
+        Parameters
+        ----------
+        column_names : Union[Sequence[str], Sequence[int]]
+            List of the names/column IDs of the columns on which the
+            ReverseFeatureOperation is applied. A mix of names and column IDs
+            is not accepted.
+        error_count : int
+            Number of samples that are being modified/replaced.
+        """
+        super().__init__(column_names)
+        self._error_count = error_count
+
+    @abstractmethod
+    def replace_samples(
+        self, column: _TestColumn, invalid_sample_ids: List[int]
+    ) -> _TestColumn:
+        """
+        Abstract method that replaces some samples in ``column`` object
+
+        This method replaces/modify the sample values with index in
+        ``invalid_sample_ids`` list and returns the ``column`` with new sample values.
+        This needs to be implemented in subclasses.
+
+        Parameters
+        ----------
+        column : _TestColumn
+            _TestColumn instance whose values are being replaced/modified
+        invalid_sample_ids : List[int]
+            List of indexes of the samples that are being replaced
+
+        Returns
+        -------
+        _TestColumn
+            _TestColumn instance where some values have been replaced/modified
+        """
+        pass
+
+    def __call__(self, dataset: TestDataSet) -> TestDataSet:
+        """
+        Insert invalid substrings into the ``column`` and store the related correct values.
+
+        If the correct substring is an empty string (i.e. the substring
+        should not be present), the invalid substring is placed at
+        the end of the value, otherwise it replaces the correct value.
+
+        Parameters
+        ----------
+        column : TestDataSet
+            TestDataSet instance containing the columns ``column_names`` used to
+            initialize this instance and where some invalid substrings will be inserted.
+
+        Returns
+        -------
+        TestDataSet
+            TestDataSet instance where some invalid substrings were inserted
+        """
+        for col_name in self._column_names:
+            column = dataset[col_name]
+            # Create list of sample IDs that will be modified
+            invalid_sample_ids = _sample_index_in_list(
+                sample_count=self._error_count,
+                step=dataset.sample_size // self._error_count,
+                # This BIAS prevents the function to insert invalid substrings for
+                # the same samples/ids where it may insert other type of errors
+                bias=column.col_id + INVALID_SUBSTRING_BIAS,
+                list_length=dataset.sample_size,
+            )
+
+            dataset[col_name] = self.replace_samples(column, invalid_sample_ids)
+
+        return dataset
+
+
+class InsertNaNs(ReplaceSamples):
+    def __init__(
+        self, error_count: int, column_names: Union[Sequence[str], Sequence[int]]
+    ):
         """
         Insert NaN values into the columns ``column_names`` of a TestDataSet instance.
 
@@ -183,61 +270,48 @@ class InsertNaNs(ReverseFeatureOperation):
 
         Parameters
         ----------
-        column_names : Union[List[str], List[int]]
+        column_names : Union[Sequence[str], Sequence[int]]
             List of the names/column IDs of the columns on which the
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.
         error_count : int
             Number of values that will be replaced with NaNs in each column
         """
-        super().__init__(column_names=column_names)
-        self._error_count = error_count
+        super().__init__(column_names=column_names, error_count=error_count)
 
-    def __call__(self, dataset: TestDataSet) -> TestDataSet:
+    @staticmethod
+    def replace_samples(
+        column: _TestColumn, invalid_sample_ids: List[int]
+    ) -> _TestColumn:
         """
         Insert NaN values into ``dataset`` keeping track of the modified samples.
 
         The function inserts an ``error_count`` number of equally-spaced NaN values
-        into the ``dataset``.
+        into the ``column``.
 
         Parameters
         ----------
-        dataset : TestDataSet
-            TestDataSet instance containing the columns ``column_names`` used
-            to initialize this instance and where some NaNs will be inserted.
+        column : _TestColumn
+            _TestColumn instance whose values are being replaced/modified
+        invalid_sample_ids : List[int]
+            List of indexes of the samples that are being replaced
 
         Returns
         -------
-        TestDataSet
-            TestDataSet instance where some NaNs were inserted.
+        _TestColumn
+            _TestColumn instance where some values have been replaced/modified
         """
-        for col_name in self._column_names:
-            column = dataset[col_name]
-            nan_sample_ids = _sample_index_in_list(
-                sample_count=self._error_count,
-                step=dataset.sample_size // self._error_count,
-                # This BIAS prevents the function to insert NaNs for the same
-                # samples/ids where it may insert other type of errors
-                bias=column.col_id + INVALID_NAN_BIAS,
-                list_length=dataset.sample_size,
-            )
-
-            for sample_id in nan_sample_ids:
-                column.update_sample(
-                    sample_id, value_to_fix=pd.NA, value_after_fix=pd.NA
-                )
-
-            dataset[col_name] = column
-
-        return dataset
+        for sample_id in invalid_sample_ids:
+            column.update_sample(sample_id, value_to_fix=pd.NA, value_after_fix=pd.NA)
+        return column
 
 
-class InsertInvalidValues(ReverseFeatureOperation):
+class InsertInvalidValues(ReplaceSamples):
     def __init__(
         self,
         error_count: int,
         replacement_map: Dict[str, str],
-        column_names: Union[Tuple[str], Tuple[int]],
+        column_names: Union[Sequence[str], Sequence[int]],
     ):
         """
         Insert invalid values into the column and store the related correct values.
@@ -247,7 +321,7 @@ class InsertInvalidValues(ReverseFeatureOperation):
         substring with the invalid one that is replaced.
         Parameters
         ----------
-        column_names : Union[List[str], List[int]]
+        column_names : Union[Sequence[str], Sequence[int]]
             List of the names/column IDs of the columns on which the
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.
@@ -259,134 +333,43 @@ class InsertInvalidValues(ReverseFeatureOperation):
             values that will replace those invalid values in the `correct_column`
             property.
         """
-        super().__init__(column_names=column_names)
-        self._error_count = error_count
+        super().__init__(column_names, error_count)
         self._replacement_map = replacement_map
 
-    def __call__(self, dataset: TestDataSet) -> TestDataSet:
+    def replace_samples(
+        self, column: _TestColumn, invalid_sample_ids: List[int]
+    ) -> _TestColumn:
         """
-        Insert invalid values into the column and store the related correct values.
-        The function inserts an ``error_count`` number of
-        equally-spaced invalid values into the column. These values are create
-        by using ``replacement_map`` dictionary that connects the original
-        substring with the invalid one that is replaced.
-        Parameters
-        ----------
-        dataset : TestDataSet
-            TestDataSet instance containing the columns ``column_names`` used to
-            initialize this instance and where some invalid values will be inserted.
-        Returns
-        -------
-        TestDataSet
-            TestDataSet instance where some invalid values were inserted
-        """
-        for col_name in self._column_names:
-            column = dataset[col_name]
-            invalid_string_sample_ids = _sample_index_in_list(
-                sample_count=self._error_count,
-                step=dataset.sample_size // self._error_count,
-                # This BIAS prevents the function to insert invalid values for
-                # the same samples/ids where it may insert other type of errors
-                bias=column.col_id + INVALID_STRING_BIAS,
-                list_length=dataset.sample_size,
-            )
-
-            invalid_string_list = list(self._replacement_map.keys())
-
-            for sample_id in invalid_string_sample_ids:
-                error_to_insert = invalid_string_list[
-                    sample_id % len(invalid_string_list)
-                ]
-                column.update_sample(
-                    sample_id,
-                    value_to_fix=error_to_insert,
-                    value_after_fix=self._replacement_map[error_to_insert],
-                )
-
-            dataset[col_name] = column
-
-        return dataset
-
-
-class GenericTransformValues(ReverseFeatureOperation):
-    def __init__(
-        self,
-        error_count: int,
-        replacement_map: Dict[str, str],
-        column_names: Union[List[str], List[int]],
-    ):
-        """
-        Insert invalid values into the column and store the related correct values.
+        Insert invalid values into the ``column`` and store the related correct values.
 
         The function inserts an ``error_count`` number of
-        equally-spaced invalid values into the column. These values are create
+        equally-spaced invalid values into the ``column``. These values are created
         by using ``replacement_map`` dictionary that connects the original
         substring with the invalid one that is replaced.
 
         Parameters
         ----------
-        column_names : Union[List[str], List[int]]
-            List of the names/column IDs of the columns on which the
-            ReverseFeatureOperation is applied. A mix of names and column IDs
-            is not accepted.
-        error_count : int
-            Number of invalid values that are inserted in column.
-        replacement_map : Dict[str, str]
-            Dictionary where the keys are the invalid string that will replace
-            some elements of ``values`` argument. The dictionary values are the
-            values that will replace those invalid values in the `correct_column`
-            property.
-        """
-        super().__init__(column_names=column_names)
-        self._error_count = error_count
-        self._replacement_map = replacement_map
-
-    def __call__(self, dataset: TestDataSet) -> TestDataSet:
-        """
-        Insert invalid values into the column and store the related correct values.
-
-        The function inserts an ``error_count`` number of
-        equally-spaced invalid values into the column. These values are create
-        by using ``replacement_map`` dictionary that connects the original
-        substring with the invalid one that is replaced.
-
-        Parameters
-        ----------
-        dataset : TestDataSet
-            TestDataSet instance containing the columns ``column_names`` used to
-            initialize this instance and where some invalid values will be inserted.
+        column : _TestColumn
+            _TestColumn instance whose values are being replaced/modified
+        invalid_sample_ids : List[int]
+            List of indexes of the samples that are being replaced
 
         Returns
         -------
-        TestDataSet
-            TestDataSet instance where some invalid values were inserted
+        _TestColumn
+            _TestColumn instance where some values have been replaced/modified
         """
-        for col_name in self._column_names:
-            column = dataset[col_name]
-            invalid_string_sample_ids = _sample_index_in_list(
-                sample_count=self._error_count,
-                step=dataset.sample_size // self._error_count,
-                # This BIAS prevents the function to insert invalid values for
-                # the same samples/ids where it may insert other type of errors
-                bias=column.col_id + INVALID_STRING_BIAS,
-                list_length=dataset.sample_size,
+        invalid_string_list = list(self._replacement_map.keys())
+
+        for sample_id in invalid_sample_ids:
+            error_to_insert = invalid_string_list[sample_id % len(invalid_string_list)]
+            column.update_sample(
+                sample_id,
+                value_to_fix=error_to_insert,
+                value_after_fix=self._replacement_map[error_to_insert],
             )
 
-            invalid_string_list = list(self._replacement_map.keys())
-
-            for sample_id in invalid_string_sample_ids:
-                error_to_insert = invalid_string_list[
-                    sample_id % len(invalid_string_list)
-                ]
-                column.update_sample(
-                    sample_id,
-                    value_to_fix=error_to_insert,
-                    value_after_fix=self._replacement_map[error_to_insert],
-                )
-
-            dataset[col_name] = column
-
-        return dataset
+        return column
 
 
 class SubstringReplacementMap(ABC):
@@ -612,10 +595,10 @@ class SubstringReplaceMapByIndex(SubstringReplacementMap):
             )
 
 
-class TransformSubstrings(ReverseFeatureOperation, ABC):
+class TransformSubstrings(ReplaceSamples, ABC):
     def __init__(
         self,
-        column_names: Union[List[str], List[int]],
+        column_names: Union[Sequence[str], Sequence[int]],
         error_count: int,
         replacement_map_list: List[SubstringReplacementMap],
     ):
@@ -628,7 +611,7 @@ class TransformSubstrings(ReverseFeatureOperation, ABC):
 
         Parameters
         ----------
-        column_names : Union[List[str], List[int]]
+        column_names : Union[Sequence[str], Sequence[int]]
             List of the names/column IDs of the columns on which the
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.
@@ -639,8 +622,7 @@ class TransformSubstrings(ReverseFeatureOperation, ABC):
             insert, the positions where they should be inserted and the
             corresponding corrections
         """
-        super().__init__(column_names)
-        self._error_count = error_count
+        super().__init__(column_names, error_count)
         self._replacement_map_list = replacement_map_list
 
     @abstractmethod
@@ -670,61 +652,51 @@ class TransformSubstrings(ReverseFeatureOperation, ABC):
         """
         pass
 
-    def __call__(self, dataset: TestDataSet) -> TestDataSet:
+    def replace_samples(
+        self, column: _TestColumn, invalid_sample_ids: List[int]
+    ) -> _TestColumn:
         """
-        Insert invalid substrings into the ``column`` and store the related correct values.
+        Method that replaces some samples in ``column`` object
 
-        If the correct substring is an empty string (i.e. the substring
-        should not be present), the invalid substring is placed at
-        the end of the value, otherwise it replaces the correct value.
+        This method replaces/modify the sample values with index in
+        ``invalid_sample_ids`` list and returns the ``column`` with new sample values.
+        This needs to be implemented in subclasses.
 
         Parameters
         ----------
-        column : TestDataSet
-            TestDataSet instance containing the columns ``column_names`` used to
-            initialize this instance and where some invalid substrings will be inserted.
+        column : _TestColumn
+            _TestColumn instance whose values are being replaced/modified
+        invalid_sample_ids : List[int]
+            List of indexes of the samples that are being replaced
 
         Returns
         -------
-        TestDataSet
-            TestDataSet instance where some invalid substrings were inserted
+        _TestColumn
+            _TestColumn instance where some values have been replaced/modified
         """
-        for col_name in self._column_names:
-            column = dataset[col_name]
-            # Create list of sample IDs that will be modified
-            invalid_substring_sample_ids = _sample_index_in_list(
-                sample_count=self._error_count,
-                step=dataset.sample_size // self._error_count,
-                # This BIAS prevents the function to insert invalid substrings for
-                # the same samples/ids where it may insert other type of errors
-                bias=column.col_id + INVALID_SUBSTRING_BIAS,
-                list_length=dataset.sample_size,
+        for sample_id in invalid_sample_ids:
+            replacement_map = self._replacement_map_list[
+                sample_id % len(self._replacement_map_list)
+            ]
+
+            new_value, value_after_fix = self.replace_value(
+                previous_value=str(column.values_to_fix[sample_id]),
+                replacement_map=replacement_map,
             )
 
-            for sample_id in invalid_substring_sample_ids:
-                replacement_map = self._replacement_map_list[
-                    sample_id % len(self._replacement_map_list)
-                ]
+            column.update_sample(
+                sample_id,
+                value_to_fix=new_value,
+                value_after_fix=value_after_fix,
+            )
 
-                new_value, value_after_fix = self.replace_value(
-                    previous_value=str(column.values_to_fix[sample_id]),
-                    replacement_map=replacement_map,
-                )
-
-                column.update_sample(
-                    sample_id,
-                    value_to_fix=new_value,
-                    value_after_fix=value_after_fix,
-                )
-            dataset[col_name] = column
-
-        return dataset
+        return column
 
 
 class InsertSubstringsByIndex(TransformSubstrings):
     def __init__(
         self,
-        column_names: Union[List[str], List[int]],
+        column_names: Union[Sequence[str], Sequence[int]],
         error_count: int,
         replacement_map_list: List[SubstringReplaceMapByIndex],
     ):
@@ -741,7 +713,7 @@ class InsertSubstringsByIndex(TransformSubstrings):
 
         Parameters
         ----------
-        column_names : Union[List[str], List[int]]
+        column_names : Union[Sequence[str], Sequence[int]]
             List of the names/column IDs of the columns on which the
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.
@@ -804,7 +776,7 @@ class InsertSubstringsByIndex(TransformSubstrings):
 class ReplaceSubstringsByValue(TransformSubstrings):
     def __init__(
         self,
-        column_names: Union[List[str], List[int]],
+        column_names: Union[Sequence[str], Sequence[int]],
         error_count: int,
         replacement_map_list: List[SubstringReplaceMapByValue],
     ):
@@ -824,7 +796,7 @@ class ReplaceSubstringsByValue(TransformSubstrings):
 
         Parameters
         ----------
-        column_names : Union[List[str], List[int]]
+        column_names : Union[Sequence[str], Sequence[int]]
             List of the names/column IDs of the columns on which the
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.

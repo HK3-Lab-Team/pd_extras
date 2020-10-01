@@ -18,16 +18,16 @@ from .datasim_util import (
 )
 
 WHOLE_WORD_REPLACE_DICT = {
-    "---": pd.NA,
-    ".": pd.NA,
-    "ASSENTI": pd.NA,
-    "PRESENTI": pd.NA,
-    "non disponibile": pd.NA,
-    "NV": pd.NA,
-    "-": pd.NA,
-    "Error": pd.NA,
-    "None": pd.NA,
-    "NAN": pd.NA
+    "---": np.nan,
+    ".": np.nan,
+    "ASSENTI": np.nan,
+    "PRESENTI": np.nan,
+    "non disponibile": np.nan,
+    "NV": np.nan,
+    "-": np.nan,
+    "Error": np.nan,
+    "None": np.nan,
+    "NAN": np.nan
     #     '0%': '0'
 }
 CHAR_REPLACE_DICT = {"°": "", ",": "."}
@@ -300,7 +300,7 @@ class CSVMock:
             [
                 InsertNaNs(column_names=column_list, error_count=wrong_values_count),
                 InsertInvalidValues(
-                    column_names=set(column_list) - set(only_string_columns),
+                    column_names=tuple(set(column_list) - set(only_string_columns)),
                     error_count=wrong_values_count,
                     replacement_map=WHOLE_WORD_REPLACE_DICT,
                 ),
@@ -308,6 +308,7 @@ class CSVMock:
                     column_names=float_columns,
                     error_count=wrong_values_count,
                     replacement_map_list=[
+                        # Replacing '.' with ','
                         SubstringReplaceMapByValue(".", ",", ".", True)
                     ],
                 ),
@@ -316,7 +317,9 @@ class CSVMock:
                     error_count=wrong_values_count,
                     replacement_map_list=[
                         SubstringReplaceMapByIndex(-1, "°", "", True),
-                        SubstringReplaceMapByIndex(-1, "%", None, False),
+                        # inserting '%' symbol into a value, that will be corrected
+                        # by changing the whole value to NaN
+                        SubstringReplaceMapByIndex(-1, "%", np.nan, False),
                     ],
                 ),
                 # Introducing wrong datetime format (no correction is provided at
