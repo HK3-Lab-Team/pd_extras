@@ -5,10 +5,10 @@ except ImportError:
 
 import collections
 from abc import abstractmethod
-from typing import Any, List
+from typing import Any, List, Union
 
 from .dataset import Dataset
-from .util import tolist
+from .util import is_sequence_and_not_str, tolist
 
 
 @runtime_checkable
@@ -104,6 +104,10 @@ class FillNA(FeatureOperation):
     ------
     ValueError
         If ``columns`` or ``derived_columns`` are not a single-element list.
+    TypeError
+            If ``columns`` is not a list
+    TypeError
+        If ``derived_columns`` is not None and it is not a list
     """
 
     def __init__(
@@ -112,12 +116,21 @@ class FillNA(FeatureOperation):
         value: Any,
         derived_columns: List[str] = None,
     ):
+        if not is_sequence_and_not_str(columns):
+            raise TypeError(
+                f"columns parameter must be a list, found {type(columns).__name__}"
+            )
         if len(columns) != 1:
             raise ValueError(f"Length of columns must be 1, found {len(columns)}")
-        if derived_columns is not None and len(derived_columns) != 1:
-            raise ValueError(
-                f"Length of derived_columns must be 1, found {len(derived_columns)}"
-            )
+        if derived_columns is not None:
+            if len(derived_columns) != 1:
+                raise ValueError(
+                    f"Length of derived_columns must be 1, found {len(derived_columns)}"
+                )
+            if not is_sequence_and_not_str(columns):
+                raise TypeError(
+                    f"derived_columns parameter must be a list, found {type(derived_columns).__name__}"
+                )
 
         self.columns = columns
         self.derived_columns = derived_columns
