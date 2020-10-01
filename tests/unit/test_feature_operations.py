@@ -87,55 +87,48 @@ class DescribeOperationsList:
 
     def it_can_iadd_first_featop(self, request):
         tolist_ = function_mock(request, "trousse.feature_operations.tolist")
-        tolist_.side_effect = [["col0", "col1"], ["col2", "col3"]]
+        tolist_.side_effect = ["col0"], ["col1"]
         op_list = fop._OperationsList()
-        feat_op = fop.FillNA(
-            columns=["col0", "col1"], derived_columns=["col2", "col3"], value=0
-        )
+        feat_op = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
 
         op_list += feat_op
 
         assert op_list._operations_list == [feat_op]
-        for column in ["col0", "col1", "col2", "col3"]:
+        for column in ["col0", "col1"]:
             assert op_list._operations_by_column[column] == [feat_op]
         assert tolist_.call_args_list == [
-            call(["col0", "col1"]),
-            call(["col2", "col3"]),
+            call(["col0"]),
+            call(["col1"]),
         ]
 
     def it_can_iadd_next_featop(self, request):
         tolist_ = function_mock(request, "trousse.feature_operations.tolist")
         tolist_.side_effect = [["col1"], ["col4"]]
         op_list = fop._OperationsList()
-        feat_op0 = fop.FillNA(
-            columns=["col0", "col1"], derived_columns=["col2", "col3"], value=0
-        )
-        feat_op1 = fop.FillNA(columns="col1", derived_columns="col4", value=1)
+        feat_op0 = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
+        feat_op1 = fop.FillNA(columns=["col1"], derived_columns=["col4"], value=1)
         op_list._operations_list = [feat_op0]
-        for column in ["col0", "col1", "col2", "col3"]:
+        for column in ["col0", "col1"]:
             op_list._operations_by_column[column] = [feat_op0]
 
         op_list += feat_op1
 
         assert op_list._operations_list == [feat_op0, feat_op1]
-        for column in ["col0", "col2", "col3"]:
-            assert op_list._operations_by_column[column] == [feat_op0]
+
+        assert op_list._operations_by_column["col0"] == [feat_op0]
         assert op_list._operations_by_column["col1"] == [feat_op0, feat_op1]
         assert op_list._operations_by_column["col4"] == [feat_op1]
         assert tolist_.call_args_list == [
-            call("col1"),
-            call("col4"),
+            call(["col1"]),
+            call(["col4"]),
         ]
 
     def it_can_getitem_from_int(self):
         op_list = fop._OperationsList()
-        feat_op0 = fop.FillNA(
-            columns=["col0", "col1"], derived_columns=["col2", "col3"], value=0
-        )
-        feat_op1 = fop.FillNA(columns="col1", derived_columns="col4", value=1)
+        feat_op0 = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
+        feat_op1 = fop.FillNA(columns=["col1"], derived_columns=["col4"], value=1)
         op_list._operations_list = [feat_op0, feat_op1]
-        for column in ["col0", "col2", "col3"]:
-            op_list._operations_by_column[column] = [feat_op0]
+        op_list._operations_by_column["col0"] = [feat_op0]
         op_list._operations_by_column["col1"] = [feat_op0, feat_op1]
         op_list._operations_by_column["col4"] = [feat_op1]
 
@@ -149,13 +142,10 @@ class DescribeOperationsList:
 
     def it_can_getitem_from_str(self):
         op_list = fop._OperationsList()
-        feat_op0 = fop.FillNA(
-            columns=["col0", "col1"], derived_columns=["col2", "col3"], value=0
-        )
-        feat_op1 = fop.FillNA(columns="col1", derived_columns="col4", value=1)
+        feat_op0 = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
+        feat_op1 = fop.FillNA(columns=["col1"], derived_columns=["col4"], value=1)
         op_list._operations_list = [feat_op0, feat_op1]
-        for column in ["col0", "col2", "col3"]:
-            op_list._operations_by_column[column] = [feat_op0]
+        op_list._operations_by_column["col0"] = [feat_op0]
         op_list._operations_by_column["col1"] = [feat_op0, feat_op1]
         op_list._operations_by_column["col4"] = [feat_op1]
 
