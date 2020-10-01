@@ -914,12 +914,12 @@ class Dataset:
 
     def fillna(
         self,
-        columns: Union[List[str], str],
+        columns: List[str],
         value: Any,
-        derived_columns: Union[List[str], str] = None,
+        derived_columns: List[str] = None,
         inplace: bool = False,
     ) -> Optional["Dataset"]:
-        """Fill NaN values in ``columns`` columns with value ``value``.
+        """Fill NaN values ``columns`` (single-element list) column with value ``value``.
 
         By default NaNs are filled in the original columns. To store the result of filling
         in other columns, ``derived_columns`` parameter has to be set with the name of
@@ -927,13 +927,14 @@ class Dataset:
 
         Parameters
         ----------
-        columns : Union[List[str], str]
-            Names of the columns with NaNs to be filled
+        columns : List[str]
+            Name of the column with NaNs to be filled. It must be a single-element list.
         value : Any
             Value used to fill the NaNs
-        derived_columns : Union[List[str], str], optional
-            Names of the columns where to store the filling result. Default is None,
-            meaning that NaNs are filled in the original columns.
+        derived_columns : List[str], optional
+            Name of the column where to store the filling result. Default is None,
+            meaning that NaNs are filled in the original column. If not None, it must be
+            a single-element list.
         inplace : bool, optional
             Whether to modify the current Dataset or return a new instance. Default False,
             meanining that a new instance of Dataset will be returned.
@@ -946,34 +947,27 @@ class Dataset:
         Raises
         ------
         ValueError
-            If the number of columns to be filled is different from the number of the
-            columns where to store the result (if ``derived_columns`` is not None)
+            If ``columns`` or ``derived_columns`` are not a single-element list.
         """
+        if len(columns) != 1:
+            raise ValueError(f"Length of columns must be 1, found {len(columns)}")
+
         if not inplace:
             dataset = self._dataset_copy
         else:
             dataset = self
 
-        if not isinstance(columns, list):
-            columns = [columns]
-
         if derived_columns:
-            if not isinstance(derived_columns, list):
-                derived_columns = [derived_columns]
-
-            if len(columns) != len(derived_columns):
+            if len(derived_columns) != 1:
                 raise ValueError(
-                    f"The number of derived_columns ({len(derived_columns)}) "
-                    f"must be equal to the number of columns ({len(columns)})"
+                    f"Length of derived_columns must be 1, found {len(derived_columns)}"
                 )
 
-            for column, derived_column in zip(columns, derived_columns):
-                filled_col = dataset.df[column].fillna(value, inplace=False)
-                dataset._df[derived_column] = filled_col
+            filled_col = dataset.df[columns[0]].fillna(value, inplace=False)
+            dataset._df[derived_columns[0]] = filled_col
 
         else:
-            for column in columns:
-                dataset.df[column].fillna(value, inplace=True)
+            dataset.df[columns[0]].fillna(value, inplace=True)
 
         if not inplace:
             return dataset

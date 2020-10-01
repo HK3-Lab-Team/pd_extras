@@ -3,7 +3,6 @@ from unittest.mock import call
 import numpy as np
 import pandas as pd
 import pytest
-
 from trousse.dataset import Dataset, _ColumnListByType
 
 from ..dataset_util import DataFrameMock
@@ -230,14 +229,7 @@ class DescribeDataset:
     @pytest.mark.parametrize(
         "columns, derived_columns, expected_new_columns, expected_inplace",
         [
-            (
-                ["nan_0", "nan_1"],
-                ["filled_nan_0", "filled_nan_1"],
-                ["filled_nan_0", "filled_nan_1"],
-                False,
-            ),
             (["nan_0"], ["filled_nan_0"], ["filled_nan_0"], False),
-            (["nan_0", "nan_1"], None, [], True),
             (["nan_0"], None, [], True),
         ],
     )
@@ -268,55 +260,12 @@ class DescribeDataset:
             call("fake/path0"),
         ]
         assert len(pd_fillna_.call_args_list) == len(columns)
-        for i, col in enumerate(columns):
-            pd.testing.assert_series_equal(pd_fillna_.call_args_list[i][0][0], df[col])
-            assert pd_fillna_.call_args_list[i][1] == {"inplace": expected_inplace}
-
-    @pytest.mark.parametrize(
-        "column, derived_column, expected_new_column, expected_inplace",
-        [
-            ("nan_0", "filled_nan_0", ["filled_nan_0"], False),
-            ("nan_0", None, [], True),
-        ],
-    )
-    def it_can_fillna_not_inplace_str(
-        self, request, column, derived_column, expected_new_column, expected_inplace
-    ):
-        pd_fillna_ = method_mock(request, pd.Series, "fillna")
-        pd_fillna_.return_value = pd.Series([0] * 100)
-        _dataset_copy_ = property_mock(request, Dataset, "_dataset_copy")
-        df = DataFrameMock.df_many_nans(nan_ratio=0.5, n_columns=3)
-        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
-        get_df_from_csv_.return_value = df
-        _dataset_copy_.return_value = Dataset(data_file="fake/path1")
-        dataset = Dataset(data_file="fake/path0")
-
-        filled_dataset = dataset.fillna(
-            columns=column,
-            derived_columns=derived_column,
-            value=0,
-            inplace=False,
+        pd.testing.assert_series_equal(
+            pd_fillna_.call_args_list[0][0][0], df[columns[0]]
         )
-
-        assert filled_dataset is not None
-        assert filled_dataset is not dataset
-        assert isinstance(filled_dataset, Dataset)
-        for col in expected_new_column:
-            assert col in filled_dataset.df.columns
-        _dataset_copy_.assert_called_once()
-        assert get_df_from_csv_.call_args_list == [
-            call("fake/path1"),
-            call("fake/path0"),
-        ]
-        assert len(pd_fillna_.call_args_list) == 1
-        pd.testing.assert_series_equal(pd_fillna_.call_args_list[0][0][0], df[column])
         assert pd_fillna_.call_args_list[0][1] == {"inplace": expected_inplace}
 
-    @pytest.mark.parametrize(
-        "columns",
-        [(["nan_0", "nan_1"]), (["nan_0"]), ("nan_0")],
-    )
-    def it_can_fillna_inplace_list(self, request, columns):
+    def it_can_fillna_inplace_list(self, request):
         df = DataFrameMock.df_many_nans(nan_ratio=0.5, n_columns=3)
         get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
         get_df_from_csv_.return_value = df
@@ -324,30 +273,13 @@ class DescribeDataset:
         old_columns = dataset.df.columns.values
 
         none = dataset.fillna(
-            columns=columns, derived_columns=None, value=0, inplace=True
+            columns=["nan_0"], derived_columns=None, value=0, inplace=True
         )
         new_columns = dataset.df.columns.values
 
         assert none is None
         np.testing.assert_array_equal(old_columns, new_columns)
         get_df_from_csv_.assert_called_once_with("fake/path0")
-
-    def but_it_raises_valueerror_if_columns_and_derived_columns_length_doesnt_match(
-        self, request
-    ):
-        initializer_mock(request, Dataset)
-        dataset = Dataset(data_file="fake/path")
-
-        with pytest.raises(ValueError) as err:
-            dataset.fillna(
-                columns=["nan_0", "nan_1"], derived_columns=["derived"], value=0
-            )
-
-        assert isinstance(err.value, ValueError)
-        assert (
-            str(err.value)
-            == "The number of derived_columns (1) must be equal to the number of columns (2)"
-        )
 
 
 class DescribeColumnListByType:
