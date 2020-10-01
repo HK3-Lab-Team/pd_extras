@@ -13,6 +13,9 @@ from .dataset import Dataset
 class FeatureOperation(Protocol):
     """Protocol definining how Operations should be applied on a Dataset."""
 
+    columns: Union[List[str], str]
+    derived_columns: Union[List[str], str] = None
+
     @abstractmethod
     def __call__(self, dataset: Dataset) -> Dataset:
         raise NotImplementedError
@@ -23,21 +26,21 @@ class FeatureOperation(Protocol):
 
 
 class FillNA(FeatureOperation):
-    """Fill NaN values in ``column`` column with value ``value``.
+    """Fill NaN values in ``columns`` columns with value ``value``.
 
-    By default NaNs are filled in the original column. To store the result of filling
-    in other column, ``derived_column`` parameter has to be set with the name of
-    the corresponding column name.
+    By default NaNs are filled in the original columns. To store the result of filling
+    in other columns, ``derived_columns`` parameter has to be set with the name of
+    the corresponding column names.
 
     Parameters
     ----------
-    column : str
-        Name of the column with NaNs to be filled
+    columns : Union[List[str], str]
+        Names of the columns with NaNs to be filled
     value : Any
         Value used to fill the NaNs
-    derived_column : str, optional
-        Names of the column where to store the filling result. Default is None,
-        meaning that NaNs are filled in the original column.
+    derived_columns : Union[List[str], str], optional
+        Names of the columns where to store the filling result. Default is None,
+        meaning that NaNs are filled in the original columns.
 
     Returns
     -------
@@ -46,24 +49,25 @@ class FillNA(FeatureOperation):
 
     Raises
     ------
-    TypeError
-        If ``column`` or ``derived_column`` are not strings
+    ValueError
+        If the number of columns to be filled is different from the number of the
+        columns where to store the result (if ``derived_columns`` is not None)
     """
 
     def __init__(
         self,
-        column: str,
+        columns: Union[List[str], str],
         value: Any,
-        derived_column: str = None,
+        derived_columns: Union[List[str], str] = None,
     ):
-        self.column = column
-        self.derived_column = derived_column
+        self.columns = columns
+        self.derived_columns = derived_columns
         self.value = value
 
     def __call__(self, dataset: Dataset) -> Dataset:
         return dataset.fillna(
-            column=self.column,
-            derived_column=self.derived_column,
+            columns=self.columns,
+            derived_columns=self.derived_columns,
             value=self.value,
             inplace=False,
         )
