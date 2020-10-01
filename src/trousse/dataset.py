@@ -914,26 +914,26 @@ class Dataset:
 
     def fillna(
         self,
-        column: str,
+        columns: Union[List[str], str],
         value: Any,
-        derived_column: str = None,
+        derived_columns: Union[List[str], str] = None,
         inplace: bool = False,
     ) -> Optional["Dataset"]:
-        """Fill NaN values in ``column`` column with value ``value``.
+        """Fill NaN values in ``columns`` columns with value ``value``.
 
-        By default NaNs are filled in the original column. To store the result of filling
-        in other column, ``derived_column`` parameter has to be set with the name of
-        the corresponding column name.
+        By default NaNs are filled in the original columns. To store the result of filling
+        in other columns, ``derived_columns`` parameter has to be set with the name of
+        the corresponding column names.
 
         Parameters
         ----------
-        column : str
-            Name of the column with NaNs to be filled
+        columns : Union[List[str], str]
+            Names of the columns with NaNs to be filled
         value : Any
             Value used to fill the NaNs
-        derived_column : str, optional
-            Name of the column where to store the filling result. Default is None,
-            meaning that NaNs are filled in the original column.
+        derived_columns : Union[List[str], str], optional
+            Names of the columns where to store the filling result. Default is None,
+            meaning that NaNs are filled in the original columns.
         inplace : bool, optional
             Whether to modify the current Dataset or return a new instance. Default False,
             meanining that a new instance of Dataset will be returned.
@@ -945,27 +945,35 @@ class Dataset:
 
         Raises
         ------
-        TypeError
-            If ``column`` or ``derived_column`` are not strings
+        ValueError
+            If the number of columns to be filled is different from the number of the
+            columns where to store the result (if ``derived_columns`` is not None)
         """
-        if not isinstance(column, str):
-            raise TypeError(
-                f"column parameter must be a string, found {type(column).__name__}"
-            )
         if not inplace:
             dataset = self._dataset_copy
         else:
             dataset = self
 
-        if derived_column:
-            if not isinstance(derived_column, str):
-                raise TypeError(
-                    f"derived_column parameter must be a string, found {type(derived_column).__name__}"
+        if not isinstance(columns, list):
+            columns = [columns]
+
+        if derived_columns:
+            if not isinstance(derived_columns, list):
+                derived_columns = [derived_columns]
+
+            if len(columns) != len(derived_columns):
+                raise ValueError(
+                    f"The number of derived_columns ({len(derived_columns)}) "
+                    f"must be equal to the number of columns ({len(columns)})"
                 )
-            filled_col = dataset.df[column].fillna(value, inplace=False)
-            dataset._df[derived_column] = filled_col
+
+            for column, derived_column in zip(columns, derived_columns):
+                filled_col = dataset.df[column].fillna(value, inplace=False)
+                dataset._df[derived_column] = filled_col
+
         else:
-            dataset.df[column].fillna(value, inplace=True)
+            for column in columns:
+                dataset.df[column].fillna(value, inplace=True)
 
         if not inplace:
             return dataset
