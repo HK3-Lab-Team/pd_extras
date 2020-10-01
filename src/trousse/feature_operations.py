@@ -13,8 +13,8 @@ from .dataset import Dataset
 class FeatureOperation(Protocol):
     """Protocol definining how Operations should be applied on a Dataset."""
 
-    columns: Union[List[str], str]
-    derived_columns: Union[List[str], str] = None
+    columns: List[str]
+    derived_columns: List[str] = None
 
     @abstractmethod
     def __call__(self, dataset: Dataset) -> Dataset:
@@ -26,7 +26,7 @@ class FeatureOperation(Protocol):
 
 
 class FillNA(FeatureOperation):
-    """Fill NaN values in ``columns`` columns with value ``value``.
+    """Fill NaN values ``columns`` (single-element list) column with value ``value``.
 
     By default NaNs are filled in the original columns. To store the result of filling
     in other columns, ``derived_columns`` parameter has to be set with the name of
@@ -34,13 +34,14 @@ class FillNA(FeatureOperation):
 
     Parameters
     ----------
-    columns : Union[List[str], str]
-        Names of the columns with NaNs to be filled
+    columns : List[str]
+        Name of the column with NaNs to be filled. It must be a single-element list.
     value : Any
         Value used to fill the NaNs
-    derived_columns : Union[List[str], str], optional
-        Names of the columns where to store the filling result. Default is None,
-        meaning that NaNs are filled in the original columns.
+    derived_columns : List[str], optional
+        Name of the column where to store the filling result. Default is None,
+        meaning that NaNs are filled in the original column. If not None, it must be a
+        single-element list.
 
     Returns
     -------
@@ -50,16 +51,22 @@ class FillNA(FeatureOperation):
     Raises
     ------
     ValueError
-        If the number of columns to be filled is different from the number of the
-        columns where to store the result (if ``derived_columns`` is not None)
+        If ``columns`` or ``derived_columns`` are not a single-element list.
     """
 
     def __init__(
         self,
-        columns: Union[List[str], str],
+        columns: List[str],
         value: Any,
-        derived_columns: Union[List[str], str] = None,
+        derived_columns: List[str] = None,
     ):
+        if len(columns) != 1:
+            raise ValueError(f"Length of columns must be 1, found {len(columns)}")
+        if derived_columns is not None and len(derived_columns) != 1:
+            raise ValueError(
+                f"Length of derived_columns must be 1, found {len(derived_columns)}"
+            )
+
         self.columns = columns
         self.derived_columns = derived_columns
         self.value = value
