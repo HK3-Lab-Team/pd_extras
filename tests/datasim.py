@@ -4,6 +4,8 @@ from typing import Any, List, MutableSequence, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
+from .datasim_util import ReverseFeatureOperation
+
 
 @dataclass
 class TestColumn:
@@ -174,14 +176,25 @@ class _TestColumn:
 
 class TestDataSet:
     def __init__(self, sample_size: Optional[int] = None):
-        # Creating two dicts with the same elements, so that
-        # retrieving an element by name or index takes the same time
+        """
+        Class to store two datasets with simulated errors and with related corrections.
+
+        This class creates a DataSet by adding columns to it and it is used to
+        add simulated errors to the original values.
+        This class also tracks the operations performed on the dataset and
+        the values that are supposed to be created after the appropriate steps
+        for the correction of the DataSet.
+        """
         self._columns_by_index = []
         self._sample_size = sample_size
         self._name_to_index_map = {}
+        self._operation_history = []
 
     @property
     def sample_size(self) -> Optional[int]:
+        """
+        Return the number of samples of the dataset
+        """
         return self._sample_size
 
     def _validate_testcolumn_to_create(self, column: TestColumn):
@@ -312,6 +325,42 @@ class TestDataSet:
         for col in columns:
             self.add_column(col)
 
+    def update_column(
+        self,
+        column_name_id: Union[int, str],
+        new_value: _TestColumn,
+        operation_used: ReverseFeatureOperation,
+    ) -> None:
+        """
+        Set a new ``value`` to existing column identified by ``column_name_id``
+
+        Parameters
+        ----------
+        column_name_id : Union[int, str]
+            Name (str) or Id (int) of the column whose value is being set.
+        value : _TestColumn
+            New _TestColumn instance that replaces the column identified
+            by ``column_name_id``.
+
+        Raises
+        ------
+        TypeError
+            If the ``column`` argument is not a _TestColumn instance.
+        ValueError
+            If no column with the same name is present in the instance,
+            or if the column has a different sample count from the
+            other instance columns.
+        """
+        self._validate_testcolumn_to_update(new_value)
+
+        # Record the new operation used
+        self._operation_history.append(operation_used)
+
+        if isinstance(column_name_id, int):
+            self._columns_by_index[column_name_id] = new_value
+        else:
+            self._columns_by_index[self._name_to_index_map[column_name_id]] = new_value
+
     @property
     def dataframe_to_fix(self) -> pd.DataFrame:
         """
@@ -365,39 +414,29 @@ class TestDataSet:
             data_dict[col_name] = column.values_after_fix
         return pd.DataFrame(data_dict)
 
+    @property
+    def last_operation_index(self) -> int:
+        """
+        Return the index of the last operation performed on the instance.
+
+        This property may be called from "ReplaceSamples" instances
+        that uses this as a bias for computing the indexes of the samples that will
+        be replaced/modified. This allows every different operation
+        to modify a different set of samples (to prevent having only few
+        samples full of errors).
+
+        Returns
+        -------
+        int
+            Index of the last operation performed on the instance.
+        """
+        return len(self._operation_history)
+
     def __getitem__(self, item: Union[int, str]) -> _TestColumn:
         if isinstance(item, int):
             return self._columns_by_index[item]
         else:
             return self._columns_by_index[self._name_to_index_map[str(item)]]
-
-    def __setitem__(self, column_name_id: Union[int, str], value: _TestColumn) -> None:
-        """
-        Set a new ``value`` to existing column identified by ``column_name_id``
-
-        Parameters
-        ----------
-        column_name_id : Union[int, str]
-            Name (str) or Id (int) of the column whose value is being set.
-        value : _TestColumn
-            New _TestColumn instance that replaces the column identified
-            by ``column_name_id``.
-
-        Raises
-        ------
-        TypeError
-            If the ``column`` argument is not a _TestColumn instance.
-        ValueError
-            If no column with the same name is present in the instance,
-            or if the column has a different sample count from the
-            other instance columns.
-        """
-        self._validate_testcolumn_to_update(value)
-
-        if isinstance(column_name_id, int):
-            self._columns_by_index[column_name_id] = value
-        else:
-            self._columns_by_index[self._name_to_index_map[column_name_id]] = value
 
     def __contains__(self, column_name_id: Union[int, str]) -> bool:
         """

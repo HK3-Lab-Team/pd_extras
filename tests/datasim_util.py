@@ -6,10 +6,6 @@ import pandas as pd
 
 from .datasim import TestDataSet, _TestColumn
 
-INVALID_NAN_BIAS = 0
-INVALID_STRING_BIAS = 1
-INVALID_SUBSTRING_BIAS = 2
-
 
 def _sample_index_in_list(
     sample_count: int, step: int, bias: int, list_length: int
@@ -77,6 +73,7 @@ def _insert_substring_by_index(
 
 
 class ReverseFeatureOperation(ABC):
+
     def __init__(self, column_names: Union[Sequence[str], Sequence[int]]):
         """
         Abstract Class that revert preprocessing operations on TestDataSets
@@ -249,11 +246,13 @@ class ReplaceSamples(ReverseFeatureOperation, ABC):
                 step=dataset.sample_size // self._error_count,
                 # This BIAS prevents the function to insert invalid substrings for
                 # the same samples/ids where it may insert other type of errors
-                bias=column.col_id + INVALID_SUBSTRING_BIAS,
+                bias=column.col_id + dataset.last_operation_index,
                 list_length=dataset.sample_size,
             )
 
-            dataset[col_name] = self.replace_samples(column, invalid_sample_ids)
+            dataset.update_column(
+                col_name, self.replace_samples(column, invalid_sample_ids), self
+            )
 
         return dataset
 
@@ -306,7 +305,7 @@ class InsertNaNs(ReplaceSamples):
         return column
 
 
-class InsertInvalidValues(ReplaceSamples):
+class InsertNewValues(ReplaceSamples):
     def __init__(
         self,
         error_count: int,
@@ -315,10 +314,12 @@ class InsertInvalidValues(ReplaceSamples):
     ):
         """
         Insert invalid values into the column and store the related correct values.
+
         The function inserts an ``error_count`` number of
         equally-spaced invalid values into the column. These values are create
         by using ``replacement_map`` dictionary that connects the original
         substring with the invalid one that is replaced.
+
         Parameters
         ----------
         column_names : Union[Sequence[str], Sequence[int]]
@@ -367,6 +368,97 @@ class InsertInvalidValues(ReplaceSamples):
                 sample_id,
                 value_to_fix=error_to_insert,
                 value_after_fix=self._replacement_map[error_to_insert],
+            )
+
+        return column
+
+
+class InsertOutOfScaleValues(ReplaceSamples):
+    def __init__(
+        self,
+        column_names: Union[Sequence[str], Sequence[int]],
+        error_count: int,
+        upperbound_increase: float,
+        lowerbound_increase: float,
+    ):
+        """
+        Insert out-of-scale values (with '<' or '>') into the ``column``.
+
+        The class is a callable that inserts an ``error_count`` number of
+        equally-spaced out-of-scale values into the _TestColumn instance that
+        is passed. The class also stores in the _TestColumn instance the related
+        values that will result after appropriate correction.
+
+        Parameters
+        ----------
+        column_names : Union[Sequence[str], Sequence[int]]
+            List of the names/column IDs of the columns on which the
+            ReverseFeatureOperation is applied. A mix of names and column IDs
+            is not accepted.
+        error_count : int
+            Number of invalid values that are inserted in column.
+        upperbound_increase : float
+            This number indicates the increase ratio of the upper bound
+            out-of-scale value, when it will be corrected.
+            Particularly, this represents the value U such that:
+             '> 80' -> will be corrected as: '> 80 + U * 80'
+        lowerbound_increase : float
+            This number indicates the increase ratio of the lower bound
+            out-of-scale value, when it will be corrected.
+            Particularly, this represents the value L such that:
+             '< 10' -> will be corrected as: '< 10 + L * 10'
+        """
+        super().__init__(column_names, error_count)
+        self._upperbound_increase = upperbound_increase
+        self._lowerbound_increase = lowerbound_increase
+
+    def replace_samples(
+        self, column: _TestColumn, invalid_sample_ids: List[int]
+    ) -> _TestColumn:
+        """
+        Insert out-of-scale values (with '<' or '>') into the ``column``.
+
+        The method inserts an ``error_count`` number of equally-spaced
+        out-of-scale values into the _TestColumn instance that is passed.
+        The method also stores in the _TestColumn instance the related
+        values that will result after appropriate correction.
+        Particularly half of ``error_count`` values will contain
+        '< ("minimum value")' and the other half
+        '> ("maximum value")', and the related corrected
+        values will be "minimum value" - "lowerbound increase" * "minimum value"
+        and "maximum value" - "upperbound increase" * "maximum value",
+        respectively.
+
+        Parameters
+        ----------
+        column : _TestColumn
+            _TestColumn instance whose values are being replaced/modified
+        invalid_sample_ids : List[int]
+            List of indexes of the samples that are being replaced
+
+        Returns
+        -------
+        _TestColumn
+            _TestColumn instance where some values have been replaced/modified
+        """
+        min_col_value = column.values_to_fix.min()
+        max_col_value = column.values_to_fix.max()
+
+        for sample_id in invalid_sample_ids:
+            if sample_id % 2:
+                new_value = "<" + str(min_col_value)
+                value_after_fix = (
+                    min_col_value - min_col_value * self._lowerbound_increase
+                )
+            else:
+                new_value = ">" + str(max_col_value)
+                value_after_fix = (
+                    max_col_value + max_col_value * self._upperbound_increase
+                )
+            column.update_sample(
+                sample_id,
+                value_to_fix=new_value,
+                value_after_fix=value_after_fix,
             )
 
         return column
