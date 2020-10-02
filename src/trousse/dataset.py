@@ -340,17 +340,22 @@ class Dataset:
 
         str_categorical_cols = self._get_categorical_cols(str_cols)
         num_categorical_cols = self._get_categorical_cols(numerical_cols)
+
+        for categorical_col in categorical_cols:
+            if self._df[categorical_col].dtype.categories.inferred_type == "integer":
+                num_categorical_cols.add(categorical_col)
+                numerical_cols.add(categorical_col)
+            elif self._df[categorical_col].dtype.categories.inferred_type == "string":
+                str_categorical_cols.add(categorical_col)
+                str_cols.add(categorical_col)
+            else:
+                raise RuntimeError("there is something wrong with the type guessing...")
+
+        # `num_categorical_cols` is already included in `numerical_cols`,
+        # so no need to add it here
         med_exam_col_list = (
             numerical_cols | bool_cols - constant_cols - self.metadata_cols
         )
-
-        for categorical_col in categorical_cols:
-            if categorical_col.dtype.categories.inferred_type == "integer":
-                num_categorical_cols.add(categorical_col)
-            elif categorical_col.dtype.categories.inferred_type == "string":
-                str_categorical_cols.add(categorical_col)
-            else:
-                raise RuntimeError("there is something wrong with the type guessing...")
 
         return _ColumnListByType(
             mixed_type_cols=mixed_type_cols,

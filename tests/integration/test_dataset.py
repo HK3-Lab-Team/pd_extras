@@ -5,7 +5,6 @@ from typing import Tuple
 
 import pandas as pd
 import pytest
-
 from trousse.dataset import (
     Dataset,
     FeatureOperation,
@@ -181,34 +180,55 @@ class Describe_Dataset:
                     "metadata_num_col",
                     "mixed_type_col",
                     "same_col",
-                    "numerical_col",
+                    "float_col",
+                    "int_col",
                     "bool_col",
                     "interval_col",
                     "nan_col",
                     "string_col",
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
                     "str_categorical_col",
+                    "str_forced_categorical_col",
                     "datetime_col",
                 },
                 _ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
                     constant_cols={"same_col"},
                     numerical_cols={
-                        "numerical_col",
+                        "int_col",
+                        "float_col",
+                        "int_categorical_col",
+                        "int_forced_categorical_col",
                         "bool_col",
                         "interval_col",
                         "nan_col",
                         "metadata_num_col",
                     },
                     med_exam_col_list={
-                        "numerical_col",
+                        "int_categorical_col",
+                        "int_forced_categorical_col",
+                        "int_col",
+                        "float_col",
                         "bool_col",
                         "interval_col",
                         "nan_col",
                         "metadata_num_col",
                     },
-                    str_cols={"string_col", "str_categorical_col"},
-                    str_categorical_cols={"str_categorical_col"},
-                    num_categorical_cols={"nan_col"},
+                    str_cols={
+                        "string_col",
+                        "str_categorical_col",
+                        "str_forced_categorical_col",
+                    },
+                    str_categorical_cols={
+                        "str_categorical_col",
+                        "str_forced_categorical_col",
+                    },
+                    num_categorical_cols={
+                        "int_categorical_col",
+                        "int_forced_categorical_col",
+                        "nan_col",
+                    },
                     other_cols={"datetime_col"},
                     bool_cols={"bool_col"},
                 ),
@@ -219,22 +239,37 @@ class Describe_Dataset:
                     mixed_type_cols={"mixed_type_col"},
                     constant_cols={"same_col"},
                     numerical_cols={
-                        "numerical_col",
-                        "num_categorical_col",
+                        "float_col",
+                        "int_col",
+                        "int_categorical_col",
+                        "int_forced_categorical_col",
                         "bool_col",
                         "interval_col",
                         "nan_col",
                     },
                     med_exam_col_list={
-                        "numerical_col",
-                        "num_categorical_col",
+                        "float_col",
+                        "int_col",
+                        "int_categorical_col",
+                        "int_forced_categorical_col",
                         "bool_col",
                         "interval_col",
                         "nan_col",
                     },
-                    str_cols={"string_col", "str_categorical_col"},
-                    str_categorical_cols={"str_categorical_col"},
-                    num_categorical_cols={"num_categorical_col", "nan_col"},
+                    str_cols={
+                        "string_col",
+                        "str_categorical_col",
+                        "str_forced_categorical_col",
+                    },
+                    str_categorical_cols={
+                        "str_categorical_col",
+                        "str_forced_categorical_col",
+                    },
+                    num_categorical_cols={
+                        "int_categorical_col",
+                        "int_forced_categorical_col",
+                        "nan_col",
+                    },
                     other_cols={"datetime_col"},
                     bool_cols={"bool_col"},
                 ),
@@ -259,16 +294,20 @@ class Describe_Dataset:
         [
             (
                 {
-                    "numerical_col",
-                    "num_categorical_col",
+                    "float_col",
+                    "int_col",
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
                     "nan_col",
                     "metadata_num_col",
                 },
                 {
-                    "numerical_col",
-                    "num_categorical_col",
+                    "float_col",
+                    "int_col",
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
                     "nan_col",
@@ -277,15 +316,19 @@ class Describe_Dataset:
             ),
             (
                 {
-                    "numerical_col",
-                    "num_categorical_col",
+                    "float_col",
+                    "int_col",
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
                     "nan_col",
                 },
                 {
-                    "numerical_col",
-                    "num_categorical_col",
+                    "float_col",
+                    "int_col",
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
                     "nan_col",
@@ -294,8 +337,10 @@ class Describe_Dataset:
             (
                 None,
                 {
-                    "numerical_col",
-                    "num_categorical_col",
+                    "float_col",
+                    "int_col",
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
                     "nan_col",
@@ -339,7 +384,7 @@ class Describe_Dataset:
         #     "string_col_0": "string_col",
         #     "string_col_1": "string_col",
         #     "string_col_2": "string_col",
-        #     "numerical_col_0": "numerical_col",
+        #     "numerical_col_0": "float_col", "int_col",
         #     "other_col_0": "other_col",
         #     "mixed_type_col_0": "mixed_type_col",
         #     "mixed_type_col_1": "mixed_type_col",
@@ -763,10 +808,10 @@ class Describe_Dataset:
         dataset = Dataset(df_object=df)
         expected_str = (
             "Columns with:\n\t1.\tMixed types: "
-            "\t\t1\n\t2.\tNumerical types (float/int): \t6\n\t3.\tString types: "
-            "\t\t2\n\t4.\tBool types: \t\t1\n\t5.\tOther types: \t\t1\nAmong these "
-            "categories:\n\t1.\tString categorical columns: 1\n\t2.\tNumeric categorical"
-            " columns: 2\n\t3.\tMedical Exam columns (numerical, no metadata): 6\n\t4."
+            "\t\t1\n\t2.\tNumerical types (float/int): \t8\n\t3.\tString types: "
+            "\t\t3\n\t4.\tBool types: \t\t1\n\t5.\tOther types: \t\t1\nAmong these "
+            "categories:\n\t1.\tString categorical columns: 2\n\t2.\tNumeric categorical"
+            " columns: 3\n\t3.\tMedical Exam columns (numerical, no metadata): 8\n\t4."
             "\tOne repeated value: 1\nColumns with many NaN: 0"
         )
 

@@ -208,14 +208,21 @@ class DataFrameMock:
             "metadata_num_col": list(range(sample_size)),
             "bool_col": bool_col,
             "string_col": [f"value_{i}" for i in range(sample_size)],
-            "str_categorical_col": pd.Series(
+            "str_forced_categorical_col": pd.Series(
                 ["category_0", "category_1", "category_2", "category_3", "category_4"]
                 * (sample_size // 5),
+                dtype="category",
             ),
-            "num_categorical_col": pd.Series(
-                [0, 1, 2, 3, 4] * (sample_size // 5),
+            "str_categorical_col": pd.Series(
+                ["category_0", "category_1", "category_2", "category_3", "category_4"]
+                * (sample_size // 5)
             ),
-            "numerical_col": [0.05 * i for i in range(sample_size)],
+            "int_forced_categorical_col": pd.Series(
+                [0, 1, 2, 3, 4] * (sample_size // 5), dtype="category"
+            ),
+            "int_categorical_col": pd.Series([0, 1, 2, 3, 4] * (sample_size // 5)),
+            "float_col": [0.05 * i for i in range(sample_size)],
+            "int_col": list(range(sample_size)),
             "datetime_col": [date(2000 + i, 8, 1) for i in range(sample_size)],
             "interval_col": pd.arrays.IntervalArray(
                 [pd.Interval(0, i) for i in range(sample_size)],
