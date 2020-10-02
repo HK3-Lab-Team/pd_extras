@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import pandas as pd
 from trousse.dataset import Dataset
 from trousse.row_fix import RowFix
@@ -41,14 +44,24 @@ def test_initial_formatting(tmpdir):
     """
     Compare dataframe after fixing invalid substring and invalid strings
     """
-    (
-        dataframe_to_fix_dir,
-        dataframe_after_fix_dir,
-    ) = CSVMock.csv_with_nans_strings_substrings(
-        sample_size=1000, wrong_values_count=20, csv_path=tmpdir
+    # (
+    #     dataframe_to_fix_dir,
+    #     dataframe_after_fix_dir,
+    # ) = CSVMock.csv_with_nans_strings_substrings(
+    #     sample_size=1000, wrong_values_count=20, csv_path=tmpdir
+    # )
+    expectations_dir = Path(os.path.dirname(__file__)).parent / "expectations"
+    rawdata_to_fix_path = (
+        expectations_dir
+        / "expectation_nans_strinsert_substrmodiffloat_symbolsaddedfloat_substrmodifdatetime.csv"
     )
-    dataset_to_fix = Dataset(metadata_cols=(), data_file=dataframe_to_fix_dir)
-    expected_dataset = Dataset(metadata_cols=(), data_file=dataframe_after_fix_dir)
+    expectation_data_path = (
+        expectations_dir
+        / "raw_data_nans_strinsert_substrmodiffloat_symbolsaddedfloat_substrmodifdatetime.csv"
+    )
+
+    dataset_to_fix = Dataset(metadata_cols=(), data_file=str(rawdata_to_fix_path))
+    expected_dataset = Dataset(metadata_cols=(), data_file=str(expectation_data_path))
 
     fix_tool = RowFix()
     fixed_dataset = fix_tool.fix_common_errors(
