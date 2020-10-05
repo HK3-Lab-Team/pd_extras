@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from unittest.mock import call
 
 import pytest
@@ -311,6 +312,35 @@ class DescribeOperationsList:
             "No FeatureOperation found that generated column "
             "col1... the pipeline is compromised"
         ) == str(err.value)
+
+    def it_knows_its_len(self, fillna_col0_col1, fillna_col1_col4):
+        op_list = fop._OperationsList()
+        op_list._operations_list = [fillna_col0_col1, fillna_col1_col4]
+
+        len_ = len(op_list)
+
+        assert type(len_) == int
+        assert len_ == 2
+
+    def it_can_be_iterated_over(
+        self, fillna_col0_col1, fillna_col1_col4, fillna_col1_col2
+    ):
+        op_list = fop._OperationsList()
+        op_list._operations_list = [
+            fillna_col0_col1,
+            fillna_col1_col4,
+            fillna_col1_col2,
+        ]
+        l = []
+        for operation in op_list:
+            l.append(operation)
+
+        assert isinstance(op_list, Iterable)
+        assert l == [
+            fillna_col0_col1,
+            fillna_col1_col4,
+            fillna_col1_col2,
+        ]
 
     # ====================
     #      FIXTURES
