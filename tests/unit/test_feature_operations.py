@@ -150,26 +150,23 @@ class DescribeOperationsList:
             call(["col1"]),
         ]
 
-    def it_can_iadd_next_featop(self, request, fillna_col0_col1, fillna_col1_col4):
+    def it_can_iadd_next_featop(self, request, fillna_col0_col1, fillna_col4_none):
         tolist_ = function_mock(request, "trousse.feature_operations.tolist")
-        tolist_.side_effect = [["col1"], ["col4"]]
+        tolist_.side_effect = [["col4"], None]
         op_list = fop._OperationsList()
         op_list._operations_list = [fillna_col0_col1]
         for column in ["col0", "col1"]:
             op_list._operations_by_column[column] = [fillna_col0_col1]
 
-        op_list += fillna_col1_col4
+        op_list += fillna_col4_none
 
-        assert op_list._operations_list == [fillna_col0_col1, fillna_col1_col4]
-
+        assert op_list._operations_list == [fillna_col0_col1, fillna_col4_none]
         assert op_list._operations_by_column["col0"] == [fillna_col0_col1]
         assert op_list._operations_by_column["col1"] == [
             fillna_col0_col1,
-            fillna_col1_col4,
         ]
-        assert op_list._operations_by_column["col4"] == [fillna_col1_col4]
+        assert op_list._operations_by_column["col4"] == [fillna_col4_none]
         assert tolist_.call_args_list == [
-            call(["col1"]),
             call(["col4"]),
         ]
 
