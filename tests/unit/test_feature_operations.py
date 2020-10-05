@@ -212,7 +212,7 @@ class DescribeOperationsList:
         assert "Cannot get FeatureOperation with a label of type set" == str(err.value)
 
     @pytest.mark.parametrize(
-        "columns, getitem_return_value, expected_derived_columns",
+        "column, getitem_return_value, expected_derived_columns",
         [
             (
                 "col0",
@@ -239,16 +239,78 @@ class DescribeOperationsList:
         ],
     )
     def it_can_get_derived_columns_from_col(
-        self, request, columns, getitem_return_value, expected_derived_columns
+        self, request, column, getitem_return_value, expected_derived_columns
     ):
         op_list = fop._OperationsList()
         getitem_ = method_mock(request, fop._OperationsList, "__getitem__")
         getitem_.return_value = getitem_return_value
 
-        derived_columns = op_list.derived_columns_from_col(columns)
+        derived_columns = op_list.derived_columns_from_col(column)
 
         assert type(derived_columns) == list
         assert derived_columns == expected_derived_columns
+
+    def it_can_get_operations_from_derived_column(self, request):
+        op_list = fop._OperationsList()
+        getitem_ = method_mock(request, fop._OperationsList, "__getitem__")
+        fop0 = fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0)
+        fop1 = fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0)
+        fop2 = fop.FillNA(columns=["col4"], derived_columns=None, value=0)
+        getitem_.return_value = [fop0, fop1, fop2]
+
+        operations = op_list._operations_from_derived_column("col4")
+
+        assert type(operations) == list
+        assert operations == [fop1]
+
+    def it_can_get_original_columns_from_derived_column(self, request):
+        op_list = fop._OperationsList()
+        _operations_from_derived_column_ = method_mock(
+            request, fop._OperationsList, "_operations_from_derived_column"
+        )
+        _operations_from_derived_column_.return_value = [
+            fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
+        ]
+
+        original_columns = op_list.original_columns_from_derived_column("col1")
+
+        assert type(original_columns) == list
+        assert original_columns == ["col0"]
+
+    def but_it_raises_runtimeerror_with_multiple_operations_found(self, request):
+        op_list = fop._OperationsList()
+        _operations_from_derived_column_ = method_mock(
+            request, fop._OperationsList, "_operations_from_derived_column"
+        )
+        _operations_from_derived_column_.return_value = [
+            fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0),
+            fop.FillNA(columns=["col2"], derived_columns=["col1"], value=0),
+        ]
+
+        with pytest.raises(RuntimeError) as err:
+            op_list.original_columns_from_derived_column("col1")
+
+        assert isinstance(err.value, RuntimeError)
+        assert (
+            "Multiple FeatureOperation found that generated column "
+            "col1... the pipeline is compromised"
+        ) == str(err.value)
+
+    def but_it_raises_runtimeerror_with_zero_operations_found(self, request):
+        op_list = fop._OperationsList()
+        _operations_from_derived_column_ = method_mock(
+            request, fop._OperationsList, "_operations_from_derived_column"
+        )
+        _operations_from_derived_column_.return_value = []
+
+        with pytest.raises(RuntimeError) as err:
+            op_list.original_columns_from_derived_column("col1")
+
+        assert isinstance(err.value, RuntimeError)
+        assert (
+            "No FeatureOperation found that generated column "
+            "col1... the pipeline is compromised"
+        ) == str(err.value)
 
     # ====================
     #      FIXTURES
