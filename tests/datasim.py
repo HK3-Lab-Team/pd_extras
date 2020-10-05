@@ -92,7 +92,7 @@ class TestColumn:
 
 
 class _TestColumn:
-    def __init__(self, column: TestColumn, col_id: int = None):
+    def __init__(self, column: TestColumn, col_id: int):
         """
         Private Class handling column values to fix and the ones modified after fix.
 
@@ -116,7 +116,7 @@ class _TestColumn:
             Integer identifying the index of the column considered. This will be
             used by ReverseFeatureOperation instances in order to avoid replacing
             the values to be fixed in the same samples.
-            Otherwise we may end up having samples with invalid values only.
+            Otherwise we may end up having samples with rows full of invalid values.
 
         """
         self._name = column.name
@@ -127,29 +127,22 @@ class _TestColumn:
 
     @property
     def name(self):
+        """
+        Return the column name
+        """
         return self._name
 
     @property
     def col_id(self):
-        if self._col_id is None:
-            raise AttributeError(
-                "The column has not a column ID because it is not a column of"
-                " a TestDataSet instance"
-            )
-        else:
-            return self._col_id
-
-    @col_id.setter
-    def col_id(self, value):
-        if self._col_id is None:
-            self._col_id = value
-        else:
-            raise AttributeError(
-                "The instance has already a specific ``col_id``."
-                " Changing it is forbidden"
-            )
+        """
+        Return the column index
+        """
+        return self._col_id
 
     def __len__(self) -> int:
+        """
+        Return the column sample size
+        """
         return len(self.values_to_fix)
 
     @property
@@ -239,6 +232,13 @@ class TestDataSet:
         This class also tracks the operations performed on the dataset and
         the values that are supposed to be created after the appropriate steps
         for the correction of the DataSet.
+
+        Parameters
+        ----------
+        sample_size: Optional[int]
+            Size of the samples that each dataset column will contain. If None,
+            this value will be computed based on the sample size of the first
+            added column. Default set to None
         """
         self._columns_by_index = []
         self._sample_size = sample_size
