@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from unittest.mock import call
 
 import pytest
 from trousse import feature_operations as fop
