@@ -254,7 +254,11 @@ class ReplaceSamples(ReverseFeatureOperation, ABC):
 
 class InsertNaNs(ReplaceSamples):
     def __init__(
-        self, error_count: int, column_names: Union[Sequence[str], Sequence[int]]
+        self,
+        error_count: int,
+        column_names: Union[Sequence[str], Sequence[int]],
+        nan_value_to_insert: Any,
+        nan_value_after_fix: Any,
     ):
         """
         Insert NaN values into the columns ``column_names`` of a TestDataSet instance.
@@ -270,12 +274,15 @@ class InsertNaNs(ReplaceSamples):
             is not accepted.
         error_count : int
             Number of values that will be replaced with NaNs in each column
+        nan_value : Any
+            Value that will be inserted as NaN value
         """
         super().__init__(column_names=column_names, error_count=error_count)
+        self._nan_value_to_insert = nan_value_to_insert
+        self._nan_value_after_fix = nan_value_after_fix
 
-    @staticmethod
     def replace_samples(
-        column: _TestColumn, invalid_sample_ids: List[int]
+        self, column: _TestColumn, invalid_sample_ids: List[int]
     ) -> _TestColumn:
         """
         Insert NaN values into ``dataset`` keeping track of the modified samples.
@@ -296,7 +303,11 @@ class InsertNaNs(ReplaceSamples):
             _TestColumn instance where some values have been replaced/modified
         """
         for sample_id in invalid_sample_ids:
-            column.update_sample(sample_id, value_to_fix=pd.NA, value_after_fix=pd.NA)
+            column.update_sample(
+                sample_id,
+                value_to_fix=self._nan_value_to_insert,
+                value_after_fix=self._nan_value_after_fix,
+            )
         return column
 
 
@@ -472,14 +483,10 @@ class InsertOutOfScaleValues(ReplaceSamples):
         for sample_id in invalid_sample_ids:
             if sample_id % 2:
                 new_value = "<" + str(min_col_value)
-                value_after_fix = (
-                    min_col_value - min_col_value * self._lowerbound_increase
-                )
+                value_after_fix = min_col_value * (1 - self._lowerbound_increase)
             else:
                 new_value = ">" + str(max_col_value)
-                value_after_fix = (
-                    max_col_value + max_col_value * self._upperbound_increase
-                )
+                value_after_fix = max_col_value * (1 + self._upperbound_increase)
             column.update_sample(
                 sample_id,
                 value_to_fix=new_value,
@@ -517,23 +524,17 @@ class SubstringReplacementMap(ABC):
             was inserted, corresponds to ``value_after_fix`` only (when   set to
             True), or to the new value where ``value_after_fix`` replaces
             the newly inserted ``new_substring`` (when set to False).
-
-             , If True, after appro the sample value after correction must be the
-            original value where the inserted substring is replaced by the correct
-            substring (specified by the third element of each tuple in
-            ``replacement_map``). If False, the sample value after the correction
-            must be a generic value (also specified by the third element of
-            each tuple in ``replacement_map``).
         """
-        self._validate_new_and_fix_substrings(new_substring, fix_with_substring)
+        self._superclass_validate(new_substring, fix_with_substring)
+
         self.new_substring = new_substring
         self.value_after_fix = value_after_fix
         self.fix_with_substring = fix_with_substring
 
     @staticmethod
-    def _validate_new_and_fix_substrings(new_substring: str, fix_with_substring: bool):
+    def _superclass_validate(new_substring: str, fix_with_substring: bool):
         """
-        Validate the arguments used to initialize the instance
+        Validate the arguments used to initialize the SubstringReplacementMap class
 
         This method checks that ``new_substring`` is a string and that
         ``fix_with_substring`` is a boolean.
@@ -562,6 +563,10 @@ class SubstringReplacementMap(ABC):
                 f"The `fix_with_substring` argument is {fix_with_substring}"
                 f" and it is not boolean, but it is {type(fix_with_substring)}"
             )
+
+    @abstractmethod
+    def _validate(self):
+        pass
 
 
 class SubstringReplaceMapByValue(SubstringReplacementMap):
@@ -611,12 +616,13 @@ class SubstringReplaceMapByValue(SubstringReplacementMap):
             If ``substr_to_replace`` argument is not a string value or if
             ``new_substring`` argument is not a string value
         """
+        self._subclass_validate(substr_to_replace)
+
         super().__init__(new_substring, value_after_fix, fix_with_substring)
-        self._validate_substr_to_replace(substr_to_replace)
         self.substr_to_replace = substr_to_replace
 
     @staticmethod
-    def _validate_substr_to_replace(substr_to_replace: str):
+    def _subclass_validate(substr_to_replace: str):
         """
         Validate the ``substr_to_replace`` argument used to initialize the instance
 
@@ -684,12 +690,13 @@ class SubstringReplaceMapByIndex(SubstringReplacementMap):
             If the ``substr_position_id`` argument is not an integer value or if
             ``new_substring`` argument is not a string value
         """
+        self._subclass_validate(substr_position_id)
+
         super().__init__(new_substring, value_after_fix, fix_with_substring)
-        self._validate(substr_position_id)
         self.substr_position_id = substr_position_id
 
     @staticmethod
-    def _validate(substr_position_id: int):
+    def _subclass_validate(substr_position_id: int):
         """
         Validate the ``substr_position_id`` argument used to initialize the instance
 
