@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Callable, Iterable, List, Sequence
+from typing import Any, Callable, Sequence
 
 
 def lazy_property(f: Callable[..., Any]):
