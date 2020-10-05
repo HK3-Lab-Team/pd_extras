@@ -110,7 +110,9 @@ class _OperationsList:
 
         columns = tolist(feat_op.columns)
         derived_columns = (
-            tolist(feat_op.derived_columns) if feat_op.derived_columns else None
+            tolist(feat_op.derived_columns)
+            if feat_op.derived_columns is not None
+            else []
         )
 
         for column in columns + derived_columns:
