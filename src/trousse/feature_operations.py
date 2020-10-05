@@ -145,13 +145,13 @@ class FillNA(FeatureOperation):
         if len(columns) != 1:
             raise ValueError(f"Length of columns must be 1, found {len(columns)}")
         if derived_columns is not None:
+            if not is_sequence_and_not_str(derived_columns):
+                raise TypeError(
+                    f"derived_columns parameter must be a list, found {type(derived_columns).__name__}"
+                )
             if len(derived_columns) != 1:
                 raise ValueError(
                     f"Length of derived_columns must be 1, found {len(derived_columns)}"
-                )
-            if not is_sequence_and_not_str(columns):
-                raise TypeError(
-                    f"derived_columns parameter must be a list, found {type(derived_columns).__name__}"
                 )
 
         self.columns = columns

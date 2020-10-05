@@ -73,6 +73,24 @@ class DescribeFillNa:
             err.value
         )
 
+    @pytest.mark.parametrize(
+        "derived_columns, expected_type",
+        [("nan", "str"), (dict(), "dict"), (set(), "set")],
+    )
+    def but_it_raises_typeerror_with_derived_columns_not_list(
+        self, derived_columns, expected_type, is_sequence_and_not_str_
+    ):
+        is_sequence_and_not_str_.side_effect = [True, False]
+
+        with pytest.raises(TypeError) as err:
+            fop.FillNA(columns=["nan"], derived_columns=derived_columns, value=0)
+
+        assert isinstance(err.value, TypeError)
+        assert (
+            f"derived_columns parameter must be a list, found {expected_type}"
+            == str(err.value)
+        )
+
     def it_calls_fillna(self, request):
         initializer_mock(request, Dataset)
         fillna_ = method_mock(request, Dataset, "fillna")
