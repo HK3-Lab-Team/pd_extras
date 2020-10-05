@@ -342,14 +342,19 @@ class Dataset:
         num_categorical_cols = self._get_categorical_cols(numerical_cols)
 
         for categorical_col in categorical_cols:
-            if self._df[categorical_col].dtype.categories.inferred_type == "integer":
+            inferred_type = self._df[categorical_col].dtype.categories.inferred_type
+            if inferred_type == "integer":
                 num_categorical_cols.add(categorical_col)
                 numerical_cols.add(categorical_col)
-            elif self._df[categorical_col].dtype.categories.inferred_type == "string":
+            elif inferred_type == "string":
                 str_categorical_cols.add(categorical_col)
                 str_cols.add(categorical_col)
             else:
-                raise RuntimeError("there is something wrong with the type guessing...")
+                raise RuntimeError(
+                    f'The column "{categorical_col}" inferred type is '
+                    f"{inferred_type}, but only string and int categorical columns "
+                    "are supported."
+                )
 
         # `num_categorical_cols` is already included in `numerical_cols`,
         # so no need to add it here
