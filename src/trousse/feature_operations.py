@@ -118,6 +118,10 @@ class _OperationsList:
 
         return self
 
+    def __iter__(self):
+        for operation in self._operations_list:
+            yield operation
+
     def __getitem__(
         self, label: Union[int, str]
     ) -> Union[FeatureOperation, List[FeatureOperation]]:
@@ -148,6 +152,9 @@ class _OperationsList:
             raise TypeError(
                 f"Cannot get FeatureOperation with a label of type {type(label).__name__}"
             )
+
+    def __len__(self):
+        return len(self._operations_list)
 
 
 class FillNA(FeatureOperation):
