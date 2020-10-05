@@ -331,12 +331,12 @@ class DescribeOperationsList:
             fillna_col1_col4,
             fillna_col1_col2,
         ]
-        l = []
+        operations = []
         for operation in op_list:
-            l.append(operation)
+            operations.append(operation)
 
         assert isinstance(op_list, Iterable)
-        assert l == [
+        assert operations == [
             fillna_col0_col1,
             fillna_col1_col4,
             fillna_col1_col2,
