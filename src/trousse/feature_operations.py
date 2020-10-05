@@ -8,7 +8,7 @@ from abc import abstractmethod
 from typing import Any, List, Union
 
 from .dataset import Dataset
-from .util import is_sequence_and_not_str, tolist
+from .util import is_sequence_and_not_str
 
 
 @runtime_checkable
@@ -108,14 +108,11 @@ class _OperationsList:
     def __iadd__(self, feat_op: FeatureOperation):
         self._operations_list.append(feat_op)
 
-        columns = tolist(feat_op.columns)
         derived_columns = (
-            tolist(feat_op.derived_columns)
-            if feat_op.derived_columns is not None
-            else []
+            feat_op.derived_columns if feat_op.derived_columns is not None else []
         )
 
-        for column in columns + derived_columns:
+        for column in feat_op.columns + derived_columns:
             self._operations_by_column[column].append(feat_op)
 
         return self
