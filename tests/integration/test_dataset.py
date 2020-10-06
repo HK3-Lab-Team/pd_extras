@@ -5,6 +5,7 @@ from typing import Tuple
 
 import pandas as pd
 import pytest
+
 from trousse.dataset import (
     Dataset,
     FeatureOperation,
@@ -162,12 +163,8 @@ class Describe_Dataset:
                 _ColumnListByType(
                     mixed_type_cols=set(),
                     constant_cols=set(),
-                    numerical_cols={
-                        "metadata_num_col",
-                    },
-                    med_exam_col_list={
-                        "metadata_num_col",
-                    },
+                    numerical_cols={"metadata_num_col"},
+                    med_exam_col_list={"metadata_num_col"},
                     str_cols=set(),
                     str_categorical_cols=set(),
                     num_categorical_cols=set(),
@@ -896,10 +893,10 @@ def test_copy_dataset_with_new_df(dataset_with_operations):
     )
 
     assert isinstance(new_dataset, Dataset)
-    conserved_attributes = new_dataset.__dict__.keys() - {"_df"}
+    conserved_attributes = new_dataset.__dict__.keys() - {"_data"}
     for k in conserved_attributes:
         assert new_dataset.__dict__[k] == dataset_with_operations.__dict__[k]
-    assert new_dataset.df.equals(new_df)
+    assert new_dataset.data.equals(new_df)
 
 
 def test_copy_dataset_with_new_df_log_warning(caplog, dataset_with_operations):
@@ -932,10 +929,10 @@ def test_to_file(dataset_with_operations, tmpdir):
     my_shelf.close()
     assert isinstance(exported_dataset, Dataset)
     # This is to identify attribute errors easier
-    conserved_attributes = exported_dataset.__dict__.keys() - {"_df"}
+    conserved_attributes = exported_dataset.__dict__.keys() - {"_data"}
     for k in conserved_attributes:
         assert exported_dataset.__dict__[k] == dataset_with_operations.__dict__[k]
-    assert exported_dataset.df.equals(dataset_with_operations.df)
+    assert exported_dataset.data.equals(dataset_with_operations.data)
 
 
 def test_to_file_raise_fileexistserror(dataset_with_operations, create_generic_file):
@@ -962,10 +959,10 @@ def test_read_file(export_dataset_with_operations_to_file_fixture):
 
     assert isinstance(imported_dataset, Dataset)
     # This is to identify attribute errors easier
-    conserved_attributes = imported_dataset.__dict__.keys() - {"_df"}
+    conserved_attributes = imported_dataset.__dict__.keys() - {"_data"}
     for k in conserved_attributes:
         assert imported_dataset.__dict__[k] == expected_imported_dataset.__dict__[k]
-    assert imported_dataset.df.equals(expected_imported_dataset.df)
+    assert imported_dataset.data.equals(expected_imported_dataset.data)
 
 
 def test_read_file_raise_notshelvefileerror(create_generic_file):

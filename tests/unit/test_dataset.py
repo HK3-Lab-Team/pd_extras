@@ -12,11 +12,7 @@ from ..unitutil import function_mock, initializer_mock, method_mock, property_mo
 class DescribeDataset:
     @pytest.mark.parametrize(
         "metadata_cols",
-        [
-            (("metadata_num_col")),
-            (("metadata_num_col", "string_col")),
-            (()),
-        ],
+        [(("metadata_num_col")), (("metadata_num_col", "string_col")), (())],
     )
     def it_knows_its_metadata_cols(self, metadata_cols):
         df = DataFrameMock.df_multi_type(10)
@@ -209,16 +205,16 @@ class DescribeDataset:
         assert type(str_) == str
         assert str_ == expected_str
 
-    def it_knows_its_df(self, request):
+    def it_knows_its_data(self, request):
         expected_df = DataFrameMock.df_generic(10)
         get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
         get_df_from_csv_.return_value = expected_df
         dataset = Dataset(data_file="fake/path")
 
-        df = dataset.df
+        data = dataset.data
 
-        assert isinstance(df, pd.DataFrame)
-        pd.testing.assert_frame_equal(df, expected_df)
+        assert isinstance(data, pd.DataFrame)
+        pd.testing.assert_frame_equal(data, expected_df)
 
     def it_can_get_dataset_copy(self, request):
         initializer_mock(request, Dataset)
@@ -256,7 +252,7 @@ class DescribeDataset:
         assert filled_dataset is not dataset
         assert isinstance(filled_dataset, Dataset)
         for col in expected_new_columns:
-            assert col in filled_dataset.df.columns
+            assert col in filled_dataset.data.columns
         _dataset_copy_.assert_called_once()
         assert get_df_from_csv_.call_args_list == [
             call("fake/path1"),
@@ -273,12 +269,12 @@ class DescribeDataset:
         get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
         get_df_from_csv_.return_value = df
         dataset = Dataset(data_file="fake/path0")
-        old_columns = dataset.df.columns.values
+        old_columns = dataset.data.columns.values
 
         none = dataset.fillna(
             columns=["nan_0"], derived_columns=None, value=0, inplace=True
         )
-        new_columns = dataset.df.columns.values
+        new_columns = dataset.data.columns.values
 
         assert none is None
         np.testing.assert_array_equal(old_columns, new_columns)

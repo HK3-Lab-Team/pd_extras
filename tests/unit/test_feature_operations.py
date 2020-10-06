@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 
 import pytest
+
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 

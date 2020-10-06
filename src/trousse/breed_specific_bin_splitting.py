@@ -454,7 +454,7 @@ def add_breed_specific_bin_id_to_df(
         contains_na_breed_samples,
         not_na_df,
         na_breed_samples_ids,
-    ) = _get_samples_with_breed_not_nan(dataset._df)
+    ) = _get_samples_with_breed_not_nan(dataset.data)
     # Compute the bins from the most populated breed so that the least populated can use these
     # bins when lacking infos about the range
     mongrels_age_bins, _ = get_bin_list_per_single_breed(
@@ -484,7 +484,7 @@ def add_breed_specific_bin_id_to_df(
     # Reinsert the samples with NaN breed values
     if contains_na_breed_samples:
         df_with_bin_column = df_with_bin_column.append(
-            dataset._df.iloc[na_breed_samples_ids]
+            dataset.data.iloc[na_breed_samples_ids]
         )
     df_with_bin_column.reset_index(drop=True, inplace=True)
     # Create Dataset with same instance attribute as dataset, but with the new bin_column
