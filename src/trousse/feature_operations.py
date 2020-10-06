@@ -4,6 +4,7 @@ except ImportError:
     from typing_extensions import Protocol, runtime_checkable
 
 import collections
+import copy
 from abc import abstractmethod
 from typing import Any, List, Union
 
@@ -216,12 +217,15 @@ class FillNA(FeatureOperation):
         self.value = value
 
     def __call__(self, dataset: Dataset) -> Dataset:
-        return dataset.fillna(
-            columns=self.columns,
-            derived_columns=self.derived_columns,
-            value=self.value,
-            inplace=False,
-        )
+        dataset = copy.deepcopy(dataset)
+
+        if self.derived_columns is not None:
+            filled_col = dataset.data[self.columns[0]].fillna(self.value, inplace=False)
+            dataset.data[self.derived_columns[0]] = filled_col
+        else:
+            dataset.data[self.columns[0]].fillna(self.value, inplace=True)
+
+        return dataset
 
     def is_similar(self, other: FeatureOperation):
         raise NotImplementedError

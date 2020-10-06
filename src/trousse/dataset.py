@@ -6,7 +6,7 @@ import os
 import shelve
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple, Union
+from typing import DefaultDict, Dict, List, Set, Tuple, Union
 
 import pandas as pd
 import sklearn
@@ -917,77 +917,6 @@ class Dataset:
                 logging.error(f"ERROR shelving: \n{e}")
             except KeyError as e:
                 logging.error(f"Exporting data unsuccessful: \n{e}")
-
-    def fillna(
-        self,
-        columns: List[str],
-        value: Any,
-        derived_columns: List[str] = None,
-        inplace: bool = False,
-    ) -> Optional["Dataset"]:
-        """Fill NaN values ``columns`` (single-element list) column with value ``value``.
-
-        By default NaNs are filled in the original columns. To store the result of filling
-        in other columns, ``derived_columns`` parameter has to be set with the name of
-        the corresponding column names.
-
-        Parameters
-        ----------
-        columns : List[str]
-            Name of the column with NaNs to be filled. It must be a single-element list.
-        value : Any
-            Value used to fill the NaNs
-        derived_columns : List[str], optional
-            Name of the column where to store the filling result. Default is None,
-            meaning that NaNs are filled in the original column. If not None, it must be
-            a single-element list.
-        inplace : bool, optional
-            Whether to modify the current Dataset or return a new instance. Default False,
-            meanining that a new instance of Dataset will be returned.
-
-        Returns
-        -------
-        Optional[Dataset]
-            The new Dataset with NaNs filled if ``inplace=False`` or None otherwise.
-
-        Raises
-        ------
-        ValueError
-            If ``columns`` or ``derived_columns`` are not a single-element list.
-        """
-        if len(columns) != 1:
-            raise ValueError(f"Length of columns must be 1, found {len(columns)}")
-
-        if not inplace:
-            dataset = self._dataset_copy
-        else:
-            dataset = self
-
-        if derived_columns:
-            if len(derived_columns) != 1:
-                raise ValueError(
-                    f"Length of derived_columns must be 1, found {len(derived_columns)}"
-                )
-
-            filled_col = dataset.data[columns[0]].fillna(value, inplace=False)
-            dataset._data[derived_columns[0]] = filled_col
-
-        else:
-            dataset._data[columns[0]].fillna(value, inplace=True)
-
-        if not inplace:
-            return dataset
-
-    @property
-    def _dataset_copy(self) -> "Dataset":
-        """Return a deep copy of the Dataset instance.
-
-        Returns
-        -------
-        Dataset
-            Deep copy of the Dataset instance.
-        """
-        return copy.deepcopy(self)
 
     def __str__(self) -> str:
         """

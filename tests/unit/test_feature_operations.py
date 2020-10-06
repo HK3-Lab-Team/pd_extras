@@ -1,10 +1,12 @@
 from collections.abc import Iterable
 
+import pandas as pd
 import pytest
 
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 
+from ..dataset_util import DataFrameMock
 from ..unitutil import ANY, function_mock, initializer_mock, method_mock
 
 
@@ -92,28 +94,37 @@ class DescribeFillNa:
             == str(err.value)
         )
 
-    def it_calls_fillna(self, request):
-        initializer_mock(request, Dataset)
-        fillna_ = method_mock(request, Dataset, "fillna")
-        fillna_.return_value = Dataset("fake/path")
-        dataset = Dataset("fake/path")
-        columns = ["nan_0"]
-        derived_columns = ["filled_0"]
-        value = 0
-        fillna_fop = fop.FillNA(
-            columns=columns, derived_columns=derived_columns, value=value
-        )
+    @pytest.mark.parametrize(
+        "columns, derived_columns, expected_new_columns, expected_inplace",
+        [
+            (["nan_0"], ["filled_nan_0"], ["filled_nan_0"], False),
+            (["nan_0"], None, [], True),
+        ],
+    )
+    def it_can_fillna(
+        self, request, columns, derived_columns, expected_new_columns, expected_inplace
+    ):
+        df = DataFrameMock.df_many_nans(nan_ratio=0.5, n_columns=3)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = df
+        dataset = Dataset(data_file="fake/path0")
+        pd_fillna_ = method_mock(request, pd.Series, "fillna")
+        pd_fillna_.return_value = pd.Series([0] * 100)
+        fillna = fop.FillNA(columns=columns, derived_columns=derived_columns, value=0)
 
-        filled_dataset = fillna_fop(dataset)
+        filled_dataset = fillna(dataset)
 
-        fillna_.assert_called_once_with(
-            dataset,
-            columns=columns,
-            derived_columns=derived_columns,
-            value=value,
-            inplace=False,
-        )
+        assert filled_dataset is not None
+        assert filled_dataset is not dataset
         assert isinstance(filled_dataset, Dataset)
+        for col in expected_new_columns:
+            assert col in filled_dataset.data.columns
+        get_df_from_csv_.assert_called_once_with("fake/path0")
+        assert len(pd_fillna_.call_args_list) == len(columns)
+        pd.testing.assert_series_equal(
+            pd_fillna_.call_args_list[0][0][0], df[columns[0]]
+        )
+        assert pd_fillna_.call_args_list[0][1] == {"inplace": expected_inplace}
 
     # ====================
     #      FIXTURES
