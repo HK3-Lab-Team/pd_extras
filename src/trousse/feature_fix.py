@@ -45,7 +45,7 @@ def split_continuous_column_into_bins(dataset: Dataset, col_name, bin_threshold)
     bin_id_range_map = {}
     # For the BIN 0 choose the column minimum as the bin "lower_value",
     # in the other case the "upper_value" of the previous loops is set as "lower_value"
-    lower_value = min(dataset._df[col_name].unique()) - 1
+    lower_value = min(dataset.data[col_name].unique()) - 1
     # Loop over the bins (we need to increase by 1 because they are only the separating values)
     for i in range(len(bin_threshold) + 1):
 
@@ -60,16 +60,16 @@ def split_continuous_column_into_bins(dataset: Dataset, col_name, bin_threshold)
         try:
             upper_value = bin_threshold[i]
         except IndexError:
-            upper_value = max(dataset._df[col_name].unique())
+            upper_value = max(dataset.data[col_name].unique())
 
         # Append the bin upper value to the "bin_id_range_map"
         bin_id_range_map[i].append(upper_value)
 
         # Identify the values in the range [lower_value, upper_value] in every row,
         # and assign them "i" as the value of the new column "_bin_id"
-        dataset._df.loc[
-            (dataset._df[col_name] >= lower_value)
-            & (dataset._df[col_name] <= upper_value),
+        dataset._data.loc[
+            (dataset._data[col_name] >= lower_value)
+            & (dataset._data[col_name] <= upper_value),
             new_col_name,
         ] = i
 
@@ -77,7 +77,7 @@ def split_continuous_column_into_bins(dataset: Dataset, col_name, bin_threshold)
         lower_value = upper_value
 
     # Cast the new column to int8
-    dataset._df.loc[:, new_col_name] = dataset._df[new_col_name].astype("Int16")
+    dataset._data.loc[:, new_col_name] = dataset._data[new_col_name].astype("Int16")
 
     dataset.add_operation(
         FeatureOperation(
@@ -120,7 +120,7 @@ def combine_categorical_columns_to_one(
     new_column_name = f"{'-'.join([c for c in columns_list])}{ENCODED_COLUMN_SUFFIX}"
 
     # If the column has already been created, return the dataset
-    if new_column_name in dataset._df.columns:
+    if new_column_name in dataset.data.columns:
         logging.warning(
             f"The column {new_column_name} is already present in dataset argument. Maybe "
             f"a similar operation has already been performed. No new column has been "
@@ -132,11 +132,11 @@ def combine_categorical_columns_to_one(
     col_unique_values = []
     for c in columns_list:
         if include_nan:
-            unique_values_in_column = list(dataset._df[c].unique())
+            unique_values_in_column = list(dataset.data[c].unique())
         else:
             # Remove NaN
             unique_values_in_column = [
-                i for i in list(dataset._df[c].unique()) if str(i) != "nan"
+                i for i in list(dataset.data[c].unique()) if str(i) != "nan"
             ]
         unique_values_in_column.sort()
         col_unique_values.append(unique_values_in_column)
@@ -144,7 +144,7 @@ def combine_categorical_columns_to_one(
     # Create the possible combinations (vector product) between the columns' values
     new_columns_encoding_maps = {}
     # Set the new column to NaN (then we fill in the appropriate values)
-    dataset._df.loc[:, new_column_name] = np.nan
+    dataset._data.loc[:, new_column_name] = np.nan
     for partit_id, combo in enumerate(itertools.product(*col_unique_values)):
         # Fill the encoding map to keep track of the link between the combination and the encoded value
         new_columns_encoding_maps[partit_id] = combo
@@ -152,16 +152,18 @@ def combine_categorical_columns_to_one(
         is_row_in_group_combo = np.logical_and.reduce(
             (
                 [
-                    dataset._df[columns_list[i]] == combo[i]
+                    dataset._data[columns_list[i]] == combo[i]
                     for i in range(len(columns_list))
                 ]
             )
         )
         # Assign "i" to every row that has that specific combination of values in columns "col_names"
-        dataset._df.loc[is_row_in_group_combo, new_column_name] = partit_id
+        dataset._data.loc[is_row_in_group_combo, new_column_name] = partit_id
 
     # Cast the ids from float64 to Int16 (capital 'I' to include NaN values)
-    dataset._df.loc[:, new_column_name] = dataset._df[new_column_name].astype("Int16")
+    dataset._data.loc[:, new_column_name] = dataset._data[new_column_name].astype(
+        "Int16"
+    )
     # Track this operation in dataset
     dataset.add_operation(
         FeatureOperation(
@@ -309,7 +311,7 @@ def encode_single_categorical_column(
             )
             return dataset
 
-    df_to_encode = dataset._df.copy()
+    df_to_encode = dataset.data.copy()
     # Find index of rows with NaN and convert it to a fixed value so the corresponding encoded col will be dropped
     nan_serie_map = df_to_encode[col_name].isna()
     nan_serie_map = nan_serie_map.index[nan_serie_map].tolist()
@@ -430,7 +432,7 @@ def convert_features_from_bool_to_binary(dataset: Dataset, col_names: Tuple = No
             )
     # Converting from bool to binary
     for col in col_names:
-        dataset._df[col] = dataset._df[col] * 1
+        dataset._data[col] = dataset._data[col] * 1
     return dataset
 
 
