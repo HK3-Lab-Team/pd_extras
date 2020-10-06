@@ -190,7 +190,7 @@ class ReplaceSamples(ReverseFeatureOperation, ABC):
         self._error_count = error_count
 
     @abstractmethod
-    def replace_samples(
+    def replace_values(
         self, column: _TestColumn, invalid_sample_ids: List[int]
     ) -> _TestColumn:
         """
@@ -246,7 +246,7 @@ class ReplaceSamples(ReverseFeatureOperation, ABC):
             )
 
             dataset.update_column(
-                col_name, self.replace_samples(column, invalid_sample_ids), self
+                col_name, self.replace_values(column, invalid_sample_ids), self
             )
 
         return dataset
@@ -281,7 +281,7 @@ class InsertNaNs(ReplaceSamples):
         self._nan_value_to_insert = nan_value_to_insert
         self._nan_value_after_fix = nan_value_after_fix
 
-    def replace_samples(
+    def replace_values(
         self, column: _TestColumn, invalid_sample_ids: List[int]
     ) -> _TestColumn:
         """
@@ -340,7 +340,7 @@ class InsertNewValues(ReplaceSamples):
         super().__init__(column_names, error_count)
         self._replacement_map = replacement_map
 
-    def replace_samples(
+    def replace_values(
         self, column: _TestColumn, invalid_sample_ids: List[int]
     ) -> _TestColumn:
         """
@@ -446,7 +446,7 @@ class InsertOutOfScaleValues(ReplaceSamples):
 
         return min_col_value, max_col_value
 
-    def replace_samples(
+    def replace_values(
         self, column: _TestColumn, invalid_sample_ids: List[int]
     ) -> _TestColumn:
         """
@@ -769,7 +769,7 @@ class TransformSubstrings(ReplaceSamples, ABC):
         """
         pass
 
-    def replace_samples(
+    def replace_values(
         self, column: _TestColumn, invalid_sample_ids: List[int]
     ) -> _TestColumn:
         """
