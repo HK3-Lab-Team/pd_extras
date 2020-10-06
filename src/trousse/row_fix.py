@@ -216,13 +216,14 @@ class RowFix:
         return copy_dataset_with_new_df(dataset=dataset, new_pandas_df=df_converted)
 
     def cols_to_correct_dtype(self, dataset: Dataset, verbose: int = 0) -> Dataset:
-        cols_by_type = dataset.column_list_by_type
-
+        """
+        Cast numerical columns of ``dataset`` to correct dtype
+        """
         float_cols = set()
         int_cols = set()
         bool_cols = set()
 
-        for col in cols_by_type.numerical_cols:
+        for col in dataset.numerical_columns:
             col_type = str(type(dataset._df[col].iloc[0]))
             unique_values = dataset._df[col].unique()
             if "bool" in col_type or (
@@ -240,7 +241,7 @@ class RowFix:
                 dataset._df[col] = dataset._df[col].astype("Int32")
                 int_cols.add(col)
 
-        bool_cols = bool_cols.union(cols_by_type.bool_cols)
+        bool_cols = bool_cols.union(dataset.bool_columns)
         dataset._df[list(bool_cols)] = dataset._df[list(bool_cols)].astype(np.bool)
         if verbose:
             logger.info(
@@ -273,13 +274,12 @@ class RowFix:
                  errors_before_correction_dict: Dict with the error list per column before applying the function
                  errors_after_correction_dict: Dict with the error list per column after applying the function
         """
-        cols_by_type = dataset.column_list_by_type
         # Get the columns that contain strings, but are actually numerical
-        num_cols = _check_numeric_cols(dataset, col_list=cols_by_type.str_cols)
+        num_cols = _check_numeric_cols(dataset, col_list=dataset.str_columns)
         # Fix the convertible values
         df_output = self.fix_typos(
             dataset,
-            column_list=cols_by_type.mixed_type_cols | set(num_cols),
+            column_list=dataset.mixed_type_columns | set(num_cols),
             verbose=verbose,
         )
 
