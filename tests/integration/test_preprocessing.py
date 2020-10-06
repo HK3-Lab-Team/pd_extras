@@ -44,24 +44,42 @@ def test_initial_formatting(tmpdir):
     """
     Compare dataframe after fixing invalid substring and invalid strings
     """
-    # (
-    #     dataframe_to_fix_dir,
-    #     dataframe_after_fix_dir,
-    # ) = CSVMock.csv_with_nans_strings_substrings(
-    #     sample_size=1000, wrong_values_count=20, csv_path=tmpdir
-    # )
+    (
+        rawdata_to_fix_path,
+        expectation_data_path,
+    ) = CSVMock.csv_with_nans_strings_substrings(
+        sample_size=1000, wrong_values_count=20, csv_path=tmpdir
+    )
     expectations_dir = Path(os.path.dirname(__file__)).parent / "expectations"
-    rawdata_to_fix_path = (
-        expectations_dir
-        / "expectation_nans_strinsert_substrmodiffloat_symbolsaddedfloat_substrmodifdatetime.csv"
-    )
-    expectation_data_path = (
-        expectations_dir
-        / "raw_data_nans_strinsert_substrmodiffloat_symbolsaddedfloat_substrmodifdatetime.csv"
-    )
-
-    dataset_to_fix = Dataset(metadata_cols=(), data_file=str(rawdata_to_fix_path))
-    expected_dataset = Dataset(metadata_cols=(), data_file=str(expectation_data_path))
+    # rawdata_to_fix_path = (
+    #     expectations_dir
+    #     / "expectation_nans_strinsert_substrmodiffloat_symbolsaddedfloat_substrmodifdatetime.csv"
+    # )
+    # expectation_data_path = (
+    #     expectations_dir
+    #     / "raw_data_nans_strinsert_substrmodiffloat_symbolsaddedfloat_substrmodifdatetime.csv"
+    # )
+    metadata_columns = [
+        "metadata_str_categ_col",
+        "metadata_num_categ_col",
+        "metadata_float_str_mixed_col",
+        "metadata_int_float_mixed_col",
+        "metadata_int_str_mixed_col",
+        "metadata_datetime_col",
+        "metadata_date_col",
+        "metadata_onlyyear_col",
+        "metadata_int_col_0",
+        "metadata_int_col_1",
+        "metadata_float_col_0",
+        "metadata_str_col_0",
+        "metadata_str_col_1",
+        "metadata_nan_col",
+        "metadata_mostly_nan_col",
+        "metadata_samenum_col",
+        "metadata_samestr_col",
+    ]
+    dataset_to_fix = Dataset(metadata_cols=metadata_columns, data_file=str(rawdata_to_fix_path))
+    expected_dataset = Dataset(metadata_cols=metadata_columns, data_file=str(expectation_data_path))
 
     fix_tool = RowFix()
     fixed_dataset = fix_tool.fix_common_errors(
@@ -71,6 +89,9 @@ def test_initial_formatting(tmpdir):
         expected_dataset.df.iloc[s, 5] == fixed_dataset.df.iloc[s, 5]
         for s in range(expected_dataset.df.shape[0])
     ]
+
+    fixed_dataset.df.to_csv(expectations_dir / "fixed.csv")
+    expected_dataset.df.to_csv(expectations_dir / "expected.csv")
 
     import pdb
 
