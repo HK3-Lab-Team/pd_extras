@@ -933,17 +933,6 @@ class Dataset:
             f"\nColumns with many NaN: {len(self.nan_columns(0.999))}"
         )
 
-    def __call__(self) -> pd.DataFrame:
-        """
-        Return pandas DataFrame ``df`` attribute
-
-        Returns
-        -------
-        pd.DataFrame
-            Pandas DataFrame ``df`` attribute of this instance
-        """
-        return self._data
-
 
 def copy_dataset_with_new_df(dataset: Dataset, new_pandas_df: pd.DataFrame) -> Dataset:
     """
