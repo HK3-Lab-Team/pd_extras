@@ -1,7 +1,7 @@
 import itertools
 import random
 from datetime import date
-from typing import Tuple
+from typing import List, Tuple
 
 import pandas as pd
 
@@ -79,6 +79,25 @@ class DataFrameMock:
                 sample_count - nan_sample_count
             )
         return pd.DataFrame(many_nan_dict)
+
+    @staticmethod
+    def df_nans_filled(columns: List[str]) -> pd.DataFrame:
+        """Starting from the df returned by ``.df_many_nans``, set ``columns`` to 1s.
+
+        Parameters
+        ----------
+        columns : List[str]
+            Name of the columns to set to 1s
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with the ``columns`` set to 1s
+        """
+        df = DataFrameMock.df_many_nans(nan_ratio=0.5, n_columns=3)
+        for column in columns:
+            df[column] = pd.Series(pd.Series([1] * 100))
+        return df
 
     @staticmethod
     def df_same_value(n_columns: int) -> pd.DataFrame:
