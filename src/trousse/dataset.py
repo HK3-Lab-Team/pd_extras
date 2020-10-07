@@ -14,7 +14,6 @@ from joblib import Parallel, delayed
 
 from .exceptions import (
     MultipleObjectsInFileError,
-    MultipleOperationsFoundError,
     NotShelveFileError,
 )
 from .feature_enum import OperationTypeEnum
@@ -710,83 +709,6 @@ class Dataset:
             # Add the derived columns to the list of the instance
             self.derived_columns = self.derived_columns.union(
                 set(feature_operation.derived_columns)
-            )
-
-    def find_operation_in_column(
-        self, feat_operation: FeatureOperation
-    ) -> Union[FeatureOperation, None]:
-        """
-        Search an operation previously executed on this object.
-
-        This method checks in ``feature_operations`` attribute if an operation similar
-        to ``feat_operation`` has already been performed on this instance.
-        Therefore, the unknown attributes of the operation can be set to None
-        (corresponding to "Not Specified") and, if the operation is found,
-        it will contain full information and it will be returned.
-
-        Parameters
-        ----------
-        feat_operation: FeatureOperation
-            FeatureOperation instance containing some information about the operation
-            the user is looking for. It must contain either ``original_columns`` or
-            ``derived_columns`` attribute, otherwise no operation is returned.
-            If some attributes are unknown and the user wants to leave them unspecified,
-            they can be set to None.
-
-        Returns
-        -------
-        FeatureOperation
-            FeatureOperation instance that has been performed on the Dataset
-            instance, and that has the same specified attributes of ``feat_operation``.
-            If no operation similar to ``feat_operation`` is found, None is returned.
-            If more than one operation similar to ``feat_operation`` is found,
-            MultipleOperationsFoundError is raised.
-
-        Raises
-        ------
-        MultipleOperationsFoundError
-            Exception raised when more than one operation similar to ``feat_operation``
-            is found.
-
-        """
-        # Select only the first element of the original_columns (since each of the
-        # columns is linked to an operation) and check if the 'feat_operation'
-        # argument is among the operations linked to that column.
-        if feat_operation.original_columns is not None:
-            selected_column_operations = self.feature_elaborations[
-                feat_operation.original_columns[0]
-            ]
-        elif feat_operation.derived_columns is not None:
-            selected_column_operations = self.feature_elaborations[
-                feat_operation.derived_columns[0]
-            ]
-        else:
-            logging.warning(
-                "It is not possible to look for an operation if neither "
-                "original columns nor derived columns attributes are provided"
-            )
-            return None
-
-        similar_operations = []
-        for f in selected_column_operations:
-            if f == feat_operation:
-                similar_operations.append(f)
-
-        if len(similar_operations) == 0:
-            return None
-        elif len(similar_operations) == 1:
-            return similar_operations[0]
-        else:
-            nl = "\n"
-            raise MultipleOperationsFoundError(
-                "Multiple operations were found. Please provide additional information."
-                "\nOperations found: "
-                + str(
-                    [
-                        f"{nl * 2}{i}. {sim_op}"
-                        for (i, sim_op) in enumerate(similar_operations)
-                    ]
-                )
             )
 
     def get_enc_column_from_original(
