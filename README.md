@@ -7,8 +7,7 @@
 
 ## WIP ⚠️
 
-PyTrousse helps to handle tabular data with many features/columns and to automatically track all the preprocessing steps performed on the dataset.
-This will help the data scientist to easily reproduce the entire preprocessing pipeline.
+PyTrousse collects into one toolbox a set of data wrangling procedures tailored for composing reproducible analytics pipelines. Data transformations include encoding, binning, scaling, strings replacement, NaN filling, column type conversion, data anonymization.
 
 ## Getting started
 The user can install PyTrousse in his/her Python virtual environment by cloning this repository:
@@ -24,12 +23,39 @@ $ cd pytrousse
 $ pip install .
 ```
 
-## Features
+## Main Features
 
-### Easy column type inference
+### Tracing the path from raw data
+
+PyTrousse transformations are progressively wrapped internally with the data, thus linking all stages of data preprocessing for future reproducibility. 
+
+Along with processed data, every `Dataset` object document how the user performed the analysis, in order to reproduce it in the future and to address questions about how the analysis was carried out months, years after the fact.
+
+The traced data path can be inspected through `operation_history` attribute.
+
+```python
+>>> dataset.operations_history
+```
+```bash
+[
+    FillNA(
+        columns=["column_with_nan"],
+        derived_columns=["column_filled"],
+        value=0,
+    ),
+    ReplaceSubstrings(
+        columns=["column_invalid_values"],
+        derived_columns=["column_valid_values"],
+        replacement_map={",": ".", "°": ""},
+    ),
+]
+```
+
+### Automatic column data type detection
+
 Wouldn't it be cool to have full column data type detection for your data?
 
-For example, PyTrousse can automatically identify categorical columns in your dataset using heuristic algorithms.
+PyTrousse expands Pandas tools for data type inference. Automatic identification is provided on an enlarged set of types (categorical, numerical, boolean, mixed, strings, etc.) using heuristic algorithms.
 
 ```python
 >>> import trousse
@@ -55,6 +81,7 @@ You can also get the name of boolean columns, numerical columns (i.e. containing
 ```
 
 ### Composable data transformations
+
 What about having an easy API for all those boring data preprocessing steps?
 
 Along with the common preprocessing utilities (for encoding, binning, scaling, etc.), PyTrousse provides tools for noisy data handling and for data anonymization.
@@ -80,27 +107,6 @@ Along with the common preprocessing utilities (for encoding, binning, scaling, e
 >>> dataset = fillna_replacestrings(dataset)
 ```
 
-### Preprocessing pipeline tracking and export
+### Integrated tools for synthetic data generation
 
-Every stage in the transformation process from raw data to clean data should be linked to prior stages. 
-This helps you to document how you performed the analysis, in order to reproduce it in the future. Also, it allows you to address questions about how the analysis was carried out months, years after the fact.
-
-PyTrousse automagically tracks every dataset transformation which can be inspected through `operation_history` attribute.
-
-```python
->>> dataset.operations_history
-```
-```bash
-[
-    FillNA(
-        columns=["column_with_nan"],
-        derived_columns=["column_filled"],
-        value=0,
-    ),
-    ReplaceSubstrings(
-        columns=["column_invalid_values"],
-        derived_columns=["column_valid_values"],
-        replacement_map={",": ".", "°": ""},
-    ),
-]
-```
+PyTrousse aids automated testing by inverting the data transformation operators. Generation of testing fixtures and injection of errors is automatically available (more information in .
