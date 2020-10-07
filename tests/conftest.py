@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-
+from trousse import feature_operations as fop
 import pytest
 
 
@@ -36,3 +36,23 @@ def temporary_data_dir(request) -> Path:
 
     request.addfinalizer(remove_temp_dir_created)
     return temp_data_dir
+
+
+@pytest.fixture
+def fillna_col0_col1(request):
+    return fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
+
+
+@pytest.fixture
+def fillna_col1_col4(request):
+    return fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0)
+
+
+@pytest.fixture
+def fillna_col4_none(request):
+    return fop.FillNA(columns=["col4"], derived_columns=None, value=0)
+
+
+@pytest.fixture
+def fillna_col1_col2(request):
+    return fop.FillNA(columns=["col1"], derived_columns=["col2"], value=0)
