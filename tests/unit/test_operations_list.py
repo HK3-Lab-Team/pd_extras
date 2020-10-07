@@ -228,3 +228,30 @@ class DescribeOperationsList:
             fillna_col1_col4,
             fillna_col1_col2,
         ]
+
+    @pytest.mark.parametrize(
+        "other_operation_list, expected_equal",
+        [
+            (
+                [
+                    fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0),
+                ],
+                True,
+            ),
+            ([fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)], False),
+            ([], False),
+            (dict(), False),
+        ],
+    )
+    def it_knows_if_equal(
+        self, other_operation_list, expected_equal, fillna_col0_col1, fillna_col1_col4
+    ):
+        op_list = OperationsList()
+        op_list._operations_list = [fillna_col0_col1, fillna_col1_col4]
+        other = OperationsList()
+        other._operations_list = other_operation_list
+        equal = op_list == other
+
+        assert type(equal) == bool
+        assert equal == expected_equal

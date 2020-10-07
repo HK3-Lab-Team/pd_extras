@@ -1,6 +1,6 @@
 import collections
 import typing
-from typing import List, Union
+from typing import List, Union, Any
 
 if typing.TYPE_CHECKING:
     from .feature_operations import FeatureOperation
@@ -113,21 +113,25 @@ class OperationsList:
 
         return operations[0].columns
 
-    def __iadd__(self, feat_op: "FeatureOperation"):
-        self._operations_list.append(feat_op)
+    def __eq__(self, other: Any) -> bool:
+        """Return True if ``other`` is a OperationsList and it contains the same operations.
 
-        derived_columns = (
-            feat_op.derived_columns if feat_op.derived_columns is not None else []
-        )
+        Parameters
+        ----------
+        other : Any
+            The instance to compare
 
-        for column in feat_op.columns + derived_columns:
-            self._operations_by_column[column].append(feat_op)
-
-        return self
-
-    def __iter__(self):
-        for operation in self._operations_list:
-            yield operation
+        Returns
+        -------
+        bool
+            True if ``other`` is a OperationsList and it contains the same operations,
+            False otherwise.
+        """
+        if not isinstance(other, OperationsList):
+            return False
+        if not self._operations_list == other._operations_list:
+            return False
+        return True
 
     def __getitem__(
         self, label: Union[int, str]
@@ -159,6 +163,22 @@ class OperationsList:
             raise TypeError(
                 f"Cannot get FeatureOperation with a label of type {type(label).__name__}"
             )
+
+    def __iadd__(self, feat_op: "FeatureOperation"):
+        self._operations_list.append(feat_op)
+
+        derived_columns = (
+            feat_op.derived_columns if feat_op.derived_columns is not None else []
+        )
+
+        for column in feat_op.columns + derived_columns:
+            self._operations_by_column[column].append(feat_op)
+
+        return self
+
+    def __iter__(self):
+        for operation in self._operations_list:
+            yield operation
 
     def __len__(self):
         return len(self._operations_list)
