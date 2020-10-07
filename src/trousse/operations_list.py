@@ -25,43 +25,15 @@ class OperationsList:
             Name of the columns created by FeatureOperations applied on ``column``.
         """
         derived_columns = []
-        operations = self[column]
+        operations = self.operations_from_original_column(column)
 
         for operation in operations:
-            if column in operation.columns and operation.derived_columns is not None:
+            if operation.derived_columns is not None:
                 derived_columns.extend(operation.derived_columns)
 
         return derived_columns
 
-    def original_columns_from_derived_column(self, derived_column: str) -> List[str]:
-        """Return the name of the columns from which ``derived_column`` is generated from.
-
-        Parameters
-        ----------
-        derived_column : str
-            The column that has been generated
-
-        Returns
-        -------
-        List[str]
-            Name of the columns from which ``derived_column`` has been generated from.
-        """
-        operations = self._operations_from_derived_column(derived_column)
-
-        if len(operations) > 1:
-            raise RuntimeError(
-                "Multiple FeatureOperation found that generated column "
-                f"{derived_column}... the pipeline is compromised"
-            )
-        if len(operations) == 0:
-            raise RuntimeError(
-                "No FeatureOperation found that generated column "
-                f"{derived_column}... the pipeline is compromised"
-            )
-
-        return operations[0].columns
-
-    def _operations_from_derived_column(
+    def operations_from_derived_column(
         self, derived_column: str
     ) -> List["FeatureOperation"]:
         """Return the FeatureOperations that generated ``derived_column``
@@ -83,6 +55,63 @@ class OperationsList:
                 self[derived_column],
             )
         )
+
+    def operations_from_original_column(
+        self, original_column: str
+    ) -> List["FeatureOperation"]:
+        """Return the FeatureOperations applied on ``original_column``
+
+        Parameters
+        ----------
+        original_column : str
+            The column on which the FeatureOperation has been applied on.
+
+        Returns
+        -------
+        List[FeatureOperation]
+            FeatureOperations applied on ``original_column``
+        """
+        return list(
+            filter(
+                lambda op: original_column in op.columns,
+                self[original_column],
+            )
+        )
+
+    def original_columns_from_derived_column(self, derived_column: str) -> List[str]:
+        """Return the name of the columns from which ``derived_column`` is generated from.
+
+        Parameters
+        ----------
+        derived_column : str
+            The column that has been generated
+
+        Returns
+        -------
+        List[str]
+            Name of the columns from which ``derived_column`` has been generated from.
+
+        Raises
+        ------
+        RuntimeError
+            If multiple FeatureOperation are found that generated ``derived_column``
+        RuntimeError
+            If no FeatureOperation are found that generated ``derived_column``
+        """
+        operations = self.operations_from_derived_column(derived_column)
+
+        if len(operations) > 1:
+            raise RuntimeError(
+                "Multiple FeatureOperation found that generated column "
+                f"{derived_column}... the pipeline is compromised"
+            )
+        if len(operations) == 0:
+            raise RuntimeError(
+                "No FeatureOperation found that generated column "
+                f"{derived_column}... the pipeline is compromised"
+            )
+
+        return operations[0].columns
 
     def __iadd__(self, feat_op: "FeatureOperation"):
         self._operations_list.append(feat_op)
