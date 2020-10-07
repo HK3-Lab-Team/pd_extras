@@ -123,6 +123,23 @@ class DescribeFillNa:
         )
         assert pd_fillna_.call_args_list[0][1] == {"inplace": expected_inplace}
 
+    @pytest.mark.parametrize(
+        "other, expected_equal",
+        [
+            (fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0), True),
+            (fop.FillNA(columns=["col9"], derived_columns=["col1"], value=0), False),
+            (fop.FillNA(columns=["col0"], derived_columns=["col2"], value=1), False),
+            (dict(), False),
+        ],
+    )
+    def it_knows_if_equal(self, other, expected_equal):
+        feat_op = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
+
+        equal = feat_op == other
+
+        assert type(equal) == bool
+        assert equal == expected_equal
+
     # ====================
     #      FIXTURES
     # ====================

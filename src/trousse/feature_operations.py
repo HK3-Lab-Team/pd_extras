@@ -22,6 +22,10 @@ class FeatureOperation(Protocol):
         raise NotImplementedError
 
     @abstractmethod
+    def __eq__(self, other: Any) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
     def is_similar(self, other: "FeatureOperation"):
         raise NotImplementedError
 
@@ -95,6 +99,31 @@ class FillNA(FeatureOperation):
             dataset.data[self.columns[0]].fillna(self.value, inplace=True)
 
         return dataset
+
+    def __eq__(self, other: Any) -> bool:
+        """Return True if ``other`` is a FillNA instance and it has the same fields value.
+
+        Parameters
+        ----------
+        other : Any
+            The instance to compare
+
+        Returns
+        -------
+        bool
+            True if ``other`` is a FillNA instance and it has the same fields value,
+            False otherwise
+        """
+        if not isinstance(other, FillNA):
+            return False
+        if (
+            self.columns == other.columns
+            and self.derived_columns == other.derived_columns
+            and self.value == other.value
+        ):
+            return True
+
+        return False
 
     def is_similar(self, other: FeatureOperation):
         raise NotImplementedError
