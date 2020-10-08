@@ -4,6 +4,7 @@ import dbm
 import logging
 import os
 import shelve
+import typing
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import DefaultDict, Dict, List, Set, Tuple, Union
@@ -11,14 +12,13 @@ from typing import DefaultDict, Dict, List, Set, Tuple, Union
 import pandas as pd
 from joblib import Parallel, delayed
 
-from .exceptions import (
-    MultipleObjectsInFileError,
-    NotShelveFileError,
-)
-from .feature_operation import FeatureOperation
+from .exceptions import MultipleObjectsInFileError, NotShelveFileError
 from .operations_list import OperationsList
 from .settings import CATEG_COL_THRESHOLD
 from .util import lazy_property
+
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from .feature_operations import FeatureOperation
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +140,7 @@ class Dataset:
         data_file: str = None,
         df_object: pd.DataFrame = None,
         new_columns_encoding_maps: Union[
-            DefaultDict[str, List[FeatureOperation]], None
+            DefaultDict[str, List["FeatureOperation"]], None
         ] = None,
     ):
         """
@@ -573,35 +573,6 @@ class Dataset:
     # =    METHODS        =
     # =====================
 
-    def get_encoded_string_values_map(
-        self, column_name: str
-    ) -> Union[Dict[int, str], None]:
-        """
-        Return the encoded values map of the column named ``column_name``.
-
-        Selecting the first operation of column_name because it will be the operation
-        that created it (whether it is the encoded of one or multiple columns)
-
-        Parameters
-        ----------
-        column_name: str
-            Name of the derived column which we are looking the encoded_values_map of
-
-        Returns
-        -------
-        Dict[int, str]
-            Dict where the keys are the integer values of the ``column_name``, and the
-                                   values are the values of the encoded column
-        """
-        try:
-            encoded_map = self.feature_elaborations[column_name][
-                0
-            ].encoded_string_values_map
-            return encoded_map
-        except (KeyError, IndexError):
-            logging.info(f"The column {column_name} was not among the operations.")
-            return None
-
     def convert_column_id_to_name(self, col_id_list: Tuple[int]) -> Set:
         """
         Convert the column IDs to column names
@@ -667,7 +638,7 @@ class Dataset:
                 f"{i}: {col_type_dict[_COL_NAME_COLUMN]} -> {col_type_dict[_COL_TYPE_COLUMN]}"
             )
 
-    def add_operation(self, feature_operation: FeatureOperation) -> None:
+    def add_operation(self, feature_operation: "FeatureOperation") -> None:
         """
         Add a new operation to the history.
 
