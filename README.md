@@ -1,6 +1,6 @@
 # PyTrousse
 
-[![Coverage Status](https://coveralls.io/repos/github/HK3-Lab-Team/pytrousse/badge.svg?branch=coveralls)](https://coveralls.io/github/HK3-Lab-Team/pytrousse?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/HK3-Lab-Team/pytrousse/badge.svg?branch=master&kill_cache=1)](https://coveralls.io/github/HK3-Lab-Team/pytrousse?branch=master)
 [![Build Status](https://travis-ci.com/HK3-Lab-Team/pytrousse.svg?branch=master)](https://travis-ci.com/HK3-Lab-Team/pytrousse)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/HK3-Lab-Team/pytrousse.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/HK3-Lab-Team/pytrousse/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/HK3-Lab-Team/pytrousse.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/HK3-Lab-Team/pytrousse/context:python)
