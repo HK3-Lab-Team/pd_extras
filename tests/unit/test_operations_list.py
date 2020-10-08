@@ -241,7 +241,6 @@ class DescribeOperationsList:
             ),
             ([fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)], False),
             ([], False),
-            (dict(), False),
         ],
     )
     def it_knows_if_equal(
@@ -255,3 +254,9 @@ class DescribeOperationsList:
 
         assert type(equal) == bool
         assert equal == expected_equal
+
+    def it_knows_not_equal_not_operations_list(self):
+        equal = dict() == OperationsList()
+
+        assert type(equal) == bool
+        assert equal is False
