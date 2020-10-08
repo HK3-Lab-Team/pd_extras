@@ -21,6 +21,7 @@ from trousse.feature_enum import EncodingFunctions, OperationTypeEnum
 from ..dataset_util import DataFrameMock, SeriesMock
 from ..featureoperation_util import eq_featureoperation_combs
 from ..fixtures import CSV
+from trousse import feature_operations as fop
 
 
 class Describe_Dataset:
@@ -393,115 +394,86 @@ class Describe_Dataset:
         pass
 
     @pytest.mark.parametrize(
-        "original_columns, derived_columns, operation_type, encoded_values_map, "
-        "encoder, details",
+        "metadata_columns, original_columns, derived_columns, expected_metadata_cols",
         [
-            (  # Case 1: Only metadata columns as original_columns
-                ["metadata_num_col", "metadata_str_col"],
-                ["exam_num_col_0", "exam_str_col_0"],
-                OperationTypeEnum.BIN_SPLITTING,
-                {0: "value_0", 1: "value_1"},
-                EncodingFunctions.ONEHOT.value(),
-                {"key_2": "value_2", "key_3": "value_3"},
+            (
+                tuple(["metadata_num_col"]),
+                ["metadata_num_col"],
+                ["derived_metadata_num_col"],
+                {"metadata_num_col", "derived_metadata_num_col"},
             ),
-            (  # Case 2: Only one metadata column as original_columns
-                ["metadata_num_col", "exam_num_col_0"],
-                ["exam_num_col_1", "exam_str_col_0"],
-                OperationTypeEnum.CATEGORICAL_ENCODING,
-                None,
-                None,
-                None,
-            ),
-            (  # Case 3: One of the derived columns is not present in df
-                ["metadata_num_col", "exam_num_col_0"],
-                ["exam_str_col_0", "exam_str_col_1"],
-                OperationTypeEnum.FEAT_COMBOS_ENCODING,
-                {0: "value_0", 1: "value_1"},
-                EncodingFunctions.ORDINAL.value(),
-                {"key_2": "value_2", "key_3": "value_3"},
-            ),
-            (  # Case 4: Only one derived column, no metadata columns involved
-                ["exam_num_col_0", "exam_num_col_1"],
-                ["exam_str_col_0"],
-                OperationTypeEnum.CATEGORICAL_ENCODING,
-                {0: "value_0", 1: "value_1"},
-                EncodingFunctions.ONEHOT.value(),
-                {"key_2": "value_2", "key_3": "value_3"},
-            ),
+            # TODO: add case with a FeatureOperation that can accept more than
+            # one derived_column
         ],
     )
-    def test_add_operation(
+    def test_add_operation_with_derived_columns(
         self,
         request,
+        metadata_columns,
         original_columns,
         derived_columns,
-        operation_type,
-        encoded_values_map,
-        encoder,
-        details,
+        expected_metadata_cols,
     ):
         df = DataFrameMock.df_generic(10)
         dataset = Dataset(
             df_object=df,
-            metadata_cols=("metadata_num_col", "metadata_str_col"),
+            metadata_cols=metadata_columns,
         )
-        feat_op = FeatureOperation(
-            original_columns=original_columns,
-            derived_columns=derived_columns,
-            operation_type=operation_type,
-            encoded_values_map=encoded_values_map,
-            encoder=encoder,
-            details=details,
+        feat_op = fop.FillNA(
+            columns=original_columns, derived_columns=derived_columns, value=0
         )
 
         dataset.add_operation(feat_op)
 
-        for orig_column in original_columns:
+        for column in original_columns + derived_columns:
             # Check if the operation is added to each column
-            assert feat_op in dataset.feature_elaborations[orig_column]
-        for deriv_column in derived_columns:
-            # Check that the derived_columns are inserted in the derived_columns
-            # attribute of Dataset instance
-            assert deriv_column in dataset.derived_columns
+            assert feat_op in dataset.operations_history[column]
+        assert dataset.metadata_cols == expected_metadata_cols
+
+    @pytest.mark.parametrize(
+        "metadata_columns, original_columns, expected_metadata_cols",
+        [
+            (
+                ("metadata_num_col", "metadata_str_col"),
+                ["metadata_num_col"],
+                {"metadata_num_col", "metadata_str_col"},
+            ),
+            # TODO: add case with a FeatureOperation that can accept more than
+            # one derived_column
+        ],
+    )
+    def test_add_operation_with_no_derived_columns(
+        self,
+        request,
+        metadata_columns,
+        original_columns,
+        expected_metadata_cols,
+    ):
+        df = DataFrameMock.df_generic(10)
+        dataset = Dataset(
+            df_object=df,
+            metadata_cols=metadata_columns,
+        )
+        feat_op = fop.FillNA(columns=original_columns, derived_columns=None, value=0)
+
+        dataset.add_operation(feat_op)
+
+        for column in original_columns:
             # Check if the operation is added to each column
-            assert feat_op in dataset.feature_elaborations[deriv_column]
-            # If original cols are all metadata_cols, check if they are
-            # added to metadata_cols
-            if original_columns == ["dataset", "metadata_str_col"]:
-                assert deriv_column in dataset.metadata_cols
+            assert feat_op in dataset.operations_history[column]
+        assert dataset.metadata_cols == expected_metadata_cols
 
     def test_add_operation_on_previous_one(self, request, dataset_with_operations):
-        # Test `add_operation` method when some columns already have other previous
-        # FeatureOperation instances associated
-        origin_column = "fop_original_col_0"
-        deriv_column = "fop_derived_col_1"
-        feat_op = FeatureOperation(
-            original_columns=[origin_column],
-            derived_columns=[deriv_column],
-            operation_type=OperationTypeEnum.BIN_SPLITTING,
-            encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=EncodingFunctions.ONEHOT.value(),
-            details={"key_2": "value_2", "key_3": "value_3"},
-        )
+        feat_op = fop.FillNA(columns=["col1"], derived_columns=["col5"], value=0)
 
         dataset_with_operations.add_operation(feat_op)
 
+        added_op = dataset_with_operations.operations_history[2]
         # Check if the previous operations are still present
-        assert len(dataset_with_operations.feature_elaborations[origin_column]) == 6
-        assert (
-            FeatureOperation(
-                OperationTypeEnum.BIN_SPLITTING,
-                original_columns=["fop_original_col_0", "fop_original_col_1"],
-                derived_columns=["fop_derived_col_0", "fop_derived_col_1"],
-            )
-            in dataset_with_operations.feature_elaborations[origin_column]
-        )
-        # Check if the operation is added to each column
-        assert feat_op in dataset_with_operations.feature_elaborations[origin_column]
-        # Check that they are inserted in derived cols attribute
-        assert deriv_column in dataset_with_operations.derived_columns
-        # Check if the operation is added to each column
-        assert feat_op in dataset_with_operations.feature_elaborations[deriv_column]
+        assert len(dataset_with_operations.operations_history) == 3
+        assert isinstance(added_op, fop.FillNA)
+        assert added_op.columns == ["col1"]
+        assert added_op.derived_columns == ["col5"]
 
     def test_to_be_fixed_cols(self):
         df = DataFrameMock.df_multi_type(10)
@@ -692,7 +664,7 @@ def test_read_file(export_dataset_with_operations_to_file_fixture):
     conserved_attributes = imported_dataset.__dict__.keys() - {"_data"}
     for k in conserved_attributes:
         assert imported_dataset.__dict__[k] == expected_imported_dataset.__dict__[k]
-    assert imported_dataset.data.equals(expected_imported_dataset.data)
+    pd.testing.assert_frame_equal(imported_dataset.data, expected_imported_dataset.data)
 
 
 def test_read_file_raise_notshelvefileerror(create_generic_file):
@@ -780,72 +752,20 @@ def create_generic_shelve_file(tmpdir) -> Path:
 
 
 @pytest.fixture(scope="function")
-def dataset_with_operations() -> Dataset:
+def dataset_with_operations(fillna_col0_col1, fillna_col1_col4) -> Dataset:
     """
-    Create Dataset instance with not empty ``feature_elaborations`` attribute.
-
-    The returned Dataset will have ``feature_elaborations`` attribute
-    initialized with ``feature_elaborations`` argument.
+    Create Dataset instance with not empty ``operations_history`` attribute.
 
     Returns
     -------
     Dataset
         Dataset instance containing FeatureOperation instances
-        in the `feature_elaborations` attribute
+        in the `operations_history` attribute
     """
     dataset = Dataset(df_object=DataFrameMock.df_generic(10))
 
-    feat_operat_list = [
-        FeatureOperation(
-            OperationTypeEnum.BIN_SPLITTING,
-            original_columns=["fop_original_col_0", "fop_original_col_1"],
-            derived_columns=["fop_derived_col_0", "fop_derived_col_1"],
-        ),
-        FeatureOperation(
-            OperationTypeEnum.BIN_SPLITTING,
-            original_columns=["fop_original_col_0", "fop_original_col_1"],
-            derived_columns=["fop_derived_col_0"],
-            encoded_values_map={0: "value_0", 1: "value_1"},
-        ),
-        FeatureOperation(
-            original_columns=("fop_original_col_0", "fop_original_col_1"),
-            derived_columns=("fop_derived_col_1",),
-            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
-            encoded_values_map={0: "value_3", 1: "value_4"},
-            encoder=EncodingFunctions.ORDINAL.value(),
-            details={"key_A": "value_A", "key_B": "value_B"},
-        ),
-        FeatureOperation(
-            original_columns=("fop_original_col_0",),
-            derived_columns=("fop_derived_col_0",),
-            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
-            encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=EncodingFunctions.ONEHOT.value(),
-            details={"key_2": "value_2", "key_3": "value_3"},
-        ),
-        FeatureOperation(
-            original_columns=("fop_original_col_0",),
-            derived_columns=("fop_derived_col_0",),
-            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
-            encoded_values_map={0: "value_0", 1: "value_1"},
-            encoder=EncodingFunctions.ORDINAL.value(),
-            details={"key_2": "value_2", "key_3": "value_3"},
-        ),
-        FeatureOperation(
-            original_columns=("fop_original_col_2",),
-            derived_columns=("fop_derived_col_2", "fop_derived_col_3"),
-            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
-            encoded_values_map={0: "value_3", 1: "value_4"},
-            encoder=EncodingFunctions.ONEHOT.value(),
-            details={"key_A": "value_A", "key_B": "value_B"},
-        ),
-    ]
-    for feat_op in feat_operat_list:
-        for orig_col in feat_op.original_columns:
-            dataset.feature_elaborations[orig_col].append(feat_op)
-
-        for der_col in feat_op.derived_columns:
-            dataset.feature_elaborations[der_col].append(feat_op)
+    dataset.add_operation(fillna_col0_col1)
+    dataset.add_operation(fillna_col1_col4)
 
     return dataset
 
