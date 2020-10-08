@@ -4,6 +4,7 @@ except ImportError:
     from typing_extensions import Protocol, runtime_checkable
 
 from abc import abstractmethod
+import copy
 from typing import Any, List
 
 from .dataset import Dataset

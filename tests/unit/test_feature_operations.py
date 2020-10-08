@@ -2,6 +2,7 @@ import pytest
 
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset
+import pandas as pd
 
 from ..dataset_util import DataFrameMock
 from ..unitutil import ANY, function_mock, initializer_mock, method_mock
