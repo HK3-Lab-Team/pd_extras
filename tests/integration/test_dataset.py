@@ -6,9 +6,9 @@ from typing import Tuple
 import pandas as pd
 import pytest
 
+from trousse import feature_operations as fop
 from trousse.dataset import (
     Dataset,
-    FeatureOperation,
     _ColumnListByType,
     _find_single_column_type,
     copy_dataset_with_new_df,
@@ -16,12 +16,9 @@ from trousse.dataset import (
     read_file,
 )
 from trousse.exceptions import NotShelveFileError
-from trousse.feature_enum import EncodingFunctions, OperationTypeEnum
 
 from ..dataset_util import DataFrameMock, SeriesMock
-from ..featureoperation_util import eq_featureoperation_combs
 from ..fixtures import CSV
-from trousse import feature_operations as fop
 
 
 class Describe_Dataset:
@@ -518,49 +515,6 @@ class Describe_Dataset:
 
         assert type(str_) == str
         assert expected_str == str_
-
-
-class Describe_FeatureOperation:
-    @pytest.mark.parametrize(
-        "feat_op_1_dict, feat_op_2_dict, is_equal_label", eq_featureoperation_combs()
-    )
-    def test_featureoperation_equals(
-        self, feat_op_1_dict, feat_op_2_dict, is_equal_label
-    ):
-        feat_op_1 = FeatureOperation(
-            operation_type=feat_op_1_dict["operation_type"],
-            original_columns=feat_op_1_dict["original_columns"],
-            derived_columns=feat_op_1_dict["derived_columns"],
-            encoder=feat_op_1_dict["encoder"],
-        )
-        feat_op_2 = FeatureOperation(
-            operation_type=feat_op_2_dict["operation_type"],
-            original_columns=feat_op_2_dict["original_columns"],
-            derived_columns=feat_op_2_dict["derived_columns"],
-            encoder=feat_op_2_dict["encoder"],
-        )
-
-        are_feat_ops_equal = feat_op_1 == feat_op_2
-
-        assert are_feat_ops_equal == is_equal_label
-
-    def test_featureoperation_equals_with_different_instance_types(self, request):
-        feat_op_1 = FeatureOperation(
-            operation_type=OperationTypeEnum.BIN_SPLITTING,
-            original_columns=("original_column_2",),
-            derived_columns=("derived_column_1", "derived_column_2"),
-            encoder=EncodingFunctions.ONEHOT.value(),
-        )
-        feat_op_2 = dict(
-            operation_type=OperationTypeEnum.BIN_SPLITTING,
-            original_columns=("original_column_2",),
-            derived_columns=("derived_column_1", "derived_column_2"),
-            encoder=EncodingFunctions.ONEHOT.value(),
-        )
-
-        are_feat_ops_equal = feat_op_1 == feat_op_2
-
-        assert are_feat_ops_equal is False
 
 
 @pytest.mark.parametrize(
