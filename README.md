@@ -90,23 +90,23 @@ Along with the common preprocessing utilities (for encoding, binning, scaling, e
 >>> from trousse.feature_operations import Compose, FillNA, ReplaceSubstrings
 
 >>> fillna_replacestrings = Compose(
-    [
-        FillNA(
-            columns=["column_with_nan"],
-            derived_columns=["column_filled"],
-            value=0,
-        ),
-        ReplaceSubstrings(
-            columns=["column_invalid_values"],
-            derived_columns=["column_valid_values"],
-            replacement_map={",": ".", "°": ""},
-        ),
-    ]
-)
+...     [
+...         FillNA(
+...             columns=["column_with_nan"],
+...             derived_columns=["column_filled"],
+...             value=0,
+...         ),
+...         ReplaceSubstrings(
+...             columns=["column_invalid_values"],
+...             derived_columns=["column_valid_values"],
+...             replacement_map={",": ".", "°": ""},
+...         ),
+...     ]
+... )
 
 >>> dataset = fillna_replacestrings(dataset)
 ```
 
 ### Integrated tools for synthetic data generation
 
-PyTrousse aids automated testing by inverting the data transformation operators. Generation of testing fixtures and injection of errors is automatically available (more information [here](https://github.com/HK3-Lab-Team/pytrousse/blob/master/tests/datasim.py)).
+PyTrousse aids automated testing by inverting the data transformation operators. Generation of testing fixtures and injection of errors is automatically available (more information [here](https://github.com/HK3-Lab-Team/pytrousse/blob/master/tests/README.py)).

@@ -8,39 +8,39 @@ Raw and expected data are wrapped in a `TestDataset` object that, following PyTr
 >>> import pandas as pd
 >>> from .datasim import from_pandas
 >>> from .datasim_util import (
-        Compose,
-        InsertOutOfScaleValues,
-        ReplaceSubstringsByValue,
-        SubstringReplaceMapByValue,
-    )
+...         Compose,
+...         InsertOutOfScaleValues,
+...         ReplaceSubstringsByValue,
+...         SubstringReplaceMapByValue,
+... )
 
 >>> df = pd.DataFrame(
-    {"float_column": list(range(10)), "int_column": [0.2 * i for i in range(10)]}
-)
-test_dataset = from_pandas(df)
-insert_errors = Compose(
-    [
-        ReplaceSubstringsByValue(
-            column_names=["float_column"],
-            error_count=2,
-            replacement_map_list=[
-                SubstringReplaceMapByValue(
-                    substr_to_replace=".",
-                    new_substring=",",
-                    value_after_fix=".",
-                    fix_with_substring=True,
-                )
-            ],
-        ),
-        InsertOutOfScaleValues(
-            column_names=["int_column"],
-            error_count=2,
-            upperbound_increase=0.02,
-            lowerbound_increase=0.02,
-        ),
-    ]
-)
-test_dataset = insert_errors(test_dataset)
+...     {"float_column": list(range(10)), "int_column": [0.2 * i for i in range(10)]}
+... )
+... test_dataset = from_pandas(df)
+... insert_errors = Compose(
+...     [
+...         ReplaceSubstringsByValue(
+...             column_names=["float_column"],
+...             error_count=2,
+...             replacement_map_list=[
+...                 SubstringReplaceMapByValue(
+...                     substr_to_replace=".",
+...                     new_substring=",",
+...                     value_after_fix=".",
+...                     fix_with_substring=True,
+...                 )
+...             ],
+...         ),
+...         InsertOutOfScaleValues(
+...             column_names=["int_column"],
+...             error_count=2,
+...             upperbound_increase=0.02,
+...             lowerbound_increase=0.02,
+...         ),
+...     ]
+... )
+... test_dataset = insert_errors(test_dataset)
 
 >>> test_dataset.dataframe_to_fix
 ```
