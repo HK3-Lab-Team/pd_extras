@@ -17,8 +17,8 @@ Raw and expected data are wrapped in a `TestDataset` object that, following PyTr
 >>> df = pd.DataFrame(
 ...     {"float_column": list(range(10)), "int_column": [0.2 * i for i in range(10)]}
 ... )
-... test_dataset = from_pandas(df)
-... insert_errors = Compose(
+>>> test_dataset = from_pandas(df)
+>>> insert_errors = Compose(
 ...     [
 ...         ReplaceSubstringsByValue(
 ...             column_names=["float_column"],
@@ -40,7 +40,7 @@ Raw and expected data are wrapped in a `TestDataset` object that, following PyTr
 ...         ),
 ...     ]
 ... )
-... test_dataset = insert_errors(test_dataset)
+>>> test_dataset = insert_errors(test_dataset)
 
 >>> test_dataset.dataframe_to_fix
 ```
