@@ -1,18 +1,18 @@
 ### Integrated tools for synthetic data generation
 
 PyTrousse aids developers in automated testing by creating simulated raw data in a controlled way along with the data expected after appropriate data wrangling operations.
-Particularly this tool can support the data transformation operator testing by inverting their behavior through error injection.
+Particularly, this tool can support the data transformation operator testing by inverting their behavior through error injection.
 
-Particularly raw and expected data are wrapped in a `TestDataset` object that, following PyTrousse behavior, can be modified by applying the inverted data transformation operators.
+Raw and expected data are wrapped in a `TestDataset` object that, following PyTrousse behavior, can be modified by applying the inverted data transformation operators.
 ```python
 >>> import pandas as pd
-from .datasim import from_pandas
-from .datasim_util import (
-    Compose,
-    InsertOutOfScaleValues,
-    ReplaceSubstringsByValue,
-    SubstringReplaceMapByValue,
-)
+>>> from .datasim import from_pandas
+>>> from .datasim_util import (
+        Compose,
+        InsertOutOfScaleValues,
+        ReplaceSubstringsByValue,
+        SubstringReplaceMapByValue,
+    )
 
 >>> df = pd.DataFrame(
     {"float_column": list(range(10)), "int_column": [0.2 * i for i in range(10)]}

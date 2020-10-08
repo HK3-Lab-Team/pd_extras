@@ -109,4 +109,4 @@ Along with the common preprocessing utilities (for encoding, binning, scaling, e
 
 ### Integrated tools for synthetic data generation
 
-PyTrousse aids automated testing by inverting the data transformation operators. Generation of testing fixtures and injection of errors is automatically available (more information in (more information [here](https://github.com/HK3-Lab-Team/pytrousse/blob/master/tests/datasim.py)).
+PyTrousse aids automated testing by inverting the data transformation operators. Generation of testing fixtures and injection of errors is automatically available (more information [here](https://github.com/HK3-Lab-Team/pytrousse/blob/master/tests/datasim.py)).
