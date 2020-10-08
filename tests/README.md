@@ -36,7 +36,7 @@ Raw and expected data are wrapped in a `TestDataset` object that, following PyTr
 ...             column_names=["int_column"],
 ...             error_count=2,
 ...             upperbound_increase=0.02,
-...             lowerbound_increase=0.02,
+...             lowerbound_decrease=0.02,
 ...         ),
 ...     ]
 ... )
