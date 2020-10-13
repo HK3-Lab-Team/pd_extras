@@ -557,12 +557,9 @@ class Dataset:
 
         """
         to_be_encoded_categorical_cols = set()
-        cols_by_type = self._columns_type
         # TODO: Check this because maybe categorical columns that are numerical, do
         #  not need encoding probably!
-        categorical_cols = (
-            cols_by_type.str_categorical_cols | cols_by_type.num_categorical_cols
-        )
+        categorical_cols = self.str_categorical_cols | self.num_categorical_cols
         for categ_col in categorical_cols:
             if self.get_enc_column_from_original(categ_col) is None:
                 to_be_encoded_categorical_cols.add(categ_col)
