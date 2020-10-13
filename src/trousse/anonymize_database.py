@@ -192,18 +192,13 @@ def anonymize_data(
     anonym_df = anonym_df.drop(private_cols_to_remove, axis=1)
 
     # Write the two DataFrames to CSV files
-    dest_path = str(dest_path)
-    file_name = str(file_name)
-    try:
-        private_df.to_csv(
-            os.path.join(dest_path, f"{file_name}_private_info.csv"),
-            mode="w+",
-            index=False,
-        )
-        anonym_df.to_csv(
-            os.path.join(dest_path, f"{file_name}_anonym.csv"), mode="w+", index=False
-        )
-    except FileNotFoundError:
-        print("FileNotFoundError: The destination path was not found")
+    private_df.to_csv(
+        os.path.join(dest_path, f"{file_name}_private_info.csv"),
+        mode="w+",
+        index=False,
+    )
+    anonym_df.to_csv(
+        os.path.join(dest_path, f"{file_name}_anonym.csv"), mode="w+", index=False
+    )
 
     return anonym_df, private_df

@@ -84,3 +84,22 @@ def test_anonymize_data(
 
     pd.testing.assert_frame_equal(anonym_df, expected_anonym_df)
     pd.testing.assert_frame_equal(private_df, expected_private_df)
+
+
+def but_it_raises_filenotfounderror_with_wrong_dest_path():
+    original_df = DataFrameMock.df_with_private_info(private_cols=["private_col_a"])
+
+    with pytest.raises(FileNotFoundError) as err:
+        anonym_df, private_df = anonymize_data(
+            df=original_df,
+            file_name="test_original_db_anonymize",
+            private_cols_to_remove=["private_col_a"],
+            private_cols_to_map=["private_col_a"],
+            dest_path="path/fake",
+            random_seed=42,
+        )
+    assert isinstance(err.value, FileNotFoundError)
+    assert (
+        "[Errno 2] No such file or directory: "
+        "'path/fake/test_original_db_anonymize_private_info.csv'"
+    ) == str(err.value)
