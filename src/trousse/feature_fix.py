@@ -79,7 +79,7 @@ def split_continuous_column_into_bins(dataset: Dataset, col_name, bin_threshold)
     # Cast the new column to int8
     dataset._data.loc[:, new_col_name] = dataset._data[new_col_name].astype("Int16")
 
-    dataset.add_operation(
+    dataset.track_history(
         FeatureOperation(
             original_columns=col_name,
             operation_type=OperationTypeEnum.BIN_SPLITTING,
@@ -165,7 +165,7 @@ def combine_categorical_columns_to_one(
         "Int16"
     )
     # Track this operation in dataset
-    dataset.add_operation(
+    dataset.track_history(
         FeatureOperation(
             original_columns=columns_list,
             operation_type=OperationTypeEnum.FEAT_COMBOS_ENCODING,
@@ -350,7 +350,7 @@ def encode_single_categorical_column(
 
     dataset_encoded = copy_dataset_with_new_df(dataset, df_encoded)
 
-    dataset_encoded.add_operation(
+    dataset_encoded.track_history(
         FeatureOperation(
             original_columns=col_name,
             operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,

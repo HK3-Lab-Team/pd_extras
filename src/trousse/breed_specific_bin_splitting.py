@@ -491,7 +491,7 @@ def add_breed_specific_bin_id_to_df(
     age_bin_dataset = copy_dataset_with_new_df(
         dataset=dataset, new_pandas_df=df_with_bin_column
     )
-    age_bin_dataset.add_operation(
+    age_bin_dataset.track_history(
         FeatureOperation(
             operation_type=OperationTypeEnum.BIN_SPLITTING,
             original_columns=column_to_split,

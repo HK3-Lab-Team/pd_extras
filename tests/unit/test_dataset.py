@@ -6,7 +6,7 @@ from trousse.dataset import Dataset, _ColumnListByType
 from trousse.operations_list import OperationsList
 
 from ..dataset_util import DataFrameMock
-from ..unitutil import function_mock, initializer_mock, method_mock, property_mock, ANY
+from ..unitutil import ANY, function_mock, initializer_mock, method_mock, property_mock
 
 
 class DescribeDataset:
@@ -238,7 +238,7 @@ class DescribeDataset:
             # one derived_column
         ],
     )
-    def it_knows_how_to_add_operation(
+    def it_knows_how_to_track_history(
         self, request, metadata_cols, derived_columns, expected_metadata_cols
     ):
         operations_list_iadd_ = method_mock(request, OperationsList, "__iadd__")
@@ -251,7 +251,7 @@ class DescribeDataset:
             columns=["metadata_num_col"], derived_columns=derived_columns, value=0
         )
 
-        dataset.add_operation(feat_op)
+        dataset.track_history(feat_op)
 
         assert dataset.metadata_cols == expected_metadata_cols
         operations_list_iadd_.assert_called_once_with(ANY, feat_op)

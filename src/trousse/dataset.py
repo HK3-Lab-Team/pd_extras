@@ -635,7 +635,7 @@ class Dataset:
                 f"{i}: {col_type_dict[_COL_NAME_COLUMN]} -> {col_type_dict[_COL_TYPE_COLUMN]}"
             )
 
-    def add_operation(self, feature_operation: "FeatureOperation") -> None:
+    def track_history(self, feature_operation: "FeatureOperation") -> None:
         """
         Add a new operation to the history.
 
