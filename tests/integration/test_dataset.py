@@ -403,7 +403,7 @@ class Describe_Dataset:
             # one derived_column
         ],
     )
-    def test_add_operation_with_derived_columns(
+    def test_track_history_with_derived_columns(
         self,
         request,
         metadata_columns,
@@ -420,7 +420,7 @@ class Describe_Dataset:
             columns=original_columns, derived_columns=derived_columns, value=0
         )
 
-        dataset.add_operation(feat_op)
+        dataset.track_history(feat_op)
 
         for column in original_columns + derived_columns:
             # Check if the operation is added to each column
@@ -439,7 +439,7 @@ class Describe_Dataset:
             # one derived_column
         ],
     )
-    def test_add_operation_with_no_derived_columns(
+    def test_track_history_with_no_derived_columns(
         self,
         request,
         metadata_columns,
@@ -453,17 +453,17 @@ class Describe_Dataset:
         )
         feat_op = fop.FillNA(columns=original_columns, derived_columns=None, value=0)
 
-        dataset.add_operation(feat_op)
+        dataset.track_history(feat_op)
 
         for column in original_columns:
             # Check if the operation is added to each column
             assert feat_op in dataset.operations_history[column]
         assert dataset.metadata_cols == expected_metadata_cols
 
-    def test_add_operation_on_previous_one(self, request, dataset_with_operations):
+    def test_track_history_on_previous_one(self, request, dataset_with_operations):
         feat_op = fop.FillNA(columns=["col1"], derived_columns=["col5"], value=0)
 
-        dataset_with_operations.add_operation(feat_op)
+        dataset_with_operations.track_history(feat_op)
 
         added_op = dataset_with_operations.operations_history[2]
         # Check if the previous operations are still present
@@ -718,8 +718,8 @@ def dataset_with_operations(fillna_col0_col1, fillna_col1_col4) -> Dataset:
     """
     dataset = Dataset(df_object=DataFrameMock.df_generic(10))
 
-    dataset.add_operation(fillna_col0_col1)
-    dataset.add_operation(fillna_col1_col4)
+    dataset.track_history(fillna_col0_col1)
+    dataset.track_history(fillna_col1_col4)
 
     return dataset
 
