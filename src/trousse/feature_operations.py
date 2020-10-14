@@ -3,8 +3,8 @@ try:
 except ImportError:
     from typing_extensions import Protocol, runtime_checkable
 
-from abc import abstractmethod
 import copy
+from abc import abstractmethod
 from typing import Any, List
 
 from .dataset import Dataset
@@ -18,8 +18,27 @@ class FeatureOperation(Protocol):
     columns: List[str]
     derived_columns: List[str] = None
 
-    @abstractmethod
     def __call__(self, dataset: Dataset) -> Dataset:
+        """Apply the operation on a new instance of Dataset and track it in the history
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to apply the operation on
+
+        Returns
+        -------
+        Dataset
+            New Dataset instance with the operation applied on and with the operation
+            tracked in the history
+        """
+
+        dataset = self._apply(dataset)
+        dataset.track_history(self)
+        return dataset
+
+    @abstractmethod
+    def _apply(self, dataset: Dataset) -> Dataset:
         raise NotImplementedError
 
     @abstractmethod
@@ -90,7 +109,19 @@ class FillNA(FeatureOperation):
         self.derived_columns = derived_columns
         self.value = value
 
-    def __call__(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: Dataset) -> Dataset:
+        """Apply FillNA operation on a new Dataset instance and return it.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to apply the operation on
+
+        Returns
+        -------
+        Dataset
+            New Dataset instance with the operation applied on
+        """
         dataset = copy.deepcopy(dataset)
 
         if self.derived_columns is not None:

@@ -1,8 +1,8 @@
+import pandas as pd
 import pytest
 
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset
-import pandas as pd
 
 from ..dataset_util import DataFrameMock
 from ..unitutil import ANY, function_mock, initializer_mock, method_mock
@@ -99,7 +99,7 @@ class DescribeFillNa:
             (["nan_0"], None, [], True),
         ],
     )
-    def it_can_fillna(
+    def it_can_apply_fillna(
         self, request, columns, derived_columns, expected_new_columns, expected_inplace
     ):
         df = DataFrameMock.df_many_nans(nan_ratio=0.5, n_columns=3)
@@ -110,7 +110,7 @@ class DescribeFillNa:
         pd_fillna_.return_value = pd.Series([0] * 100)
         fillna = fop.FillNA(columns=columns, derived_columns=derived_columns, value=0)
 
-        filled_dataset = fillna(dataset)
+        filled_dataset = fillna._apply(dataset)
 
         assert filled_dataset is not None
         assert filled_dataset is not dataset
@@ -123,6 +123,25 @@ class DescribeFillNa:
             pd_fillna_.call_args_list[0][0][0], df[columns[0]]
         )
         assert pd_fillna_.call_args_list[0][1] == {"inplace": expected_inplace}
+
+    def it_can_fillna_with_template_call(self, request):
+        _apply_ = method_mock(request, fop.FillNA, "_apply")
+        track_history_ = method_mock(request, Dataset, "track_history")
+        df = DataFrameMock.df_many_nans(nan_ratio=0.5, n_columns=3)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = df
+        dataset_in = Dataset(data_file="fake/path0")
+        dataset_out = Dataset(data_file="fake/path0")
+        _apply_.return_value = dataset_out
+        fillna = fop.FillNA(
+            columns=["nan_0"], derived_columns=["filled_nan_0"], value=0
+        )
+
+        filled_dataset = fillna(dataset_in)
+
+        _apply_.assert_called_once_with(fillna, dataset_in)
+        track_history_.assert_called_once_with(filled_dataset, fillna)
+        assert filled_dataset is dataset_out
 
     @pytest.mark.parametrize(
         "other, expected_equal",
