@@ -47,7 +47,7 @@ def test_fillna(request, columns, derived_columns, expected_df):
             None,
             "csv/generic-replaced-d-a-col0-inplace",
         ),
-        (CSV.generic, ["col0"], ["col3"], "csv/generic-replaced-d-a-col0-col3"),
+        (CSV.generic, ["col0"], ["col4"], "csv/generic-replaced-d-a-col0-col4"),
     ),
 )
 def test_replace_strings(csv, columns, derived_columns, expected_csv):
@@ -58,5 +58,34 @@ def test_replace_strings(csv, columns, derived_columns, expected_csv):
     )
 
     replaced_dataset = replace_strings(dataset)
+
+    pd.testing.assert_frame_equal(replaced_dataset.data, expected_df)
+
+
+@pytest.mark.parametrize(
+    "csv, columns, derived_columns, expected_csv",
+    (
+        (
+            CSV.generic,
+            ["col3"],
+            None,
+            "csv/generic-replaced-substrings-r-c-col3-inplace",
+        ),
+        (
+            CSV.generic,
+            ["col3"],
+            ["col4"],
+            "csv/generic-replaced-substrings-r-c-col3-col4",
+        ),
+    ),
+)
+def test_replace_substrings(csv, columns, derived_columns, expected_csv):
+    dataset = Dataset(data_file=csv)
+    expected_df = load_expectation(expected_csv, type_="csv")
+    replace_substrings = fop.ReplaceSubstrings(
+        columns=columns, derived_columns=derived_columns, replacement_map={"r": "c"}
+    )
+
+    replaced_dataset = replace_substrings(dataset)
 
     pd.testing.assert_frame_equal(replaced_dataset.data, expected_df)
