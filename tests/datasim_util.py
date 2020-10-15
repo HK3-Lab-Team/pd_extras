@@ -333,9 +333,12 @@ class InsertNewValues(ReplaceSamples):
             ReverseFeatureOperation is applied. A mix of names and column IDs
             is not accepted.
         error_count : int
-            Number of values that will be replaced with NaNs in each column
-        nan_value : Any
-            Value that will be inserted as NaN value
+            Number of invalid values that are inserted in column.
+        replacement_map : Dict[str, str]
+            Dictionary where the keys are the invalid string that will replace
+            some elements of ``values`` argument. The dictionary values are the
+            values that will replace those invalid values in the `correct_column`
+            property.
         """
         super().__init__(column_names, error_count)
         self._replacement_map = replacement_map
@@ -935,6 +938,7 @@ class ReplaceSubstringsByValue(TransformSubstrings):
         Implementation of the method of the abstract class that describes
         the behavior of the class when it replaces values (by calling it).
         The method replaces the sample ``previous_value`` with the new substring
+        from ``replacement_map`` argument and it stores the new value that will be
         present after the appropriate correction.
 
         Parameters
