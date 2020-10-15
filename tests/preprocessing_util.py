@@ -51,7 +51,7 @@ def _int_data_list(sample_size: int, step: int = 1, bias: int = 0):
     return [step * i + bias for i in range(sample_size)]
 
 
-def _float_data_list(sample_size: int, step: float, bias: float = 0):
+def _float_data_list(sample_size: int, step: float, bias: float = 0.1):
     return [step * i + bias for i in range(sample_size)]
 
 
@@ -96,7 +96,7 @@ def _categ_data_list(sample_size: int, categories_count: int, prefix: str = ""):
 
 
 def _bool_data_list(sample_size: int, true_sample_count: int):
-    return [True] * true_sample_count + [False] * (sample_size - true_sample_count)
+    return [1] * true_sample_count + [0] * (sample_size - true_sample_count)
 
 
 def _create_ideal_test_dataset(sample_size: int) -> TestDataSet:
@@ -187,6 +187,7 @@ def _create_ideal_test_dataset(sample_size: int) -> TestDataSet:
         # Feature Columns
         ("feature_int_col_0", list(range(sample_size))),
         ("feature_int_col_1", [i * 10 for i in range(sample_size)]),
+        ("feature_forcedstr_int_col", list(range(sample_size))),
         ("feature_smallfloat_col_0", [i * 0.0001 for i in range(sample_size)]),
         ("feature_smallfloat_col_1", [i * 0.0002 for i in range(sample_size)]),
         (
@@ -207,8 +208,12 @@ def _create_ideal_test_dataset(sample_size: int) -> TestDataSet:
             "feature_bool_col",
             _bool_data_list(sample_size, one_half_samples),
         ),
+        (
+            "feature_forcedstr_bool_col",
+            _bool_data_list(sample_size, one_half_samples),
+        ),
         # Column with numerical values and explicit dtype="object"
-        ("feature_forcedstr_num_col", _float_data_list(sample_size, step=1.3)),
+        ("feature_forcedstr_float_col", _float_data_list(sample_size, step=1.3)),
         ("feature_str_col_0", [f"value0_{i}" for i in range(sample_size)]),
         ("feature_str_col_1", [f"value1_{i}" for i in range(sample_size)]),
         (
@@ -224,12 +229,12 @@ def _create_ideal_test_dataset(sample_size: int) -> TestDataSet:
         (
             "feature_float_str_mixed_col",
             _string_data_list(one_half_samples)
-            + _float_data_list(sample_size - one_half_samples, step=0.5),
+            + _float_data_list(sample_size - one_half_samples, step=0.5, bias=0.1),
         ),
         (
             "feature_int_float_mixed_col",
             _int_data_list(one_half_samples, step=2)
-            + _float_data_list(sample_size - one_half_samples, step=23.1),
+            + _float_data_list(sample_size - one_half_samples, step=23.0, bias=0.1),
         ),
         (
             "feature_int_str_mixed_col",
@@ -349,7 +354,7 @@ class CSVMock:
             "feature_bigfloat_col_1",
             "feature_smallfloat_col_0",
             "feature_smallfloat_col_1",
-            "feature_forcedstr_num_col",
+            "feature_forcedstr_float_col",
         ]
         datetime_features = [
             "feature_datetime_col",
@@ -360,21 +365,37 @@ class CSVMock:
         )
 
         insert_nan_str_substr = Compose(
-            [
+            [   
+                # Convert the columns to appropriate dtype to make sure about the
+                # starting format
                 ChangeColumnDType(
-                    # This must be before the conversion to "Int32" for a known
-                    # pandas issue (https://github.com/pandas-dev/pandas/issues/25472)
-                    column_names=float_only_features + int_only_features,
-                    new_dtype="object",
+                    column_names=float_only_features,
+                    new_dtype=np.float64,
                     dtype_after_fix=np.float64,
                 ),
                 ChangeColumnDType(
                     column_names=int_only_features,
-                    new_dtype="object",
+                    new_dtype=np.int64,
                     dtype_after_fix=np.int64,
                 ),
                 ChangeColumnDType(
                     column_names={"feature_bool_col"},
+                    new_dtype=np.bool,
+                    dtype_after_fix=np.bool,
+                ),
+                # Force few columns to the "object" dtype
+                ChangeColumnDType(
+                    column_names=["feature_forcedstr_float_col"],
+                    new_dtype="object",
+                    dtype_after_fix=np.float64,
+                ),
+                ChangeColumnDType(
+                    column_names=["feature_forcedstr_int_col"],
+                    new_dtype="object",
+                    dtype_after_fix=np.int64,
+                ),
+                ChangeColumnDType(
+                    column_names={"feature_forcedstr_bool_col"},
                     new_dtype="object",
                     dtype_after_fix=np.bool,
                 ),
@@ -422,8 +443,9 @@ class CSVMock:
                     column_names=datetime_features,
                     error_count=wrong_values_count,
                     replacement_map_list=[
-                        SubstringReplaceMapByValue("-", "/", "/", True),
+                        SubstringReplaceMapByValue("-", "/", "/", True),  # TODO: Remove one parameter (use index as optional so that you can replace by value in index)
                         SubstringReplaceMapByValue(":", ".", ".", True),
+                        SubstringReplaceMapByValue("o", "@", "o", True),
                     ],
                 ),
                 InsertOutOfScaleValues(

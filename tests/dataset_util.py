@@ -213,10 +213,14 @@ class DataFrameMock:
                 * (sample_size // 5),
                 dtype="category",
             ),
-            "str_categorical_col": pd.Series(
-                ["category_0", "category_1", "category_2", "category_3", "category_4"]
-                * (sample_size // 5)
-            ),
+            "str_categorical_col": [
+                "category_0",
+                "category_1",
+                "category_2",
+                "category_3",
+                "category_4",
+            ]
+            * (sample_size // 5),
             "int_forced_categorical_col": pd.Series(
                 [0, 1, 2, 3, 4] * (sample_size // 5), dtype="category"
             ),
@@ -227,8 +231,8 @@ class DataFrameMock:
             "interval_col": pd.arrays.IntervalArray(
                 [pd.Interval(0, i) for i in range(sample_size)],
             ),
-            "mixed_type_col": list(range(sample_size // 2))
-            + [f"value_{i}" for i in range(sample_size // 2)],
+            "mixed_type_col": list(range(sample_size - 3))
+            + [f"value_{i}" for i in range(3)],
             "same_col": [2] * sample_size,
             "nan_col": [pd.NA] * (sample_size - 1) + [3],
         }
