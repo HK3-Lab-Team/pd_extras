@@ -208,6 +208,18 @@ class ReplaceStrings(FeatureOperation):
         self.derived_columns = derived_columns
 
     def _apply(self, dataset: Dataset) -> Dataset:
+        """Apply ReplaceStrings operation on a new Dataset instance and return it.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to apply the operation on
+
+        Returns
+        -------
+        Dataset
+            New Dataset instance with the operation applied on
+        """
         dataset = copy.deepcopy(dataset)
 
         if self.derived_columns is not None:
