@@ -201,6 +201,7 @@ class ReplaceStrings(FeatureOperation):
 
         self._validate_single_element_columns(columns)
         self._validate_single_element_derived_columns(derived_columns)
+        self._validate_replacement_map(replacement_map)
 
         self.columns = columns
         self.replacement_map = replacement_map
@@ -220,6 +221,34 @@ class ReplaceStrings(FeatureOperation):
             )
 
         return dataset
+
+    def _validate_replacement_map(self, replacement_map: Mapping[str, str]) -> None:
+        """Validate ``replacement_map`` dict to map string keys to string values
+
+        Parameters
+        ----------
+        replacement_map : Mapping[str, str]
+            The dict to validate
+
+        Raises
+        ------
+        TypeError
+            If ``replacement_map`` is not a dict, or is an empty dict or if not all keys
+            or not all values are strings
+        """
+        if (
+            not isinstance(replacement_map, Mapping)
+            or not replacement_map.keys()
+            or not all(
+                [
+                    isinstance(key, str) and isinstance(value, str)
+                    for key, value in replacement_map.items()
+                ]
+            )
+        ):
+            raise TypeError(
+                "replacement_map must be a non-empty dict mapping string keys to string values"
+            )
 
     def __eq__(self, other: Any) -> bool:
         """Return True if ``other`` is a ReplaceStrings instance and it has the same fields value.

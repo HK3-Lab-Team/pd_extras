@@ -218,6 +218,9 @@ class DescribeReplaceStrings:
         validate_derived_columns_ = method_mock(
             request, fop.ReplaceStrings, "_validate_single_element_derived_columns"
         )
+        validate_replacement_map = method_mock(
+            request, fop.ReplaceStrings, "_validate_replacement_map"
+        )
 
         replace_strings = fop.ReplaceStrings(
             columns=["col0"], derived_columns=["col1"], replacement_map={"a": "b"}
@@ -225,6 +228,26 @@ class DescribeReplaceStrings:
 
         validate_columns_.assert_called_once_with(replace_strings, ["col0"])
         validate_derived_columns_.assert_called_once_with(replace_strings, ["col1"])
+        validate_replacement_map.assert_called_once_with(replace_strings, {"a": "b"})
+
+    @pytest.mark.parametrize(
+        "replacement_map",
+        [([]), ({}), ({"a": 1}), ({1: "a"})],
+    )
+    def it_knows_how_to_validate_replacement_map(self, request, replacement_map):
+        initializer_mock(request, fop.ReplaceStrings)
+        replace_strings = fop.ReplaceStrings(
+            columns=["col0"], derived_columns=["col1"], replacement_map=replacement_map
+        )
+
+        with pytest.raises(TypeError) as err:
+            replace_strings._validate_replacement_map(replacement_map)
+
+        assert isinstance(err.value, TypeError)
+        assert (
+            "replacement_map must be a non-empty dict mapping string keys to string values"
+            == str(err.value)
+        )
 
     @pytest.mark.parametrize(
         "columns, derived_columns, expected_new_columns, expected_inplace",
