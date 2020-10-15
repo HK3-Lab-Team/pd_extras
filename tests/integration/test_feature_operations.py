@@ -6,6 +6,8 @@ from trousse.dataset import Dataset
 
 from ..dataset_util import DataFrameMock
 from ..unitutil import function_mock
+from ..fixtures import CSV
+from ..util import load_expectation
 
 
 @pytest.mark.parametrize(
@@ -34,3 +36,27 @@ def test_fillna(request, columns, derived_columns, expected_df):
 
     assert filled_dataset is not dataset
     pd.testing.assert_frame_equal(filled_dataset.data, expected_df)
+
+
+@pytest.mark.parametrize(
+    "csv, columns, derived_columns, expected_csv",
+    (
+        (
+            CSV.generic,
+            ["col0"],
+            None,
+            "csv/generic-replaced-d-a-col0-inplace",
+        ),
+        (CSV.generic, ["col0"], ["col3"], "csv/generic-replaced-d-a-col0-col3"),
+    ),
+)
+def test_replace_strings(csv, columns, derived_columns, expected_csv):
+    dataset = Dataset(data_file=csv)
+    expected_df = load_expectation(expected_csv, type_="csv")
+    replace_strings = fop.ReplaceStrings(
+        columns=columns, derived_columns=derived_columns, replacement_map={"d": "a"}
+    )
+
+    replaced_dataset = replace_strings(dataset)
+
+    pd.testing.assert_frame_equal(replaced_dataset.data, expected_df)
