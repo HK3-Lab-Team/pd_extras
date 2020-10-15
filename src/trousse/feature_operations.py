@@ -1,9 +1,5 @@
-try:
-    from typing import Protocol, runtime_checkable
-except ImportError:
-    from typing_extensions import Protocol, runtime_checkable
-
 import copy
+from abc import ABC
 from abc import abstractmethod
 from typing import Any, List
 
@@ -11,8 +7,7 @@ from .dataset import Dataset
 from .util import is_sequence_and_not_str
 
 
-@runtime_checkable
-class FeatureOperation(Protocol):
+class FeatureOperation(ABC):
     """Protocol definining how Operations should be applied on a Dataset."""
 
     columns: List[str]
@@ -36,6 +31,54 @@ class FeatureOperation(Protocol):
         dataset = self._apply(dataset)
         dataset.track_history(self)
         return dataset
+
+    def _validate_single_element_columns(self, columns: Any) -> None:
+        """Validate single-element list ``columns`` attribute
+
+        Parameters
+        ----------
+        columns : Any
+            Object to validate
+
+        Raises
+        ------
+        TypeError
+            If ``columns`` is not a list
+        ValueError
+            If ``columns`` is not a single-element list.
+        """
+        if not is_sequence_and_not_str(columns):
+            raise TypeError(
+                f"columns parameter must be a list, found {type(columns).__name__}"
+            )
+        if len(columns) != 1:
+            raise ValueError(f"Length of columns must be 1, found {len(columns)}")
+
+    def _validate_single_element_derived_columns(self, derived_columns: Any) -> None:
+        """Validate single-element list ``derived_columns`` attribute
+
+        Parameters
+        ----------
+        derived_columns : Any
+            Object to validate
+
+        Raises
+        ------
+        TypeError
+            If ``derived_columns`` is not None and it is not a list
+        ValueError
+            If ``derived_columns`` is not a single-element list.
+        """
+        if derived_columns is not None:
+            if not is_sequence_and_not_str(derived_columns):
+                raise TypeError(
+                    "derived_columns parameter must be a list, found "
+                    f"{type(derived_columns).__name__}"
+                )
+            if len(derived_columns) != 1:
+                raise ValueError(
+                    f"Length of derived_columns must be 1, found {len(derived_columns)}"
+                )
 
     @abstractmethod
     def _apply(self, dataset: Dataset) -> Dataset:
@@ -89,21 +132,8 @@ class FillNA(FeatureOperation):
         value: Any,
         derived_columns: List[str] = None,
     ):
-        if not is_sequence_and_not_str(columns):
-            raise TypeError(
-                f"columns parameter must be a list, found {type(columns).__name__}"
-            )
-        if len(columns) != 1:
-            raise ValueError(f"Length of columns must be 1, found {len(columns)}")
-        if derived_columns is not None:
-            if not is_sequence_and_not_str(derived_columns):
-                raise TypeError(
-                    f"derived_columns parameter must be a list, found {type(derived_columns).__name__}"
-                )
-            if len(derived_columns) != 1:
-                raise ValueError(
-                    f"Length of derived_columns must be 1, found {len(derived_columns)}"
-                )
+        self._validate_single_element_columns(columns)
+        self._validate_single_element_derived_columns(derived_columns)
 
         self.columns = columns
         self.derived_columns = derived_columns

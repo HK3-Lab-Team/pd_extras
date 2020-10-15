@@ -8,6 +8,103 @@ from ..dataset_util import DataFrameMock
 from ..unitutil import ANY, function_mock, initializer_mock, method_mock
 
 
+class DescribeFeatureOperation:
+    @pytest.mark.parametrize(
+        "columns, expected_length",
+        [
+            (["nan", "nan"], 2),
+            ([], 0),
+        ],
+    )
+    def it_knows_how_to_validate_columns_valueerror(
+        self, columns, expected_length, is_sequence_and_not_str_
+    ):
+        # overriding __abstractmethods__ lets you instantiate an abstract class (PEP 3119)
+        fop.FeatureOperation.__abstractmethods__ = set()
+        feature_operation = fop.FeatureOperation()
+        is_sequence_and_not_str_.return_value = True
+
+        with pytest.raises(ValueError) as err:
+            feature_operation._validate_single_element_columns(columns)
+
+        assert isinstance(err.value, ValueError)
+        assert f"Length of columns must be 1, found {expected_length}" == str(err.value)
+
+    @pytest.mark.parametrize(
+        "columns, expected_type",
+        [("nan", "str"), (dict(), "dict"), (set(), "set")],
+    )
+    def it_knows_how_to_validate_columns_typeerror(
+        self, columns, expected_type, is_sequence_and_not_str_
+    ):
+        # overriding __abstractmethods__ lets you instantiate an abstract class (PEP 3119)
+        fop.FeatureOperation.__abstractmethods__ = set()
+        feature_operation = fop.FeatureOperation()
+        is_sequence_and_not_str_.return_value = False
+
+        with pytest.raises(TypeError) as err:
+            feature_operation._validate_single_element_columns(columns)
+
+        assert isinstance(err.value, TypeError)
+        assert f"columns parameter must be a list, found {expected_type}" == str(
+            err.value
+        )
+
+    @pytest.mark.parametrize(
+        "derived_columns, expected_length",
+        [
+            (["nan", "nan"], 2),
+            ([], 0),
+        ],
+    )
+    def it_knows_how_to_validate_derived_columns_valueerror(
+        self, derived_columns, expected_length, is_sequence_and_not_str_
+    ):
+        # overriding __abstractmethods__ lets you instantiate an abstract class (PEP 3119)
+        fop.FeatureOperation.__abstractmethods__ = set()
+        feature_operation = fop.FeatureOperation()
+        is_sequence_and_not_str_.return_value = True
+
+        with pytest.raises(ValueError) as err:
+            feature_operation._validate_single_element_derived_columns(derived_columns)
+
+        assert isinstance(err.value, ValueError)
+        assert f"Length of derived_columns must be 1, found {expected_length}" == str(
+            err.value
+        )
+
+    @pytest.mark.parametrize(
+        "derived_columns, expected_type",
+        [("nan", "str"), (dict(), "dict"), (set(), "set")],
+    )
+    def it_knows_how_to_validate_derived_columns_typeerror(
+        self, derived_columns, expected_type, is_sequence_and_not_str_
+    ):
+        # overriding __abstractmethods__ lets you instantiate an abstract class (PEP 3119)
+        fop.FeatureOperation.__abstractmethods__ = set()
+        feature_operation = fop.FeatureOperation()
+        is_sequence_and_not_str_.return_value = False
+
+        with pytest.raises(TypeError) as err:
+            feature_operation._validate_single_element_derived_columns(derived_columns)
+
+        assert isinstance(err.value, TypeError)
+        assert (
+            f"derived_columns parameter must be a list, found {expected_type}"
+            == str(err.value)
+        )
+
+    # ====================
+    #      FIXTURES
+    # ====================
+
+    @pytest.fixture
+    def is_sequence_and_not_str_(self, request):
+        return function_mock(
+            request, "trousse.feature_operations.is_sequence_and_not_str"
+        )
+
+
 class DescribeFillNa:
     def it_construct_from_args(self, request):
         _init_ = initializer_mock(request, fop.FillNA)
@@ -19,78 +116,18 @@ class DescribeFillNa:
         )
         assert isinstance(fillna, fop.FillNA)
 
-    @pytest.mark.parametrize(
-        "columns, expected_length",
-        [
-            (["nan", "nan"], 2),
-            ([], 0),
-        ],
-    )
-    def but_it_raises_valueerror_with_columns_length_different_than_1(
-        self, columns, expected_length, is_sequence_and_not_str_
-    ):
-        is_sequence_and_not_str_.return_value = True
-
-        with pytest.raises(ValueError) as err:
-            fop.FillNA(columns=columns, value=0)
-
-        assert isinstance(err.value, ValueError)
-        assert f"Length of columns must be 1, found {expected_length}" == str(err.value)
-
-    @pytest.mark.parametrize(
-        "derived_columns, expected_length",
-        [
-            (["nan", "nan"], 2),
-            ([], 0),
-        ],
-    )
-    def but_it_raises_valueerror_with_derived_columns_length_different_than_1(
-        self, derived_columns, expected_length, is_sequence_and_not_str_
-    ):
-        is_sequence_and_not_str_.return_value = True
-
-        with pytest.raises(ValueError) as err:
-            fop.FillNA(columns=["nan"], derived_columns=derived_columns, value=0)
-
-        assert isinstance(err.value, ValueError)
-        assert f"Length of derived_columns must be 1, found {expected_length}" == str(
-            err.value
+    def and_it_validates_its_arguments(self, request):
+        validate_columns_ = method_mock(
+            request, fop.FillNA, "_validate_single_element_columns"
+        )
+        validate_derived_columns_ = method_mock(
+            request, fop.FillNA, "_validate_single_element_derived_columns"
         )
 
-    @pytest.mark.parametrize(
-        "columns, expected_type",
-        [("nan", "str"), (dict(), "dict"), (set(), "set")],
-    )
-    def but_it_raises_typeerror_with_columns_not_list(
-        self, columns, expected_type, is_sequence_and_not_str_
-    ):
-        is_sequence_and_not_str_.return_value = False
+        fillna = fop.FillNA(columns=["nan"], derived_columns=["filled"], value=0)
 
-        with pytest.raises(TypeError) as err:
-            fop.FillNA(columns=columns, value=0)
-
-        assert isinstance(err.value, TypeError)
-        assert f"columns parameter must be a list, found {expected_type}" == str(
-            err.value
-        )
-
-    @pytest.mark.parametrize(
-        "derived_columns, expected_type",
-        [("nan", "str"), (dict(), "dict"), (set(), "set")],
-    )
-    def but_it_raises_typeerror_with_derived_columns_not_list(
-        self, derived_columns, expected_type, is_sequence_and_not_str_
-    ):
-        is_sequence_and_not_str_.side_effect = [True, False]
-
-        with pytest.raises(TypeError) as err:
-            fop.FillNA(columns=["nan"], derived_columns=derived_columns, value=0)
-
-        assert isinstance(err.value, TypeError)
-        assert (
-            f"derived_columns parameter must be a list, found {expected_type}"
-            == str(err.value)
-        )
+        validate_columns_.assert_called_once_with(fillna, ["nan"])
+        validate_derived_columns_.assert_called_once_with(fillna, ["filled"])
 
     @pytest.mark.parametrize(
         "columns, derived_columns, expected_new_columns, expected_inplace",
@@ -159,13 +196,3 @@ class DescribeFillNa:
 
         assert type(equal) == bool
         assert equal == expected_equal
-
-    # ====================
-    #      FIXTURES
-    # ====================
-
-    @pytest.fixture
-    def is_sequence_and_not_str_(self, request):
-        return function_mock(
-            request, "trousse.feature_operations.is_sequence_and_not_str"
-        )
