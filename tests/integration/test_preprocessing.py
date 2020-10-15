@@ -78,8 +78,12 @@ def test_initial_formatting(tmpdir):
         "metadata_samenum_col",
         "metadata_samestr_col",
     ]
-    dataset_to_fix = Dataset(metadata_cols=metadata_columns, data_file=str(rawdata_to_fix_path))
-    expected_dataset = Dataset(metadata_cols=metadata_columns, data_file=str(expectation_data_path))
+    dataset_to_fix = Dataset(
+        metadata_cols=metadata_columns, data_file=str(rawdata_to_fix_path)
+    )
+    expected_dataset = Dataset(
+        metadata_cols=metadata_columns, data_file=str(expectation_data_path)
+    )
 
     fix_tool = RowFix()
     fixed_dataset = fix_tool.fix_common_errors(
@@ -93,9 +97,9 @@ def test_initial_formatting(tmpdir):
     fixed_dataset.df.to_csv(expectations_dir / "fixed.csv")
     expected_dataset.df.to_csv(expectations_dir / "expected.csv")
 
-    import pdb
+    # import pdb
 
-    pdb.set_trace()
+    # pdb.set_trace()
     print(f"Expected:\n{expected_dataset.df.iloc[list_diff_bool,3]}")
     print(f"Expected:\n{fixed_dataset.df.iloc[list_diff_bool,3]}")
 
