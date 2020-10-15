@@ -191,7 +191,39 @@ class FillNA(FeatureOperation):
         raise NotImplementedError
 
 
-class ReplaceStrings(FeatureOperation):
+class ReplaceSubstrings(FeatureOperation):
+    """Replace substrings with strings in ``columns`` (single-element list)
+
+    By default the substrings are replaced in the original columns. To store the result
+    of the replacement in other columns, ``derived_columns`` parameter has to be set with
+    the name of the corresponding column names.
+
+    Parameters
+    ----------
+    columns : List[str]
+        Name of the column with substrings to be replaced. It must be a single-element list.
+    replacement_map : Mapping[str, str]
+        Substrings replacement map. Must have string keys and string values.
+    derived_columns : List[str], optional
+        Name of the column where to store the replacement result. Default is None,
+        meaning that the substrings are replaced in the original column. If not None, it
+        must be a single-element list.
+
+    Returns
+    -------
+    Dataset
+        The new Dataset with substrings replaced.
+
+    Raises
+    ------
+    ValueError
+        If ``columns`` or ``derived_columns`` are not a single-element list.
+    TypeError
+            If ``columns`` is not a list
+    TypeError
+        If ``derived_columns`` is not None and it is not a list
+    """
+
     def __init__(
         self,
         columns: List[str],
@@ -208,7 +240,7 @@ class ReplaceStrings(FeatureOperation):
         self.derived_columns = derived_columns
 
     def _apply(self, dataset: Dataset) -> Dataset:
-        """Apply ReplaceStrings operation on a new Dataset instance and return it.
+        """Apply ReplaceSubstrings operation on a new Dataset instance and return it.
 
         Parameters
         ----------
@@ -222,15 +254,14 @@ class ReplaceStrings(FeatureOperation):
         """
         dataset = copy.deepcopy(dataset)
 
-        if self.derived_columns is not None:
-            replaced_col = dataset.data[self.columns[0]].replace(
-                to_replace=self.replacement_map, inplace=False
+        for pattern, replacement in self.replacement_map.items():
+            replaced_col = dataset.data[self.columns[0]].str.replace(
+                pat=pattern, repl=replacement
             )
-            dataset.data[self.derived_columns[0]] = replaced_col
-        else:
-            dataset.data[self.columns[0]].replace(
-                to_replace=self.replacement_map, inplace=True
-            )
+            if self.derived_columns is not None:
+                dataset.data[self.derived_columns[0]] = replaced_col
+            else:
+                dataset.data[self.columns[0]] = replaced_col
 
         return dataset
 
@@ -263,6 +294,71 @@ class ReplaceStrings(FeatureOperation):
             )
 
     def __eq__(self, other: Any) -> bool:
+        """Return True if ``other`` is a ReplaceSubstrings instance and it has the same fields value.
+
+        Parameters
+        ----------
+        other : Any
+            The instance to compare
+
+        Returns
+        -------
+        bool
+            True if ``other`` is a ReplaceSubstrings instance and it has the same fields
+            value, False otherwise
+        """
+        if not isinstance(other, ReplaceSubstrings):
+            return False
+        if (
+            self.columns == other.columns
+            and self.derived_columns == other.derived_columns
+            and self.replacement_map == other.replacement_map
+        ):
+            return True
+
+        return False
+
+    def is_similar(self, other: FeatureOperation):
+        raise NotImplementedError
+
+
+class ReplaceStrings(ReplaceSubstrings):
+    def __init__(
+        self,
+        columns: List[str],
+        replacement_map: Mapping[str, str],
+        derived_columns: List[str] = None,
+    ):
+        super().__init__(columns, replacement_map, derived_columns)
+
+    def _apply(self, dataset: Dataset) -> Dataset:
+        """Apply ReplaceStrings operation on a new Dataset instance and return it.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to apply the operation on
+
+        Returns
+        -------
+        Dataset
+            New Dataset instance with the operation applied on
+        """
+        dataset = copy.deepcopy(dataset)
+
+        if self.derived_columns is not None:
+            replaced_col = dataset.data[self.columns[0]].replace(
+                to_replace=self.replacement_map, inplace=False
+            )
+            dataset.data[self.derived_columns[0]] = replaced_col
+        else:
+            dataset.data[self.columns[0]].replace(
+                to_replace=self.replacement_map, inplace=True
+            )
+
+        return dataset
+
+    def __eq__(self, other: Any) -> bool:
         """Return True if ``other`` is a ReplaceStrings instance and it has the same fields value.
 
         Parameters
@@ -286,6 +382,3 @@ class ReplaceStrings(FeatureOperation):
             return True
 
         return False
-
-    def is_similar(self, other: FeatureOperation):
-        raise NotImplementedError

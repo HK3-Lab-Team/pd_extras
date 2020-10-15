@@ -231,25 +231,6 @@ class DescribeReplaceStrings:
         validate_replacement_map.assert_called_once_with(replace_strings, {"a": "b"})
 
     @pytest.mark.parametrize(
-        "replacement_map",
-        [([]), ({}), ({"a": 1}), ({1: "a"})],
-    )
-    def it_knows_how_to_validate_replacement_map(self, request, replacement_map):
-        initializer_mock(request, fop.ReplaceStrings)
-        replace_strings = fop.ReplaceStrings(
-            columns=["col0"], derived_columns=["col1"], replacement_map=replacement_map
-        )
-
-        with pytest.raises(TypeError) as err:
-            replace_strings._validate_replacement_map(replacement_map)
-
-        assert isinstance(err.value, TypeError)
-        assert (
-            "replacement_map must be a non-empty dict mapping string keys to string values"
-            == str(err.value)
-        )
-
-    @pytest.mark.parametrize(
         "columns, derived_columns, expected_new_columns, expected_inplace",
         [
             (["exam_num_col_0"], ["col1"], ["col1"], False),
@@ -367,6 +348,186 @@ class DescribeReplaceStrings:
     )
     def it_knows_if_equal(self, other, expected_equal):
         feat_op = fop.ReplaceStrings(
+            columns=["exam_num_col_0"],
+            derived_columns=["replaced_exam_num_col_0"],
+            replacement_map={"a": "b", "c": "d"},
+        )
+
+        equal = feat_op == other
+
+        assert type(equal) == bool
+        assert equal == expected_equal
+
+
+class DescribeReplaceSubstrings:
+    def it_construct_from_args(self, request):
+        _init_ = initializer_mock(request, fop.ReplaceSubstrings)
+
+        replace_substrings = fop.ReplaceSubstrings(
+            columns=["col0"], derived_columns=["col1"], replacement_map={"a": "b"}
+        )
+
+        _init_.assert_called_once_with(
+            ANY, columns=["col0"], derived_columns=["col1"], replacement_map={"a": "b"}
+        )
+        assert isinstance(replace_substrings, fop.ReplaceSubstrings)
+
+    def and_it_validates_its_arguments(self, request):
+        validate_columns_ = method_mock(
+            request, fop.ReplaceSubstrings, "_validate_single_element_columns"
+        )
+        validate_derived_columns_ = method_mock(
+            request, fop.ReplaceSubstrings, "_validate_single_element_derived_columns"
+        )
+        validate_replacement_map = method_mock(
+            request, fop.ReplaceSubstrings, "_validate_replacement_map"
+        )
+
+        replace_strings = fop.ReplaceSubstrings(
+            columns=["col0"], derived_columns=["col1"], replacement_map={"a": "b"}
+        )
+
+        validate_columns_.assert_called_once_with(replace_strings, ["col0"])
+        validate_derived_columns_.assert_called_once_with(replace_strings, ["col1"])
+        validate_replacement_map.assert_called_once_with(replace_strings, {"a": "b"})
+
+    @pytest.mark.parametrize(
+        "replacement_map",
+        [([]), ({}), ({"a": 1}), ({1: "a"})],
+    )
+    def it_knows_how_to_validate_replacement_map(self, request, replacement_map):
+        initializer_mock(request, fop.ReplaceSubstrings)
+        replace_strings = fop.ReplaceSubstrings(
+            columns=["col0"], derived_columns=["col1"], replacement_map=replacement_map
+        )
+
+        with pytest.raises(TypeError) as err:
+            replace_strings._validate_replacement_map(replacement_map)
+
+        assert isinstance(err.value, TypeError)
+        assert (
+            "replacement_map must be a non-empty dict mapping string keys to string values"
+            == str(err.value)
+        )
+
+    @pytest.mark.parametrize(
+        "columns, derived_columns, expected_new_columns, expected_inplace",
+        [
+            (["exam_str_col_0"], ["col1"], ["col1"], False),
+            (["exam_str_col_0"], None, [], True),
+        ],
+    )
+    def it_can_apply_replace_strings(
+        self, request, columns, derived_columns, expected_new_columns, expected_inplace
+    ):
+        df = DataFrameMock.df_generic(sample_size=100)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = df
+        dataset = Dataset(data_file="fake/path0")
+        pd_str_replace_ = function_mock(request, "pandas.Series.str.replace")
+        pd_str_replace_.return_value = pd.Series([0] * 100)
+        replace_substrings = fop.ReplaceSubstrings(
+            columns=columns, derived_columns=derived_columns, replacement_map={"a": "b"}
+        )
+
+        replaced_dataset = replace_substrings._apply(dataset)
+
+        assert replaced_dataset is not None
+        assert replaced_dataset is not dataset
+        assert isinstance(replaced_dataset, Dataset)
+        for col in expected_new_columns:
+            assert col in replaced_dataset.data.columns
+        get_df_from_csv_.assert_called_once_with("fake/path0")
+        assert len(pd_str_replace_.call_args_list) == len(columns)
+        pd.testing.assert_series_equal(
+            pd_str_replace_.call_args_list[0][0][0][:], df[columns[0]]
+        )
+        assert pd_str_replace_.call_args_list[0][1] == {
+            "pat": "a",
+            "repl": "b",
+        }
+
+    def it_can_replace_with_template_call(self, request):
+        _apply_ = method_mock(request, fop.ReplaceSubstrings, "_apply")
+        track_history_ = method_mock(request, Dataset, "track_history")
+        df = DataFrameMock.df_generic(sample_size=100)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = df
+        dataset_in = Dataset(data_file="fake/path0")
+        dataset_out = Dataset(data_file="fake/path0")
+        _apply_.return_value = dataset_out
+        replace_substrings = fop.ReplaceSubstrings(
+            columns=["exam_num_col_0"],
+            derived_columns=["exam_str_col_0"],
+            replacement_map={"a": "b"},
+        )
+
+        replaced_dataset = replace_substrings(dataset_in)
+
+        _apply_.assert_called_once_with(replace_substrings, dataset_in)
+        track_history_.assert_called_once_with(replaced_dataset, replace_substrings)
+        assert replaced_dataset is dataset_out
+
+    @pytest.mark.parametrize(
+        "other, expected_equal",
+        [
+            (
+                fop.ReplaceSubstrings(
+                    columns=["exam_num_col_0"],
+                    derived_columns=["replaced_exam_num_col_0"],
+                    replacement_map={"a": "b", "c": "d"},
+                ),
+                True,
+            ),
+            (
+                fop.ReplaceSubstrings(
+                    columns=["exam_num_col_0"],
+                    derived_columns=["replaced_exam_num_col_0"],
+                    replacement_map={"c": "d", "a": "b"},
+                ),
+                True,
+            ),
+            (
+                fop.ReplaceSubstrings(
+                    columns=["exam_num_col_1"],
+                    derived_columns=["replaced_exam_num_col_0"],
+                    replacement_map={"a": "b", "c": "d"},
+                ),
+                False,
+            ),
+            (
+                fop.ReplaceSubstrings(
+                    columns=["exam_num_col_0"],
+                    derived_columns=["replaced_exam_num_col_1"],
+                    replacement_map={"a": "b", "c": "d"},
+                ),
+                False,
+            ),
+            (
+                fop.ReplaceSubstrings(
+                    columns=["exam_num_col_0"],
+                    derived_columns=["replaced_exam_num_col_0"],
+                    replacement_map={
+                        "a": "b",
+                    },
+                ),
+                False,
+            ),
+            (
+                fop.ReplaceSubstrings(
+                    columns=["exam_num_col_0"],
+                    derived_columns=["replaced_exam_num_col_0"],
+                    replacement_map={
+                        "c": "b",
+                    },
+                ),
+                False,
+            ),
+            (dict(), False),
+        ],
+    )
+    def it_knows_if_equal(self, other, expected_equal):
+        feat_op = fop.ReplaceSubstrings(
             columns=["exam_num_col_0"],
             derived_columns=["replaced_exam_num_col_0"],
             replacement_map={"a": "b", "c": "d"},
