@@ -323,6 +323,38 @@ class ReplaceSubstrings(FeatureOperation):
 
 
 class ReplaceStrings(ReplaceSubstrings):
+    """Replace strings with strings in ``columns`` (single-element list)
+
+    By default the strings are replaced in the original columns. To store the result
+    of the replacement in other columns, ``derived_columns`` parameter has to be set with
+    the name of the corresponding column names.
+
+    Parameters
+    ----------
+    columns : List[str]
+        Name of the column with strings to be replaced. It must be a single-element list.
+    replacement_map : Mapping[str, str]
+        Strings replacement map. Must have string keys and string values.
+    derived_columns : List[str], optional
+        Name of the column where to store the replacement result. Default is None,
+        meaning that the strings are replaced in the original column. If not None, it
+        must be a single-element list.
+
+    Returns
+    -------
+    Dataset
+        The new Dataset with strings replaced.
+
+    Raises
+    ------
+    ValueError
+        If ``columns`` or ``derived_columns`` are not a single-element list.
+    TypeError
+            If ``columns`` is not a list
+    TypeError
+        If ``derived_columns`` is not None and it is not a list
+    """
+
     def __init__(
         self,
         columns: List[str],
