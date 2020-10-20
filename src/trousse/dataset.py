@@ -429,7 +429,7 @@ class Dataset:
             "time": other_cols,
             "period": other_cols,
             "mixed": mixed_type_cols,
-            "interval": numerical_cols,
+            "interval": str_cols,
             "category": categorical_cols,
             "categorical": categorical_cols,
         }
