@@ -146,34 +146,30 @@ class _DfConvertToMixedType:
         self._maybe_update_col_dtype(numeric_col, col_serie)
         self._update_converted_values(numeric_col)
 
-    def _convert_to_boolean_mixed_types(self, df: pd.DataFrame) -> None:
+    def _convert_to_boolean_mixed_types(self, col_serie: pd.Series) -> None:
         """
         Convert 'object'-typed values to boolean when possible.
 
-        This static method analyzes the column ``col`` in pandas DataFrame ``df``
-        and maps the string values "True" and "False" (when present) into the
+        This static method analyzes the column ``col_serie`` and maps the
+        string values "True" and "False" (when present) into the
         related boolean values True and False respectively.
         The result is added to the other conversion results.
 
         Parameters
         ----------
-        df : pd.DataFrame
-            DataFrame containing the column that will be analyzed.
+        col_serie : pd.Series
+            Pandas Series containing the column that will be analyzed.
         """
         bool_map = {"True": True, "False": False}
-        col = self.column
-        if df[col].dtype != np.dtype("O"):
-            # No conversion can be performed if the dtype is not 'object'
-            return df
-        else:
-            converted_df = df.replace({col: bool_map})
+        # Conversion can be performed only if the dtype is not 'object'
+        if col_serie.dtype == np.dtype("O"):
+            converted_col = col_serie.replace(to_replace=bool_map, inplace=False)
             # Set to NaN all the values that were not converted and use the new
             # column as argument for "_update_converted_values" method
-            non_bool_ids = np.where(np.equal(converted_df[col], df[col]))[0]
-            converted_df[col][non_bool_ids] = pd.NA
-            self._maybe_update_col_dtype(converted_df[col], df[col])
-            self._update_converted_values(converted_df[col])
-            return converted_df
+            non_bool_ids = np.where(np.equal(converted_col, col_serie))[0]
+            converted_col[non_bool_ids] = pd.NA
+            self._maybe_update_col_dtype(converted_col, col_serie)
+            self._update_converted_values(converted_col)
 
     def _convert_to_datetime_mixed_types(self, col_serie: pd.Series) -> None:
         """
@@ -248,7 +244,7 @@ class _DfConvertToMixedType:
         # Convert to numeric the values that are compatible.
         self._convert_to_numeric_mixed_types(col_to_convert)
         # Convert to boolean the values that are compatible
-        self._convert_to_boolean_mixed_types(df_to_convert)
+        self._convert_to_boolean_mixed_types(col_to_convert)
         # Convert to datetime the values that are compatible
         self._convert_to_datetime_mixed_types(col_to_convert)
 
