@@ -47,6 +47,7 @@ class _DfConvertToMixedType:
         self.column = column
         self.derived_column = derived_column
         self._converted_values = None
+        self._col_dtype = None
 
     def _update_converted_values(self, new_converted_values: pd.Series) -> None:
         """
@@ -70,7 +71,63 @@ class _DfConvertToMixedType:
             value_ids_to_insert
         ]
 
-    def _convert_to_numeric_mixed_types(self, col_serie: pd.Series):
+    @staticmethod
+    def _is_column_fully_convertible(
+        converted_col: pd.Series, original_col: pd.Series
+    ) -> bool:
+        """
+        Check if the analyzed column has values with the same type only
+
+        This method checks whether the converted column ``converted_col`` has the
+        same NaN count as ``original_col`` because that would mean that the
+        conversion has been applied to each value and the column can be fully
+        converted to that type.
+
+        Parameters
+        ----------
+        converted_col : pd.Series
+            Pandas Series containing the column values after conversion
+        original_col : pd.Series
+            Pandas Series containing the column values before conversion
+
+        Returns
+        -------
+        bool
+            True if ``converted_col`` has the same NaN count as ``original_col``,
+            False otherwise.
+        """
+        return (converted_col.isna() == original_col.isna()).all()
+
+    def _maybe_update_col_dtype(
+        self, converted_col: pd.Series, original_col: pd.Series
+    ) -> None:
+        """
+        Check if the analyzed column has values with the same type only
+
+        This method checks whether the converted column ``converted_col`` has the
+        same NaN count as ``original_col`` because that would mean that the
+        conversion has been applied to each value and the column can be fully
+        converted to that type.
+
+        Parameters
+        ----------
+        converted_col : pd.Series
+            Pandas Series containing the column values after conversion
+        original_col : pd.Series
+            Pandas Series containing the column values before conversion
+        """
+        is_column_fully_convertible = self._is_column_fully_convertible(
+            converted_col, original_col
+        )
+
+        if is_column_fully_convertible and self._col_dtype is None:
+            if converted_col.dtype == "int":
+                # Change to Int32 because 'int' dtype is not nullable
+                self._col_dtype = "Int32"
+            else:
+                self._col_dtype = converted_col.dtype
+
+    def _convert_to_numeric_mixed_types(self, col_serie: pd.Series) -> None:
         """
         Convert 'object'-typed values to numerical when possible.
 
@@ -86,9 +143,10 @@ class _DfConvertToMixedType:
             Series containing the values that will be analyzed
         """
         numeric_col = pd.to_numeric(col_serie, errors="coerce")
+        self._maybe_update_col_dtype(numeric_col, col_serie)
         self._update_converted_values(numeric_col)
 
-    def _convert_to_boolean_mixed_types(self, df: pd.DataFrame):
+    def _convert_to_boolean_mixed_types(self, df: pd.DataFrame) -> None:
         """
         Convert 'object'-typed values to boolean when possible.
 
@@ -113,10 +171,11 @@ class _DfConvertToMixedType:
             # column as argument for "_update_converted_values" method
             non_bool_ids = np.where(np.equal(converted_df[col], df[col]))[0]
             converted_df[col][non_bool_ids] = pd.NA
+            self._maybe_update_col_dtype(converted_df[col], df[col])
             self._update_converted_values(converted_df[col])
             return converted_df
 
-    def _convert_to_datetime_mixed_types(self, col_serie: pd.Series):
+    def _convert_to_datetime_mixed_types(self, col_serie: pd.Series) -> None:
         """
         Convert 'object'-typed values to datetime when possible.
 
@@ -133,7 +192,33 @@ class _DfConvertToMixedType:
             modified inplace.
         """
         datetime_col = pd.to_datetime(col_serie, errors="coerce")
+        self._maybe_update_col_dtype(datetime_col, col_serie)
         self._update_converted_values(datetime_col)
+
+    def _set_converted_col_dtype(self, col_serie: pd.Series) -> pd.Series:
+        """
+        Set the new dtype to ``col_serie`` after conversion
+
+        This method sets the new col_dtype to ``col_serie`` column
+        TODO: Complete docs
+
+        Parameters
+        ----------
+        col_serie : pd.Series
+            Series containing the values that will be analyzed. It will not be
+            modified inplace.
+        """
+        if self._col_dtype is None:
+            # If the _col_dtype is not unique and consistent, convert the column
+            # to "object" dtype, otherwise it may have problems with mixed types or NaN
+            col_with_dtype = col_serie.astype("object")
+        else:
+            # If the _col_dtype is unique and consistent, fill NaN with
+            # None that will be converted to appropriate value with "astype" call
+            col_serie[col_serie.isna()] = None
+            col_with_dtype = col_serie.astype(self._col_dtype)
+
+        return col_with_dtype
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -155,7 +240,12 @@ class _DfConvertToMixedType:
         self._converted_values = pd.Series(
             [pd.NA] * len(col_to_convert), dtype="object"
         )
-        # Convert to numeric the values that are compatible
+        # These checks must be in precise order where the first check is the most
+        # strict. For example the first check can be for numeric values because
+        # the numbers must not be interpreted and converted to datetime (this
+        # is avoided by caching the  _converted_values list attribute).
+
+        # Convert to numeric the values that are compatible.
         self._convert_to_numeric_mixed_types(col_to_convert)
         # Convert to boolean the values that are compatible
         self._convert_to_boolean_mixed_types(df_to_convert)
@@ -165,10 +255,10 @@ class _DfConvertToMixedType:
         # Replace the original values with the converted ones
         converted_ids = np.where(self._converted_values.notna())[0]
         col_to_convert[converted_ids] = self._converted_values[converted_ids]
-        # Convert the column to "object" dtype, otherwise it may have problems with
-        # mixed types or NaN
-        converted_col = col_to_convert.astype("object")
 
+        converted_col = self._set_converted_col_dtype(col_to_convert)
+
+        # Write the converted column into the DataFrame
         if self.derived_column is not None:
             df_to_convert.loc[:, self.derived_column] = converted_col
         else:
