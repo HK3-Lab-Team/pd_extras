@@ -4,7 +4,6 @@ import dbm
 import logging
 import os
 import shelve
-import typing
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import DefaultDict, Dict, List, Set, Tuple, Union
@@ -14,12 +13,10 @@ import pandas as pd
 from joblib import Parallel, delayed
 
 from .exceptions import MultipleObjectsInFileError, NotShelveFileError
+from .feature_operations import FeatureOperation
 from .operations_list import OperationsList
 from .settings import CATEG_COL_THRESHOLD
 from .util import lazy_property
-
-if typing.TYPE_CHECKING:  # pragma: no cover
-    from .feature_operations import FeatureOperation
 
 logger = logging.getLogger(__name__)
 

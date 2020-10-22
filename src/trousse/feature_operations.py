@@ -1,10 +1,12 @@
 import copy
-from abc import ABC
-from abc import abstractmethod
+import typing
+from abc import ABC, abstractmethod
 from typing import Any, List, Mapping
 
-from .dataset import Dataset
 from .util import is_sequence_and_not_str
+
+if typing.TYPE_CHECKING:
+    from .dataset import Dataset
 
 
 class FeatureOperation(ABC):
@@ -13,7 +15,7 @@ class FeatureOperation(ABC):
     columns: List[str]
     derived_columns: List[str] = None
 
-    def __call__(self, dataset: Dataset) -> Dataset:
+    def __call__(self, dataset: "Dataset") -> "Dataset":
         """Apply the operation on a new instance of Dataset and track it in the history
 
         Parameters
@@ -81,7 +83,7 @@ class FeatureOperation(ABC):
                 )
 
     @abstractmethod
-    def _apply(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: "Dataset") -> "Dataset":
         raise NotImplementedError
 
     @abstractmethod
@@ -139,7 +141,7 @@ class FillNA(FeatureOperation):
         self.derived_columns = derived_columns
         self.value = value
 
-    def _apply(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: "Dataset") -> "Dataset":
         """Apply FillNA operation on a new Dataset instance and return it.
 
         Parameters
