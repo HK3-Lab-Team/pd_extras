@@ -532,11 +532,12 @@ class Dataset:
 
         This static method analyzes the DataFrame ``df`` columns that have
         dtype='object'. The columns that have numeric and string values are interpreted
-        and casted by Pandas as columns with dtype='object' and all the numeric
-        or boolean values are transformed into string typed values (e.g. 2 -> '2').
+        and casted by Pandas as columns with dtype='object' and all the numeric,
+        boolean or datetime values are transformed into string typed values
+        (e.g. 2 -> '2').
         This would disturb the Dataset column type inference, so this method restore
-        numeric and boolean values to the appropriate types for columns with
-        dtype='object'.
+        numeric, boolean and datetime values to the appropriate types for columns
+        with dtype='object'.
 
         Parameters
         ----------
