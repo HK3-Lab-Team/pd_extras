@@ -8,12 +8,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import DefaultDict, Dict, List, Set, Tuple, Union
 
-import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
+from .convert_to_mixed_type import _DfConvertToMixedType
 from .exceptions import MultipleObjectsInFileError, NotShelveFileError
-from .feature_operations import FeatureOperation
+from .feature_operations import ConvertToMixedType, FeatureOperation
 from .operations_list import OperationsList
 from .settings import CATEG_COL_THRESHOLD
 from .util import lazy_property
@@ -95,103 +95,6 @@ def _find_single_column_type(df_col: pd.Series) -> Dict[str, str]:
             return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "other_col"}
     else:
         return {_COL_NAME_COLUMN: col, _COL_TYPE_COLUMN: "mixed_type_col"}
-
-
-def _convert_to_numeric_mixed_types(col_serie: pd.Series):
-    """
-    Convert 'object'-typed values to numerical when possible.
-
-    This static method analyzes the pandas Series ``col_serie`` looking
-    values that can be interpreted as numbers (even if they are string-typed)
-    (e.g. '2' -> 2). The found numbers are converted to the appropriate
-    numeric type.
-
-    Parameters
-    ----------
-    col_serie : pd.Series
-        Series containing the values that will be analyzed. It will not be
-        modified inplace.
-
-    Returns
-    -------
-    pd.Series
-        New pandas Series where numeric values have been converted to the
-        appropriate numeric type.
-    """
-    numeric_col = col_serie.copy()
-    numeric_col = pd.to_numeric(numeric_col, errors="coerce")
-    numeric_map = numeric_col.notna()
-    numeric_ids = np.where(numeric_map)
-    non_numeric_ids = np.where(np.logical_not(numeric_map))
-    mixed_list = (
-        numeric_col.loc[numeric_ids].tolist() + col_serie.loc[non_numeric_ids].tolist()
-    )
-    return pd.Series(mixed_list)
-
-
-def _convert_to_boolean_mixed_types(df: pd.DataFrame, col: str):
-    """
-    Convert 'object'-typed values to boolean when possible.
-
-    This static method analyzes the column ``col`` in pandas DataFrame ``df``
-    and maps the string values "True" and "False" (when present) into the
-    related boolean values True and False respectively.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame containing the column that will be analyzed.
-    col : pd.Series
-        Name of the column in ``df`` that will be analyzed. It will not be
-        modified inplace.
-
-    Returns
-    -------
-    pd.DataFrame
-        New pandas DataFrame where boolean values have been converted to the
-        appropriate type.
-
-    """
-    bool_map = {"True": True, "False": False}
-    if df[col].dtype != np.dtype("O"):
-        # No conversion can be performed if the dtype is not 'object'
-        return df
-    else:
-        converted_df = df.replace({col: bool_map})
-        return converted_df
-
-
-def _convert_to_datetime_mixed_types(col_serie: pd.Series):
-    """
-    Convert 'object'-typed values to datetime when possible.
-
-    This static method analyzes the pandas Series ``col_serie`` looking
-    values that can be interpreted as datetime values (even if they are string-typed)
-    (e.g. '6/12/20' -> 06/12/2020). The found numbers are converted to datetime
-    values.
-
-    Parameters
-    ----------
-    col_serie : pd.Series
-        Series containing the values that will be analyzed. It will not be
-        modified inplace.
-
-    Returns
-    -------
-    pd.Series
-        New pandas Series where datetime values have been converted to
-        datetime type.
-    """
-    datetime_col = col_serie.copy()
-    datetime_col = pd.to_datetime(datetime_col, errors="coerce")
-    datetime_map = datetime_col.notna()
-    datetime_ids = np.where(datetime_map)
-    non_datetime_ids = np.where(np.logical_not(datetime_map))
-    mixed_list = (
-        datetime_col.loc[datetime_ids].tolist()
-        + col_serie.loc[non_datetime_ids].tolist()
-    )
-    return pd.Series(mixed_list)
 
 
 @dataclass
@@ -623,8 +526,7 @@ class Dataset:
     # =====================
     # =    METHODS        =
     # =====================
-    @staticmethod
-    def _data_to_mixed_types(df: pd.DataFrame):
+    def _data_to_mixed_types(self, df: pd.DataFrame):
         """
         Transform 'object'-typed column values to appropriate types.
 
@@ -649,15 +551,12 @@ class Dataset:
             types for columns with dtype='object'.
         """
         mixed_df = df.copy()
-
-        str_cols = mixed_df.select_dtypes(include="object").columns
+        str_cols = df.select_dtypes(include="object").columns
         for col in str_cols:
-            # Convert to numeric the values that are compatible
-            mixed_df.loc[:, col] = _convert_to_numeric_mixed_types(mixed_df[col])
-            # Convert to boolean the values that are compatible
-            mixed_df = _convert_to_boolean_mixed_types(mixed_df, col)
-            # Convert to datetime the values that are compatible
-            mixed_df.loc[:, col] = _convert_to_datetime_mixed_types(mixed_df[col])
+            mixedtype_converter = _DfConvertToMixedType(column=col)
+            mixed_df = mixedtype_converter(df)
+
+            self.track_history(ConvertToMixedType(columns=[col]))
 
         return mixed_df
 
