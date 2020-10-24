@@ -3,7 +3,7 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, List, Mapping
 
-from .convert_to_mixed_type import _DfConvertToMixedType
+from .convert_to_mixed_type import _ConvertDfToMixedType
 from .util import is_sequence_and_not_str
 
 if typing.TYPE_CHECKING:
@@ -427,8 +427,11 @@ class ConvertToMixedType(FeatureOperation):
     consistent with a single type are stored with dtype = "object" and every value
     is converted to "string".
     This FeatureOperation subclass convert the string values to numeric, boolean
-    or datetime values where possible.
-    The transformed column will still have dtype="object" but the inferred type will
+    or datetime values where possible. When each value can consistently be
+    interpreted with a single type, the column will be converted to that dtype
+    (and NaNs will be converted appropriately).
+    On the other hand, if column values are interpreted with multiple types,
+    the column will maintain the dtype="object" but the inferred type will
     be "mixed" which allows a correct column categorization by Dataset class.
     By default the converted column overwrites the related original column.
     To store the result of conversion in another column, ``derived_columns``
@@ -502,7 +505,8 @@ class ConvertToMixedType(FeatureOperation):
             return False
 
     def _apply(self, dataset: "Dataset") -> "Dataset":
-        """Apply ReplaceStrings operation on a new Dataset instance and return it.
+        """
+        Apply ConvertToMixedType operation on a new Dataset instance and return it.
 
         Parameters
         ----------
@@ -516,7 +520,7 @@ class ConvertToMixedType(FeatureOperation):
         """
         dataset = copy.deepcopy(dataset)
 
-        mixedtype_converter = _DfConvertToMixedType(
+        mixedtype_converter = _ConvertDfToMixedType(
             column=self.columns[0], derived_column=self.derived_columns[0]
         )
         dataset.data = mixedtype_converter(dataset.data)

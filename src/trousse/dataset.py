@@ -11,9 +11,9 @@ from typing import DefaultDict, Dict, List, Set, Tuple, Union
 import pandas as pd
 from joblib import Parallel, delayed
 
-from .convert_to_mixed_type import _DfConvertToMixedType
+from .convert_to_mixed_type import _ConvertDfToMixedType
 from .exceptions import MultipleObjectsInFileError, NotShelveFileError
-from .feature_operations import ConvertToMixedType, FeatureOperation
+from .feature_operations import FeatureOperation
 from .operations_list import OperationsList
 from .settings import CATEG_COL_THRESHOLD
 from .util import lazy_property
@@ -555,7 +555,7 @@ class Dataset:
         """
         str_cols = df.select_dtypes(include="object").columns
         for col in str_cols:
-            mixedtype_converter = _DfConvertToMixedType(column=col)
+            mixedtype_converter = _ConvertDfToMixedType(column=col)
             df = mixedtype_converter(df)
 
         return df

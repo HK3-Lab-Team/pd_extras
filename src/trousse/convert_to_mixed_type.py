@@ -2,15 +2,15 @@ import numpy as np
 import pandas as pd
 
 
-class _DfConvertToMixedType:
+class _ConvertDfToMixedType:
     """
     Convert values from "object"-typed ``column`` column to appropriate format.
 
     When pandas package reads from CSV file, the columns that are not completely
     consistent with a single type are stored with dtype = "object" and every value
     is converted to "string".
-    This FeatureOperation subclass convert the string values to numeric, boolean
-    or datetime values where possible.
+    This class converts the string values of a column in a pandas DataFrame
+    to numeric, boolean or datetime values where possible.
     The transformed column will still have dtype="object" but the inferred type will
     be "mixed" which allows a correct column categorization by Dataset class.
     By default the converted column overwrites the related original column.
@@ -193,16 +193,27 @@ class _DfConvertToMixedType:
 
     def _set_converted_col_dtype(self, col_serie: pd.Series) -> pd.Series:
         """
-        Set the new dtype to ``col_serie`` after conversion
+        Set the new dtype to ``col_serie`` after conversion.
 
-        This method sets the new col_dtype to ``col_serie`` column
-        TODO: Complete docs
+        This method updates, if possible, the ``col_serie`` column dtype.
+        Particularly, if each value of the column has been consistently interpreted
+        with a single type, the column will be converted to that dtype
+        (and NaNs will be converted coherently with the new dtype).
+        On the other hand, if column values are interpreted with multiple types,
+        the column will maintain the dtype="object" (and the column values will
+        have multiple types).
 
         Parameters
         ----------
         col_serie : pd.Series
             Series containing the values that will be analyzed. It will not be
             modified inplace.
+
+        Returns
+        -------
+        pd.Series
+            Column with the same values as ``col_serie`` and the dtype set
+            according to the value types.
         """
         if self._col_dtype is None:
             # If the _col_dtype is not unique and consistent, convert the column
