@@ -242,7 +242,7 @@ class ReplaceSubstrings(FeatureOperation):
         self.replacement_map = replacement_map
         self.derived_columns = derived_columns
 
-    def _apply(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: "Dataset") -> "Dataset":
         """Apply ReplaceSubstrings operation on a new Dataset instance and return it.
 
         Parameters
@@ -366,7 +366,7 @@ class ReplaceStrings(ReplaceSubstrings):
     ):
         super().__init__(columns, replacement_map, derived_columns)
 
-    def _apply(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: "Dataset") -> "Dataset":
         """Apply ReplaceStrings operation on a new Dataset instance and return it.
 
         Parameters
