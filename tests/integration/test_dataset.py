@@ -1,11 +1,11 @@
 import logging
+import os
 import shelve
 from pathlib import Path
 from typing import Tuple
 
 import pandas as pd
 import pytest
-
 from trousse import feature_operations as fop
 from trousse.dataset import (
     Dataset,
@@ -154,118 +154,118 @@ class Describe_Dataset:
         assert categ_cols == expected_categ_cols
 
     feature_cols_expected_col_list_type_tuples_list = [
-            (
-                {"metadata_num_col"},
-                _ColumnListByType(
-                    mixed_type_cols=set(),
-                    constant_cols=set(),
-                    numerical_cols={"metadata_num_col"},
-                    med_exam_col_list={"metadata_num_col"},
-                    str_cols=set(),
-                    str_categorical_cols=set(),
-                    num_categorical_cols=set(),
-                    other_cols=set(),
-                    bool_cols=set(),
-                ),
+        (
+            {"metadata_num_col"},
+            _ColumnListByType(
+                mixed_type_cols=set(),
+                constant_cols=set(),
+                numerical_cols={"metadata_num_col"},
+                med_exam_col_list={"metadata_num_col"},
+                str_cols=set(),
+                str_categorical_cols=set(),
+                num_categorical_cols=set(),
+                other_cols=set(),
+                bool_cols=set(),
             ),
-            (
-                {
-                    "metadata_num_col",
-                    "mixed_type_col",
-                    "same_col",
-                    "float_col",
-                    "int_col",
-                    "bool_col",
-                    "interval_col",
+        ),
+        (
+            {
+                "metadata_num_col",
+                "mixed_type_col",
+                "same_col",
+                "float_col",
+                "int_col",
+                "bool_col",
+                "interval_col",
                 "many_nan_num_col",
                 "only_nan_col",
-                    "string_col",
+                "string_col",
+                "int_categorical_col",
+                "int_forced_categorical_col",
+                "str_categorical_col",
+                "str_forced_categorical_col",
+                "datetime_col",
+            },
+            _ColumnListByType(
+                mixed_type_cols={"mixed_type_col"},
+                constant_cols={"same_col", "only_nan_col"},
+                numerical_cols={
+                    "int_col",
+                    "float_col",
                     "int_categorical_col",
                     "int_forced_categorical_col",
+                    "bool_col",
+                    "many_nan_num_col",
+                    "metadata_num_col",
+                },
+                med_exam_col_list={
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
+                    "int_col",
+                    "float_col",
+                    "bool_col",
+                    "many_nan_num_col",
+                    "metadata_num_col",
+                },
+                str_cols={
+                    "string_col",
                     "str_categorical_col",
                     "str_forced_categorical_col",
-                    "datetime_col",
+                    "interval_col",
                 },
-                _ColumnListByType(
-                    mixed_type_cols={"mixed_type_col"},
-                constant_cols={"same_col", "only_nan_col"},
-                    numerical_cols={
-                        "int_col",
-                        "float_col",
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "bool_col",
+                str_categorical_cols={
+                    "str_categorical_col",
+                    "str_forced_categorical_col",
+                },
+                num_categorical_cols={
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
                     "many_nan_num_col",
-                        "metadata_num_col",
-                    },
-                    med_exam_col_list={
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "int_col",
-                        "float_col",
-                        "bool_col",
-                    "many_nan_num_col",
-                        "metadata_num_col",
-                    },
-                    str_cols={
-                        "string_col",
-                        "str_categorical_col",
-                        "str_forced_categorical_col",
-                    "interval_col",
-                    },
-                    str_categorical_cols={
-                        "str_categorical_col",
-                        "str_forced_categorical_col",
-                    },
-                    num_categorical_cols={
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                    "many_nan_num_col",
-                    },
-                    other_cols={"datetime_col"},
-                    bool_cols={"bool_col"},
-                ),
+                },
+                other_cols={"datetime_col"},
+                bool_cols={"bool_col"},
             ),
-            (
-                None,
-                _ColumnListByType(
-                    mixed_type_cols={"mixed_type_col"},
+        ),
+        (
+            None,
+            _ColumnListByType(
+                mixed_type_cols={"mixed_type_col"},
                 constant_cols={"same_col", "only_nan_col"},
-                    numerical_cols={
-                        "float_col",
-                        "int_col",
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "bool_col",
+                numerical_cols={
+                    "float_col",
+                    "int_col",
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
+                    "bool_col",
                     "many_nan_num_col",
-                    },
-                    med_exam_col_list={
-                        "float_col",
-                        "int_col",
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "bool_col",
+                },
+                med_exam_col_list={
+                    "float_col",
+                    "int_col",
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
+                    "bool_col",
                     "many_nan_num_col",
-                    },
-                    str_cols={
-                        "string_col",
-                        "str_categorical_col",
-                        "str_forced_categorical_col",
+                },
+                str_cols={
+                    "string_col",
+                    "str_categorical_col",
+                    "str_forced_categorical_col",
                     "interval_col",
-                    },
-                    str_categorical_cols={
-                        "str_categorical_col",
-                        "str_forced_categorical_col",
-                    },
-                    num_categorical_cols={
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
+                },
+                str_categorical_cols={
+                    "str_categorical_col",
+                    "str_forced_categorical_col",
+                },
+                num_categorical_cols={
+                    "int_categorical_col",
+                    "int_forced_categorical_col",
                     "many_nan_num_col",
-                    },
-                    other_cols={"datetime_col"},
-                    bool_cols={"bool_col"},
-                ),
+                },
+                other_cols={"datetime_col"},
+                bool_cols={"bool_col"},
             ),
+        ),
     ]
 
     @pytest.mark.parametrize(
@@ -276,6 +276,28 @@ class Describe_Dataset:
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
         dataset = Dataset(
             df_object=df_multi_type,
+            metadata_cols=("metadata_num_col",),
+            feature_cols=feature_cols,
+        )
+
+        col_list_by_type = dataset._columns_type
+
+        assert isinstance(col_list_by_type, _ColumnListByType)
+        assert col_list_by_type == expected_column_list_type
+
+    @pytest.mark.parametrize(
+        "feature_cols, expected_column_list_type",
+        feature_cols_expected_col_list_type_tuples_list,
+    )
+    def test_column_list_by_type_from_csv(
+        self, tmpdir, feature_cols, expected_column_list_type
+    ):
+        df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
+        df_multi_path = os.path.join(tmpdir, "df_multi_type.csv")
+        df_multi_type.to_csv(df_multi_path, index=False)
+        df_from_csv = pd.read_csv(df_multi_path)
+        dataset = Dataset(
+            df_object=df_from_csv,
             metadata_cols=("metadata_num_col",),
             feature_cols=feature_cols,
         )
@@ -504,11 +526,11 @@ class Describe_Dataset:
         dataset = Dataset(df_object=df)
         expected_str = (
             "Columns with:\n\t1.\tMixed types: "
-            "\t\t1\n\t2.\tNumerical types (float/int): \t8\n\t3.\tString types: "
-            "\t\t3\n\t4.\tBool types: \t\t1\n\t5.\tOther types: \t\t1\nAmong these "
+            "\t\t1\n\t2.\tNumerical types (float/int): \t7\n\t3.\tString types: "
+            "\t\t4\n\t4.\tBool types: \t\t1\n\t5.\tOther types: \t\t1\nAmong these "
             "categories:\n\t1.\tString categorical columns: 2\n\t2.\tNumeric categorical"
-            " columns: 3\n\t3.\tMedical Exam columns (numerical, no metadata): 8\n\t4."
-            "\tOne repeated value: 1\nColumns with many NaN: 0"
+            " columns: 3\n\t3.\tMedical Exam columns (numerical, no metadata): 7\n\t4."
+            "\tOne repeated value: 2\nColumns with many NaN: 1"
         )
 
         str_ = str(dataset)
