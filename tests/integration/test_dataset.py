@@ -153,9 +153,7 @@ class Describe_Dataset:
         assert isinstance(categ_cols, set)
         assert categ_cols == expected_categ_cols
 
-    @pytest.mark.parametrize(
-        "feature_cols, expected_column_list_type",
-        [
+    feature_cols_expected_col_list_type_tuples_list = [
             (
                 {"metadata_num_col"},
                 _ColumnListByType(
@@ -179,7 +177,8 @@ class Describe_Dataset:
                     "int_col",
                     "bool_col",
                     "interval_col",
-                    "nan_col",
+                "many_nan_num_col",
+                "only_nan_col",
                     "string_col",
                     "int_categorical_col",
                     "int_forced_categorical_col",
@@ -189,15 +188,14 @@ class Describe_Dataset:
                 },
                 _ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
-                    constant_cols={"same_col"},
+                constant_cols={"same_col", "only_nan_col"},
                     numerical_cols={
                         "int_col",
                         "float_col",
                         "int_categorical_col",
                         "int_forced_categorical_col",
                         "bool_col",
-                        "interval_col",
-                        "nan_col",
+                    "many_nan_num_col",
                         "metadata_num_col",
                     },
                     med_exam_col_list={
@@ -206,14 +204,14 @@ class Describe_Dataset:
                         "int_col",
                         "float_col",
                         "bool_col",
-                        "interval_col",
-                        "nan_col",
+                    "many_nan_num_col",
                         "metadata_num_col",
                     },
                     str_cols={
                         "string_col",
                         "str_categorical_col",
                         "str_forced_categorical_col",
+                    "interval_col",
                     },
                     str_categorical_cols={
                         "str_categorical_col",
@@ -222,7 +220,7 @@ class Describe_Dataset:
                     num_categorical_cols={
                         "int_categorical_col",
                         "int_forced_categorical_col",
-                        "nan_col",
+                    "many_nan_num_col",
                     },
                     other_cols={"datetime_col"},
                     bool_cols={"bool_col"},
@@ -232,15 +230,14 @@ class Describe_Dataset:
                 None,
                 _ColumnListByType(
                     mixed_type_cols={"mixed_type_col"},
-                    constant_cols={"same_col"},
+                constant_cols={"same_col", "only_nan_col"},
                     numerical_cols={
                         "float_col",
                         "int_col",
                         "int_categorical_col",
                         "int_forced_categorical_col",
                         "bool_col",
-                        "interval_col",
-                        "nan_col",
+                    "many_nan_num_col",
                     },
                     med_exam_col_list={
                         "float_col",
@@ -248,13 +245,13 @@ class Describe_Dataset:
                         "int_categorical_col",
                         "int_forced_categorical_col",
                         "bool_col",
-                        "interval_col",
-                        "nan_col",
+                    "many_nan_num_col",
                     },
                     str_cols={
                         "string_col",
                         "str_categorical_col",
                         "str_forced_categorical_col",
+                    "interval_col",
                     },
                     str_categorical_cols={
                         "str_categorical_col",
@@ -263,13 +260,17 @@ class Describe_Dataset:
                     num_categorical_cols={
                         "int_categorical_col",
                         "int_forced_categorical_col",
-                        "nan_col",
+                    "many_nan_num_col",
                     },
                     other_cols={"datetime_col"},
                     bool_cols={"bool_col"},
                 ),
             ),
-        ],
+    ]
+
+    @pytest.mark.parametrize(
+        "feature_cols, expected_column_list_type",
+        feature_cols_expected_col_list_type_tuples_list,
     )
     def test_column_list_by_type(self, feature_cols, expected_column_list_type):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
@@ -295,7 +296,8 @@ class Describe_Dataset:
                     "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
-                    "nan_col",
+                    "many_nan_num_col",
+                    "only_nan_col",
                     "metadata_num_col",
                 },
                 {
@@ -304,9 +306,8 @@ class Describe_Dataset:
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "bool_col",
-                    "interval_col",
-                    "nan_col",
                     "metadata_num_col",
+                    "many_nan_num_col",
                 },
             ),
             (
@@ -317,7 +318,8 @@ class Describe_Dataset:
                     "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
-                    "nan_col",
+                    "many_nan_num_col",
+                    "only_nan_col",
                 },
                 {
                     "float_col",
@@ -325,8 +327,7 @@ class Describe_Dataset:
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "bool_col",
-                    "interval_col",
-                    "nan_col",
+                    "many_nan_num_col",
                 },
             ),
             (
@@ -337,8 +338,7 @@ class Describe_Dataset:
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "bool_col",
-                    "interval_col",
-                    "nan_col",
+                    "many_nan_num_col",
                 },
             ),
         ],

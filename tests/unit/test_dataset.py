@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset, _ColumnListByType
 from trousse.operations_list import OperationsList
@@ -45,7 +44,8 @@ class DescribeDataset:
                     "same_col",
                     "bool_col",
                     "mixed_type_col",
-                    "nan_col",
+                    "many_nan_num_col",
+                    "only_nan_col",
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "string_col",
