@@ -526,7 +526,8 @@ class Dataset:
     # =====================
     # =    METHODS        =
     # =====================
-    def _data_to_mixed_types(self, df: pd.DataFrame):
+    @staticmethod
+    def _data_to_mixed_types(df: pd.DataFrame):
         """
         Transform 'object'-typed column values to appropriate types.
 
@@ -555,9 +556,7 @@ class Dataset:
         str_cols = df.select_dtypes(include="object").columns
         for col in str_cols:
             mixedtype_converter = _DfConvertToMixedType(column=col)
-            mixed_df = mixedtype_converter(df)
-
-            self.track_history(ConvertToMixedType(columns=[col]))
+            mixed_df = mixedtype_converter(mixed_df)
 
         return mixed_df
 
