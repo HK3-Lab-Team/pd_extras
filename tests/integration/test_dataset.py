@@ -172,12 +172,12 @@ class Describe_Dataset:
             {
                 "metadata_num_col",
                 "mixed_type_col",
-                "same_col",
+                "same_int_col",
                 "float_col",
                 "int_col",
                 "bool_col",
                 "interval_col",
-                "many_nan_num_col",
+                "many_nan_int_col",
                 "only_nan_col",
                 "string_col",
                 "int_categorical_col",
@@ -188,14 +188,14 @@ class Describe_Dataset:
             },
             _ColumnListByType(
                 mixed_type_cols={"mixed_type_col"},
-                constant_cols={"same_col", "only_nan_col"},
+                constant_cols={"same_int_col", "only_nan_col"},
                 numerical_cols={
                     "int_col",
                     "float_col",
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "bool_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                     "metadata_num_col",
                 },
                 med_exam_col_list={
@@ -204,7 +204,7 @@ class Describe_Dataset:
                     "int_col",
                     "float_col",
                     "bool_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                     "metadata_num_col",
                 },
                 str_cols={
@@ -220,7 +220,7 @@ class Describe_Dataset:
                 num_categorical_cols={
                     "int_categorical_col",
                     "int_forced_categorical_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                 },
                 other_cols={"datetime_col"},
                 bool_cols={"bool_col"},
@@ -230,14 +230,14 @@ class Describe_Dataset:
             None,
             _ColumnListByType(
                 mixed_type_cols={"mixed_type_col"},
-                constant_cols={"same_col", "only_nan_col"},
+                constant_cols={"same_int_col", "only_nan_col"},
                 numerical_cols={
                     "float_col",
                     "int_col",
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "bool_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                 },
                 med_exam_col_list={
                     "float_col",
@@ -245,7 +245,7 @@ class Describe_Dataset:
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "bool_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                 },
                 str_cols={
                     "string_col",
@@ -260,7 +260,7 @@ class Describe_Dataset:
                 num_categorical_cols={
                     "int_categorical_col",
                     "int_forced_categorical_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                 },
                 other_cols={"datetime_col"},
                 bool_cols={"bool_col"},
@@ -318,7 +318,7 @@ class Describe_Dataset:
                     "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                     "only_nan_col",
                     "metadata_num_col",
                 },
@@ -329,7 +329,7 @@ class Describe_Dataset:
                     "int_forced_categorical_col",
                     "bool_col",
                     "metadata_num_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                 },
             ),
             (
@@ -340,7 +340,7 @@ class Describe_Dataset:
                     "int_forced_categorical_col",
                     "bool_col",
                     "interval_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                     "only_nan_col",
                 },
                 {
@@ -349,7 +349,7 @@ class Describe_Dataset:
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "bool_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                 },
             ),
             (
@@ -360,7 +360,7 @@ class Describe_Dataset:
                     "int_categorical_col",
                     "int_forced_categorical_col",
                     "bool_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                 },
             ),
         ],

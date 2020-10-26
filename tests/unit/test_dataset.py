@@ -41,10 +41,10 @@ class DescribeDataset:
                 {
                     "int_col",
                     "float_col",
-                    "same_col",
+                    "same_int_col",
                     "bool_col",
                     "mixed_type_col",
-                    "many_nan_num_col",
+                    "many_nan_int_col",
                     "only_nan_col",
                     "int_categorical_col",
                     "int_forced_categorical_col",

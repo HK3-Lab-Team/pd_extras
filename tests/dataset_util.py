@@ -248,8 +248,8 @@ class DataFrameMock:
             ),
             "mixed_type_col": list(range(sample_size // 2))
             + [f"value_{i}" for i in range(sample_size // 2)],
-            "same_col": [2] * sample_size,
-            "many_nan_num_col": [pd.NA] * (sample_size - 1) + [3],
+            "same_int_col": [2] * sample_size,
+            "many_nan_int_col": [pd.NA] * (sample_size - 1) + [3],
             "only_nan_col": [pd.NA] * sample_size,
         }
         return pd.DataFrame(df_multi_type_dict)
