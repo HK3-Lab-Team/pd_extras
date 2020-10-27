@@ -133,7 +133,7 @@ class _ConvertDfToMixedType:
             else:
                 self._col_dtype = converted_col.dtype
 
-    def _convert_to_numeric_mixed_types(self, col_serie: pd.Series) -> None:
+    def _analyze_numeric_values(self, col_serie: pd.Series) -> None:
         """
         Convert 'object'-typed values to numerical when possible.
 
@@ -152,7 +152,7 @@ class _ConvertDfToMixedType:
         self._maybe_update_col_dtype(numeric_col, col_serie)
         self._update_converted_values(numeric_col)
 
-    def _convert_to_boolean_mixed_types(self, col_serie: pd.Series) -> None:
+    def _analyze_bool_values(self, col_serie: pd.Series) -> None:
         """
         Convert 'object'-typed values to boolean when possible.
 
@@ -177,7 +177,7 @@ class _ConvertDfToMixedType:
             self._maybe_update_col_dtype(converted_col, col_serie)
             self._update_converted_values(converted_col)
 
-    def _convert_to_datetime_mixed_types(self, col_serie: pd.Series) -> None:
+    def _analyze_datetime_values(self, col_serie: pd.Series) -> None:
         """
         Convert 'object'-typed values to datetime when possible.
 
@@ -249,21 +249,24 @@ class _ConvertDfToMixedType:
         """
         df_to_convert = df.copy()
         col_to_convert = df_to_convert[self.column].copy()
-        # Fill the _converted_values attribute with NaN
+        # Initialize the _converted_values attribute with NaN
         self._converted_values = pd.Series(
             [pd.NA] * len(col_to_convert), dtype="object"
         )
         # These checks must be in precise order where the first check is the most
-        # strict. For example the first check can be for numeric values because
-        # the numbers must not be interpreted and converted to datetime (this
-        # is avoided by caching the  _converted_values list attribute).
+        # strict. For example the checks priority must be:
+        # 1. Boolean: No boolean can be interpreted as number
+        # 2. Numeric: No number can be interpreted and converted to datetime
+        # 3. datetime
+        # These misinterpretation are avoided by caching the  _converted_values
+        # list attribute.
 
-        # Convert to numeric the values that are compatible.
-        self._convert_to_numeric_mixed_types(col_to_convert)
         # Convert to boolean the values that are compatible
-        self._convert_to_boolean_mixed_types(col_to_convert)
+        self._analyze_bool_values(col_to_convert)
+        # Convert to numeric the values that are compatible.
+        self._analyze_numeric_values(col_to_convert)
         # Convert to datetime the values that are compatible
-        self._convert_to_datetime_mixed_types(col_to_convert)
+        self._analyze_datetime_values(col_to_convert)
 
         # Replace the original values with the converted ones
         converted_ids = np.where(self._converted_values.notna())[0]
