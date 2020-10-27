@@ -81,6 +81,10 @@ class _ConvertDfToMixedType:
         same NaN count as ``original_col`` because that would mean that the
         conversion has been applied to each value and the column can be fully
         converted to that type.
+        It also checks if the values have been converted previously with a more
+        appropriate type. This is because the conversions are sorted according
+        to priority and, for instance, boolean values can be interpreted
+        as numeric, but the column should not be converted to numeric.
 
         Parameters
         ----------
@@ -93,9 +97,12 @@ class _ConvertDfToMixedType:
         -------
         bool
             True if ``converted_col`` has the same NaN count as ``original_col``,
-            False otherwise.
+            and if no value has already been converted to another more appropriate
+            type. False otherwise.
         """
-        return (converted_col.isna() == original_col.isna()).all()
+        return (converted_col.isna() == original_col.isna()).all() and (
+            self._converted_values.isna()
+        ).all()
 
     def _maybe_update_col_dtype(
         self, converted_col: pd.Series, original_col: pd.Series
