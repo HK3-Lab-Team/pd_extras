@@ -170,10 +170,13 @@ class _ConvertDfToMixedType:
         # Conversion can be performed only if the dtype is not 'object'
         if col_serie.dtype == np.dtype("O"):
             converted_col = col_serie.replace(to_replace=bool_map, inplace=False)
-            # Set to NaN all the values that were not converted and use the new
-            # column as argument for "_update_converted_values" method
-            non_bool_ids = np.where(np.equal(converted_col, col_serie))[0]
+            # Set to NaN all the values that were not converted or boolean and use
+            # the new column as argument for "_update_converted_values" method
+            non_bool_ids = np.where(
+                np.logical_not(np.isin(converted_col, [True, False]))
+            )[0]
             converted_col[non_bool_ids] = pd.NA
+
             self._maybe_update_col_dtype(converted_col, col_serie)
             self._update_converted_values(converted_col)
 
