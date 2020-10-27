@@ -71,9 +71,8 @@ class _ConvertDfToMixedType:
             value_ids_to_insert
         ]
 
-    @staticmethod
-    def _is_column_fully_convertible(
-        converted_col: pd.Series, original_col: pd.Series
+    def _is_single_typed_column(
+        self, converted_col: pd.Series, original_col: pd.Series
     ) -> bool:
         """
         Check if the analyzed column has values with the same type only
@@ -116,7 +115,7 @@ class _ConvertDfToMixedType:
         original_col : pd.Series
             Pandas Series containing the column values before conversion
         """
-        is_column_fully_convertible = self._is_column_fully_convertible(
+        is_column_fully_convertible = self._is_single_typed_column(
             converted_col, original_col
         )
 
