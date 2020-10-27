@@ -303,6 +303,11 @@ class Dataset:
 
         col_list = self.feature_cols - constant_cols
 
+        # Converting 'object' column values from string to appropriate type
+        # when applicable:
+        # e.g. 'True' -> True, '3' -> 3, '3/04/20' -> date(3,4,2020)
+        mixed_data = self._convert_str_to_mixed_columns(self._data)
+
         mixed_type_cols = set()
         numerical_cols = set()
         str_cols = set()
@@ -315,6 +320,7 @@ class Dataset:
             "bytes": other_cols,
             "floating": numerical_cols,
             "integer": numerical_cols,
+            # For columns containing bool+int values (and float optionally):
             "mixed-integer": mixed_type_cols,
             "mixed-integer-float": numerical_cols,
             "decimal": numerical_cols,
@@ -327,13 +333,12 @@ class Dataset:
             "timedelta": other_cols,
             "time": other_cols,
             "period": other_cols,
+            # For columns containing bool+float values or str+'any other type':
             "mixed": mixed_type_cols,
             "interval": str_cols,
             "category": categorical_cols,
             "categorical": categorical_cols,
         }
-
-        mixed_data = self._data_to_mixed_types(self._data)
 
         for col in col_list:
             col_type = pd.api.types.infer_dtype(mixed_data[col], skipna=True)
@@ -528,7 +533,7 @@ class Dataset:
     # =    METHODS        =
     # =====================
     @staticmethod
-    def _data_to_mixed_types(df: pd.DataFrame):
+    def _convert_str_to_mixed_columns(df: pd.DataFrame):
         """
         Transform 'object'-typed column values to appropriate types.
 
