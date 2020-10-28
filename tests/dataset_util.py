@@ -1,6 +1,6 @@
 import itertools
 import random
-from datetime import date
+from datetime import date, datetime
 from typing import List, Tuple
 
 import pandas as pd
@@ -194,17 +194,17 @@ class DataFrameMock:
         a) V < ``sample_size``
         b) V is divisible by 10.
         The DataFrame has columns as follows:
-        1. One column containing boolean values
-        2. One column containing string values
-        3. One column containing string repeated values ("category" dtype)
-        4. One column containing string values (it is meant to simulate metadata)
-        5. One column containing numerical values
-        6. One column containing numerical repeated values ("category" dtype)
-        7. One column containing datetime values
-        8. One column containing 'interval' typed values
-        9. One column containing values of mixed types
-        10. One column containing repeated values
-        11. One column containing NaN values (+ 1 numerical value)
+        1. One column (that is supposed to be used as metadata) with int values
+        2. 6 Columns with: boolean, string, float, integer, datetime and interval values
+        3. 4 Columns with categorical values: string values, string values
+           (with forced dtype=category), int, int values (with forced dtype=category),
+        4. 5 Columns with typos (string values): int, float, datetime, bool
+        5. 5 Columns with nans (None value): int, float, datetime, bool
+        6. 6 Columns with mixed types: int+float, bool+int,
+           bool+int+float, datetime+float, bool+float, datetime+bool
+        7. One column containing one int repeated value
+        8. One column containing NaN values only
+        9. One column containing NaN values + 1 int value
 
         Parameters
         ----------
@@ -214,40 +214,78 @@ class DataFrameMock:
         Returns
         -------
         pd.DataFrame
-            Pandas DataFrame with ``sample_size`` samples and 5 columns
+            Pandas DataFrame with ``sample_size`` samples and 30 columns
             containing values of different types.
         """
-        random.seed(42)
-        # Get only the part that is divisible by 2 and 5
-        sample_size = sample_size // 10 * 10
-        bool_col = [True, False, True, True, False] * (sample_size // 5)
-        random.shuffle(bool_col)
+        assert sample_size > 0
+
+        five_typos = ["5,3", "3%", "4E10", "KO", "None"]
+        five_nans = [None] * 5
+        half_samples = sample_size // 2
+        onethird_samples = sample_size // 3
+
+        datetime_col = [date(2000 + i, 8, 1) for i in range(sample_size)]
+        float_col = [0.1 + i for i in range(sample_size)]
+        bool_col = [True, False, True, True, False] * (sample_size // 5) + [True] * (
+            sample_size % 5
+        )
+        int_col = list(range(sample_size))
+        string_col = [f"value_{i}" for i in range(sample_size)]
+        str_categorical_col = [
+            "category_0",
+            "category_1",
+            "category_2",
+            "category_3",
+            "category_4",
+        ] * (sample_size // 5) + ["category_0"] * (sample_size % 5)
 
         df_multi_type_dict = {
-            "metadata_num_col": list(range(sample_size)),
+            "metadata_num_col": int_col,
             "bool_col": bool_col,
-            "string_col": [f"value_{i}" for i in range(sample_size)],
-            "str_forced_categorical_col": pd.Series(
-                ["category_0", "category_1", "category_2", "category_3", "category_4"]
-                * (sample_size // 5),
-                dtype="category",
-            ),
-            "str_categorical_col": pd.Series(
-                ["category_0", "category_1", "category_2", "category_3", "category_4"]
-                * (sample_size // 5)
-            ),
-            "int_forced_categorical_col": pd.Series(
-                [0, 1, 2, 3, 4] * (sample_size // 5), dtype="category"
-            ),
-            "int_categorical_col": pd.Series([0, 1, 2, 3, 4] * (sample_size // 5)),
-            "float_col": [0.05 * i for i in range(sample_size)],
-            "int_col": list(range(sample_size)),
-            "datetime_col": [date(2000 + i, 8, 1) for i in range(sample_size)],
+            "string_col": string_col,
+            "float_col": float_col,
+            "int_col": int_col,
+            "datetime_col": datetime_col,
             "interval_col": pd.arrays.IntervalArray(
                 [pd.Interval(0, i) for i in range(sample_size)],
             ),
-            "mixed_type_col": list(range(sample_size // 2))
-            + [f"value_{i}" for i in range(sample_size // 2)],
+            # Categorical values
+            "str_forced_categorical_col": pd.Series(
+                str_categorical_col,
+                dtype="category",
+            ),
+            "str_categorical_col": str_categorical_col,
+            "int_forced_categorical_col": pd.Series(
+                [0, 1, 2, 3, 4] * (sample_size // 5) + [0] * (sample_size % 5),
+                dtype="category",
+            ),
+            "int_categorical_col": [0, 1, 2, 3, 4] * (sample_size // 5)
+            + [0] * (sample_size % 5),
+            # With Typos
+            "int_col_with_typos": int_col[:-5] + five_typos,
+            "float_col_with_typos": float_col[:-5] + five_typos,
+            "datetime_col_with_typos": datetime_col[:-5]
+            + ["KO", "4E10", "3-13-2050", "13\\14\\2020", "03.07.09"],
+            "bool_col_with_typos": bool_col[:-5]
+            + ["Fals3", "Trup", "Falll", "KO", "None"],
+            # With NaN
+            "int_col_with_nans": int_col[:-5] + five_nans,
+            "float_col_with_nans": float_col[:-5] + five_nans,
+            "datetime_col_with_nans": datetime_col[:-5] + five_nans,
+            "bool_col_with_nans": bool_col[:-5] + five_nans,
+            "string_col_with_nans": string_col[:-5] + five_nans,
+            # Mixed
+            "int_float_mixed_col": int_col[:half_samples] + float_col[half_samples:],
+            "bool_int_mixed_col": bool_col[:half_samples] + int_col[half_samples:],
+            "bool_int_float_mixed_col": bool_col[:onethird_samples]
+            + int_col[onethird_samples : onethird_samples * 2]
+            + float_col[onethird_samples * 2 :],
+            "datetime_float_mixed_col": datetime_col[:half_samples]
+            + float_col[half_samples:],
+            "bool_float_mixed_col": bool_col[:half_samples] + float_col[half_samples:],
+            "datetime_bool_mixed_col": bool_col[:half_samples]
+            + datetime_col[half_samples:],
+            # Special Cols
             "same_int_col": [2] * sample_size,
             "many_nan_int_col": [pd.NA] * (sample_size - 1) + [3],
             "only_nan_col": [pd.NA] * sample_size,
