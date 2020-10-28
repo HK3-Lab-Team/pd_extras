@@ -1,6 +1,6 @@
 import itertools
 import random
-from datetime import date, datetime
+from datetime import date
 from typing import List, Tuple
 
 import pandas as pd
