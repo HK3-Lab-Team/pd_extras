@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from trousse.convert_to_mixed_type import _ConvertDfToMixedType, _StrColumnToConvert
 
-from ..unitutil import ANY, function_mock, initializer_mock, method_mock
+from ..unitutil import ANY, initializer_mock
 
 
 class Describe_StrColumnToConvert:
