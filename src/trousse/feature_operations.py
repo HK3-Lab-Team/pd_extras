@@ -1,10 +1,12 @@
 import copy
-from abc import ABC
-from abc import abstractmethod
-from typing import Any, List, Mapping
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, List, Mapping
 
-from .dataset import Dataset
+from .convert_to_mixed_type import _ConvertDfToMixedType
 from .util import is_sequence_and_not_str
+
+if TYPE_CHECKING:
+    from .dataset import Dataset
 
 
 class FeatureOperation(ABC):
@@ -13,7 +15,7 @@ class FeatureOperation(ABC):
     columns: List[str]
     derived_columns: List[str] = None
 
-    def __call__(self, dataset: Dataset) -> Dataset:
+    def __call__(self, dataset: "Dataset") -> "Dataset":
         """Apply the operation on a new instance of Dataset and track it in the history
 
         Parameters
@@ -81,7 +83,7 @@ class FeatureOperation(ABC):
                 )
 
     @abstractmethod
-    def _apply(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: "Dataset") -> "Dataset":
         raise NotImplementedError
 
     @abstractmethod
@@ -139,7 +141,7 @@ class FillNA(FeatureOperation):
         self.derived_columns = derived_columns
         self.value = value
 
-    def _apply(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: "Dataset") -> "Dataset":
         """Apply FillNA operation on a new Dataset instance and return it.
 
         Parameters
@@ -239,7 +241,7 @@ class ReplaceSubstrings(FeatureOperation):
         self.replacement_map = replacement_map
         self.derived_columns = derived_columns
 
-    def _apply(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: "Dataset") -> "Dataset":
         """Apply ReplaceSubstrings operation on a new Dataset instance and return it.
 
         Parameters
@@ -363,7 +365,7 @@ class ReplaceStrings(ReplaceSubstrings):
     ):
         super().__init__(columns, replacement_map, derived_columns)
 
-    def _apply(self, dataset: Dataset) -> Dataset:
+    def _apply(self, dataset: "Dataset") -> "Dataset":
         """Apply ReplaceStrings operation on a new Dataset instance and return it.
 
         Parameters
@@ -414,3 +416,115 @@ class ReplaceStrings(ReplaceSubstrings):
             return True
 
         return False
+
+
+class ConvertToMixedType(FeatureOperation):
+    """
+    Convert values from "object"-typed ``columns`` column to appropriate format.
+
+    When pandas package reads from CSV file, the columns that are not completely
+    consistent with a single type are stored with dtype = "object" and every value
+    is converted to "string".
+    This FeatureOperation subclass convert the string values to numeric, boolean
+    or datetime values where possible. When each value can consistently be
+    interpreted with a single type, the column will be converted to that dtype
+    (and NaNs will be converted appropriately).
+    On the other hand, if column values are interpreted with multiple types,
+    the column will maintain the dtype="object" but the inferred type will
+    be "mixed" which allows a correct column categorization by Dataset class.
+    By default the converted column overwrites the related original column.
+    To store the result of conversion in another column, ``derived_columns``
+    parameter has to be set with the name of the corresponding column name.
+
+    This class is a wrapper of _ConvertToMixedType that makes the same operation
+    but transforms that class into a FeatureOperation.
+
+    Parameters
+    ----------
+    columns : List[str]
+        Name of the column with string values that may be converted. It must
+        be a single-element list.
+    derived_columns : List[str], optional
+        Name of the column where to store the conversion result. Default is None,
+        meaning that the converted values are stored in the original column.
+        If not None, it must be a single-element list.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The new DataFrame containing the column with converted values.
+
+    Raises
+    ------
+    ValueError
+        If ``columns`` or ``derived_columns`` are not a single-element list.
+    TypeError
+        If ``columns`` is not a list
+    TypeError
+        If ``derived_columns`` is not None and it is not a list
+    """
+
+    def __init__(
+        self,
+        columns: List[str],
+        derived_columns: List[str] = None,
+    ):
+        self._validate_single_element_columns(columns)
+        self._validate_single_element_derived_columns(derived_columns)
+
+        self.columns = columns
+        self.derived_columns = derived_columns
+
+    def __eq__(self, other: Any) -> bool:
+        """
+        Check if two ConvertToMixedType instances are equal.
+
+        Return True if ``other`` is a ConvertToMixedType instance and it has
+        the same fields value.
+
+        Parameters
+        ----------
+        other : Any
+            The instance to compare
+
+        Returns
+        -------
+        bool
+            True if ``other`` is a ConvertToMixedType instance and it has the same
+            fields value, False otherwise
+        """
+        if not isinstance(other, ConvertToMixedType):
+            return False
+        elif (
+            self.columns == other.columns
+            and self.derived_columns == other.derived_columns
+        ):
+            return True
+        else:
+            return False
+
+    def _apply(self, dataset: "Dataset") -> "Dataset":
+        """
+        Apply ConvertToMixedType operation on a new Dataset instance and return it.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to apply the operation on
+
+        Returns
+        -------
+        Dataset
+            New Dataset instance with the operation applied on
+        """
+        dataset = copy.deepcopy(dataset)
+
+        mixedtype_converter = _ConvertDfToMixedType(
+            column=self.columns[0], derived_column=self.derived_columns[0]
+        )
+        dataset.data = mixedtype_converter(dataset.data)
+
+        return dataset
+
+    def is_similar(self, other: FeatureOperation):
+        raise NotImplementedError

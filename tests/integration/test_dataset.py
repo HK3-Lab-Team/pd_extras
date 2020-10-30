@@ -1,11 +1,11 @@
 import logging
+import os
 import shelve
 from pathlib import Path
 from typing import Tuple
 
 import pandas as pd
 import pytest
-
 from trousse import feature_operations as fop
 from trousse.dataset import (
     Dataset,
@@ -153,123 +153,150 @@ class Describe_Dataset:
         assert isinstance(categ_cols, set)
         assert categ_cols == expected_categ_cols
 
+    df_multi_type_feature_cols = {
+        "float_col",
+        "int_col",
+        "bool_col",
+        "interval_col",
+        "string_col",
+        "int_categorical_col",
+        "int_forced_categorical_col",
+        "str_categorical_col",
+        "str_forced_categorical_col",
+        "datetime_col",
+        # With Typos
+        "float_col_with_typos",
+        "int_col_with_typos",
+        "datetime_col_with_typos",
+        "bool_col_with_typos",
+        # With NaNs
+        "float_col_with_nans",
+        "int_col_with_nans",
+        "datetime_col_with_nans",
+        "string_col_with_nans",
+        "bool_col_with_nans",
+        # Mixed
+        "int_float_mixed_col",
+        "datetime_float_mixed_col",
+        "datetime_bool_mixed_col",
+        "bool_float_mixed_col",
+        "bool_int_mixed_col",
+        "bool_int_float_mixed_col",
+        # Special Cols
+        "same_int_col",
+        "many_nan_int_col",
+        "only_nan_col",
+    }
+
+    mixed_type_cols = {
+        # With Typos
+        "float_col_with_typos",
+        "int_col_with_typos",
+        "datetime_col_with_typos",
+        "bool_col_with_typos",
+        # Mixed
+        "datetime_float_mixed_col",
+        "datetime_bool_mixed_col",
+        "bool_int_mixed_col",
+        "bool_float_mixed_col",
+        "bool_int_float_mixed_col",
+    }
+    constant_cols = {"same_int_col", "only_nan_col"}
+    numerical_cols = {
+        "int_col",
+        "float_col",
+        "int_categorical_col",
+        "int_forced_categorical_col",
+        "bool_col",
+        # With NaNs-
+        "many_nan_int_col",
+        "bool_col_with_nans",
+        "float_col_with_nans",
+        "int_col_with_nans",
+        "int_float_mixed_col",
+    }
+    med_exam_col_list = {
+        "int_categorical_col",
+        "int_forced_categorical_col",
+        "int_col",
+        "float_col",
+        "bool_col",
+        "many_nan_int_col",
+        "int_float_mixed_col",
+        "bool_col_with_nans",
+        "float_col_with_nans",
+        "int_col_with_nans",
+    }
+    str_cols = {
+        "string_col",
+        "string_col_with_nans",
+        "str_categorical_col",
+        "str_forced_categorical_col",
+        "interval_col",
+    }
+    str_categorical_cols = {
+        "str_categorical_col",
+        "str_forced_categorical_col",
+    }
+    num_categorical_cols = {
+        "int_categorical_col",
+        "int_forced_categorical_col",
+        "many_nan_int_col",
+    }
+    other_cols = {
+        "datetime_col",
+        "datetime_col_with_nans",
+    }
+    bool_cols = {"bool_col", "bool_col_with_nans"}
+
+    feature_cols_expected_col_list_type_tuples_list = [
+        (
+            {"metadata_num_col"},
+            _ColumnListByType(
+                mixed_type_cols=set(),
+                constant_cols=set(),
+                numerical_cols={"metadata_num_col"},
+                med_exam_col_list={"metadata_num_col"},
+                str_cols=set(),
+                str_categorical_cols=set(),
+                num_categorical_cols=set(),
+                other_cols=set(),
+                bool_cols=set(),
+            ),
+        ),
+        (
+            df_multi_type_feature_cols | {"metadata_num_col"},
+            _ColumnListByType(
+                mixed_type_cols=mixed_type_cols,
+                constant_cols=constant_cols,
+                numerical_cols=numerical_cols | {"metadata_num_col"},
+                med_exam_col_list=med_exam_col_list | {"metadata_num_col"},
+                str_cols=str_cols,
+                str_categorical_cols=str_categorical_cols,
+                num_categorical_cols=num_categorical_cols,
+                other_cols=other_cols,
+                bool_cols=bool_cols,
+            ),
+        ),
+        (
+            None,
+            _ColumnListByType(
+                mixed_type_cols=mixed_type_cols,
+                constant_cols=constant_cols,
+                numerical_cols=numerical_cols,
+                med_exam_col_list=med_exam_col_list,
+                str_cols=str_cols,
+                str_categorical_cols=str_categorical_cols,
+                num_categorical_cols=num_categorical_cols,
+                other_cols=other_cols,
+                bool_cols=bool_cols,
+            ),
+        ),
+    ]
+
     @pytest.mark.parametrize(
         "feature_cols, expected_column_list_type",
-        [
-            (
-                {"metadata_num_col"},
-                _ColumnListByType(
-                    mixed_type_cols=set(),
-                    constant_cols=set(),
-                    numerical_cols={"metadata_num_col"},
-                    med_exam_col_list={"metadata_num_col"},
-                    str_cols=set(),
-                    str_categorical_cols=set(),
-                    num_categorical_cols=set(),
-                    other_cols=set(),
-                    bool_cols=set(),
-                ),
-            ),
-            (
-                {
-                    "metadata_num_col",
-                    "mixed_type_col",
-                    "same_col",
-                    "float_col",
-                    "int_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
-                    "string_col",
-                    "int_categorical_col",
-                    "int_forced_categorical_col",
-                    "str_categorical_col",
-                    "str_forced_categorical_col",
-                    "datetime_col",
-                },
-                _ColumnListByType(
-                    mixed_type_cols={"mixed_type_col"},
-                    constant_cols={"same_col"},
-                    numerical_cols={
-                        "int_col",
-                        "float_col",
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "bool_col",
-                        "interval_col",
-                        "nan_col",
-                        "metadata_num_col",
-                    },
-                    med_exam_col_list={
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "int_col",
-                        "float_col",
-                        "bool_col",
-                        "interval_col",
-                        "nan_col",
-                        "metadata_num_col",
-                    },
-                    str_cols={
-                        "string_col",
-                        "str_categorical_col",
-                        "str_forced_categorical_col",
-                    },
-                    str_categorical_cols={
-                        "str_categorical_col",
-                        "str_forced_categorical_col",
-                    },
-                    num_categorical_cols={
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "nan_col",
-                    },
-                    other_cols={"datetime_col"},
-                    bool_cols={"bool_col"},
-                ),
-            ),
-            (
-                None,
-                _ColumnListByType(
-                    mixed_type_cols={"mixed_type_col"},
-                    constant_cols={"same_col"},
-                    numerical_cols={
-                        "float_col",
-                        "int_col",
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "bool_col",
-                        "interval_col",
-                        "nan_col",
-                    },
-                    med_exam_col_list={
-                        "float_col",
-                        "int_col",
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "bool_col",
-                        "interval_col",
-                        "nan_col",
-                    },
-                    str_cols={
-                        "string_col",
-                        "str_categorical_col",
-                        "str_forced_categorical_col",
-                    },
-                    str_categorical_cols={
-                        "str_categorical_col",
-                        "str_forced_categorical_col",
-                    },
-                    num_categorical_cols={
-                        "int_categorical_col",
-                        "int_forced_categorical_col",
-                        "nan_col",
-                    },
-                    other_cols={"datetime_col"},
-                    bool_cols={"bool_col"},
-                ),
-            ),
-        ],
+        feature_cols_expected_col_list_type_tuples_list,
     )
     def test_column_list_by_type(self, feature_cols, expected_column_list_type):
         df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
@@ -285,62 +312,57 @@ class Describe_Dataset:
         assert col_list_by_type == expected_column_list_type
 
     @pytest.mark.parametrize(
+        "feature_cols, expected_column_list_type",
+        feature_cols_expected_col_list_type_tuples_list,
+    )
+    def test_column_list_by_type_from_csv(
+        self, tmpdir, feature_cols, expected_column_list_type
+    ):
+        df_multi_type = DataFrameMock.df_multi_type(sample_size=200)
+        df_multi_path = os.path.join(tmpdir, "df_multi_type.csv")
+        df_multi_type.to_csv(df_multi_path, index=False)
+        df_from_csv = pd.read_csv(df_multi_path)
+        dataset = Dataset(
+            df_object=df_from_csv,
+            metadata_cols=("metadata_num_col",),
+            feature_cols=feature_cols,
+        )
+
+        col_list_by_type = dataset._columns_type
+
+        assert isinstance(col_list_by_type, _ColumnListByType)
+        assert col_list_by_type == expected_column_list_type
+
+    df_multi_type_med_exam_col_list = {
+        "float_col",
+        "int_col",
+        "bool_col",
+        "int_categorical_col",
+        "int_forced_categorical_col",
+        # With NaNs
+        "float_col_with_nans",
+        "int_col_with_nans",
+        "bool_col_with_nans",
+        "many_nan_int_col",
+        # Mixed
+        "int_float_mixed_col",
+    }
+
+    @pytest.mark.parametrize(
         "feature_cols, expected_med_exam_col_list",
         [
             (
-                {
-                    "float_col",
-                    "int_col",
-                    "int_categorical_col",
-                    "int_forced_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
+                df_multi_type_feature_cols
+                | {
                     "metadata_num_col",
                 },
-                {
-                    "float_col",
-                    "int_col",
-                    "int_categorical_col",
-                    "int_forced_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
+                df_multi_type_med_exam_col_list
+                | {
                     "metadata_num_col",
                 },
             ),
-            (
-                {
-                    "float_col",
-                    "int_col",
-                    "int_categorical_col",
-                    "int_forced_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
-                },
-                {
-                    "float_col",
-                    "int_col",
-                    "int_categorical_col",
-                    "int_forced_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
-                },
-            ),
-            (
-                None,
-                {
-                    "float_col",
-                    "int_col",
-                    "int_categorical_col",
-                    "int_forced_categorical_col",
-                    "bool_col",
-                    "interval_col",
-                    "nan_col",
-                },
-            ),
+            (df_multi_type_feature_cols, df_multi_type_med_exam_col_list),
+            (None, df_multi_type_med_exam_col_list),
         ],
     )
     def test_med_exam_col_list(self, feature_cols, expected_med_exam_col_list):
@@ -370,25 +392,6 @@ class Describe_Dataset:
 
         assert isinstance(contains_duplicated_features, bool)
         assert contains_duplicated_features is expected_contains_dupl_cols_bool
-
-    def test_show_columns_type(self, request):
-        # df_col_names_by_type = DataFrameMock.df_column_names_by_type()
-        # expected_cols_to_type_map = {
-        #     "bool_col_0": "bool_col",
-        #     "bool_col_1": "bool_col",
-        #     "string_col_0": "string_col",
-        #     "string_col_1": "string_col",
-        #     "string_col_2": "string_col",
-        #     "numerical_col_0": "float_col", "int_col",
-        #     "other_col_0": "other_col",
-        #     "mixed_type_col_0": "mixed_type_col",
-        #     "mixed_type_col_1": "mixed_type_col",
-        #     "mixed_type_col_2": "mixed_type_col",
-        #     "mixed_type_col_3": "mixed_type_col",
-        # }
-
-        # TODO: Check "print" output or make the method easy to test and then complete test
-        pass
 
     @pytest.mark.parametrize(
         "metadata_columns, original_columns, derived_columns, expected_metadata_cols",
@@ -479,8 +482,18 @@ class Describe_Dataset:
         to_be_fixed_cols = dataset.to_be_fixed_cols
 
         assert type(to_be_fixed_cols) == set
-        assert len(to_be_fixed_cols) == 1
-        assert to_be_fixed_cols == {"mixed_type_col"}
+        assert len(to_be_fixed_cols) == 9
+        assert to_be_fixed_cols == {
+            "datetime_bool_mixed_col",
+            "bool_int_float_mixed_col",
+            "float_col_with_typos",
+            "bool_int_mixed_col",
+            "bool_float_mixed_col",
+            "int_col_with_typos",
+            "datetime_float_mixed_col",
+            "bool_col_with_typos",
+            "datetime_col_with_typos",
+        }
 
     @pytest.mark.parametrize(
         "col_id_list, expected_columns_name",
@@ -504,11 +517,11 @@ class Describe_Dataset:
         dataset = Dataset(df_object=df)
         expected_str = (
             "Columns with:\n\t1.\tMixed types: "
-            "\t\t1\n\t2.\tNumerical types (float/int): \t8\n\t3.\tString types: "
-            "\t\t3\n\t4.\tBool types: \t\t1\n\t5.\tOther types: \t\t1\nAmong these "
-            "categories:\n\t1.\tString categorical columns: 2\n\t2.\tNumeric categorical"
-            " columns: 3\n\t3.\tMedical Exam columns (numerical, no metadata): 8\n\t4."
-            "\tOne repeated value: 1\nColumns with many NaN: 0"
+            "\t\t9\n\t2.\tNumerical types (float/int): \t11\n\t3.\tString types: "
+            "\t\t5\n\t4.\tBool types: \t\t2\n\t5.\tOther types: \t\t2\nAmong these "
+            "categories:\n\t1.\tString categorical columns: 3\n\t2.\tNumeric categorical"
+            " columns: 5\n\t3.\tMedical Exam columns (numerical, no metadata): 11\n\t4."
+            "\tOne repeated value: 2\nColumns with many NaN: 1"
         )
 
         str_ = str(dataset)
