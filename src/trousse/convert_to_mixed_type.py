@@ -3,7 +3,7 @@ import pandas as pd
 from pandas.core.arrays.sparse.dtype import DtypeObj
 
 
-class _MixedColumn:
+class _StrColumnToConvert:
     """
     Class describing a string column containing values with mixed types.
 
@@ -285,7 +285,7 @@ class _ConvertDfToMixedType:
         self.derived_column = derived_column
 
     @staticmethod
-    def _convert_numeric_values(column: _MixedColumn) -> _MixedColumn:
+    def _convert_numeric_values(column: _StrColumnToConvert) -> _StrColumnToConvert:
         """
         Convert 'object'-typed values to numerical when possible.
 
@@ -310,7 +310,7 @@ class _ConvertDfToMixedType:
         return column
 
     @staticmethod
-    def _convert_bool_values(column: _MixedColumn) -> _MixedColumn:
+    def _convert_bool_values(column: _StrColumnToConvert) -> _StrColumnToConvert:
         """
         Convert 'object'-typed values to boolean when possible.
 
@@ -346,7 +346,7 @@ class _ConvertDfToMixedType:
         return column
 
     @staticmethod
-    def _convert_datetime_values(column: _MixedColumn) -> _MixedColumn:
+    def _convert_datetime_values(column: _StrColumnToConvert) -> _StrColumnToConvert:
         """
         Convert 'object'-typed values to datetime when possible.
 
@@ -385,7 +385,7 @@ class _ConvertDfToMixedType:
             New DataFrame instance with the conversion applied on
         """
         df_to_convert = df.copy()
-        col_to_convert = _MixedColumn(values=df_to_convert[self.column])
+        col_to_convert = _StrColumnToConvert(values=df_to_convert[self.column])
 
         # These checks must be in precise order where the first check is the most
         # strict. For example the checks priority must be:
