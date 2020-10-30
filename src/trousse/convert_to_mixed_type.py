@@ -77,6 +77,9 @@ class _StrColumnToConvert:
             # If the _col_dtype is not unique and consistent, the column dtype
             # will be "object", that is the universal dtype
             return "object"
+        elif self._dtype == "int":
+            # Change to Int32 because 'int' dtype is not nullable
+            return pd.Int32Dtype()
         else:
             return self._dtype
 
@@ -189,10 +192,7 @@ class _StrColumnToConvert:
         is_column_fully_convertible = self._is_single_typed_column(new_converted)
 
         if is_column_fully_convertible and self._dtype is None:
-            if new_converted.dtype == "int":
-                # Change to Int32 because 'int' dtype is not nullable
-                self._dtype = pd.Int32Dtype
-            else:
+
                 self._dtype = new_converted.dtype
 
         return self._dtype
