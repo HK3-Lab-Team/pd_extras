@@ -250,7 +250,9 @@ class _StrColumnToConvert:
 
         return self._dtype
 
-    def update_converted_values(self, new_converted: pd.Series) -> None:
+    def add_converted_values(
+        self, new_converted: pd.Series, inplace: bool = False
+    ) -> Optional["_StrColumnToConvert"]:
         """
         Store the converted values from ``new_converted`` into the instance.
 
@@ -266,15 +268,44 @@ class _StrColumnToConvert:
         new_converted : pd.Series
             Pandas Series containing the column values that have been converted
             to a single specific type, while all the other values are NaN.
+        inplace : bool, optional
+            If False, a copy is modified and returned. Otherwise, the operations
+            are performed inplace and it returns None. Default set to False.
+
+        Returns
+        -------
+        Optional[_StrColumnToConvert]
+            If ``inplace`` argument is set to False, a copy of the instance is
+            modified and returned.
         """
         value_ids_to_insert = np.where(
             np.logical_and(self._converted_values.isna(), new_converted.notna())
         )[0]
+
+        if not inplace:
+            self = copy.deepcopy(self)
+
         self._converted_values.loc[value_ids_to_insert] = new_converted[
             value_ids_to_insert
         ]
 
-        self._updated_dtype(new_converted)
+        self._dtype = self._updated_dtype(new_converted)
+
+        return self
+
+    def __deepcopy__(self, memo=None) -> "_StrColumnToConvert":
+        """
+        Create a deepcopy of the instance
+
+        Returns
+        -------
+        _StrColumnToConvert
+            New instance that is a deepcopy of the current instance
+        """
+        copied = _StrColumnToConvert(self.original_values, self.dtype)
+        copied._coerce_dtype_conversion = self._coerce_dtype_conversion
+        copied._converted_values = self._converted_values.copy()
+        return copied
 
 
 class _ConvertDfToMixedType:
@@ -359,7 +390,7 @@ class _ConvertDfToMixedType:
             Column containing the new converted values
         """
         numeric_col = pd.to_numeric(column.original_values, errors="coerce")
-        column.update_converted_values(numeric_col)
+        column.add_converted_values(numeric_col, inplace=True)
         return column
 
     @staticmethod
@@ -395,7 +426,7 @@ class _ConvertDfToMixedType:
             )[0]
             converted_col[non_bool_ids] = pd.NA
 
-            column.update_converted_values(converted_col)
+            column.add_converted_values(converted_col, inplace=True)
         return column
 
     @staticmethod
@@ -420,7 +451,7 @@ class _ConvertDfToMixedType:
             Column containing the new converted values
         """
         datetime_col = pd.to_datetime(column.original_values, errors="coerce")
-        column.update_converted_values(datetime_col)
+        column.add_converted_values(datetime_col, inplace=True)
         return column
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
