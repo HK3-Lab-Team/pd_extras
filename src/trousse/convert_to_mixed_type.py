@@ -164,7 +164,7 @@ class _StrColumnToConvert:
             self.converted_values.isna()
         ).all()
 
-    def _update_dtype(self, new_converted: pd.Series) -> DtypeObj:
+    def _updated_dtype(self, new_converted: pd.Series) -> DtypeObj:
         """
         Update the column dtype according to the ``new_converted`` values
 
@@ -221,7 +221,7 @@ class _StrColumnToConvert:
             value_ids_to_insert
         ]
 
-        self._update_dtype(new_converted)
+        self._updated_dtype(new_converted)
 
 
 class _ConvertDfToMixedType:
