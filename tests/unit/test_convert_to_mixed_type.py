@@ -243,14 +243,18 @@ class Describe_StrColumnToConvert:
 
         copied_ = copy.deepcopy(mixed_col)
 
-        for key_, value_ in copied_.__dict__.items():
-            if isinstance(value_, pd.Series):
-                assert value_ is not mixed_col.__dict__[key_]
-                pd.testing.assert_series_equal(value_, mixed_col.__dict__[key_])
-            else:
-                # The builtin types share the memory everytime they contain
-                # the same value ('float' is 'float')
-                assert value_ == mixed_col.__dict__[key_]
+        assert copied_._original_values is not mixed_col._original_values
+        pd.testing.assert_series_equal(
+            copied_._original_values, mixed_col._original_values
+        )
+        assert copied_._converted_values is not mixed_col._converted_values
+        pd.testing.assert_series_equal(
+            copied_._converted_values, mixed_col._converted_values
+        )
+        # The builtin types share the memory everytime they contain
+        # the same value ('float' is 'float')
+        assert copied_._dtype == mixed_col._dtype
+        assert copied_._coerce_dtype_conversion == mixed_col._coerce_dtype_conversion
 
 
 class Describe_ConvertDfToMixedType:

@@ -1,12 +1,11 @@
 import copy
-import typing
 from abc import ABC, abstractmethod
-from typing import Any, List, Mapping
+from typing import TYPE_CHECKING, Any, List, Mapping
 
 from .convert_to_mixed_type import _ConvertDfToMixedType
 from .util import is_sequence_and_not_str
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from .dataset import Dataset
 
 

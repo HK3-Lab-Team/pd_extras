@@ -1,8 +1,7 @@
 import collections
-import typing
-from typing import List, Union, Any
+from typing import TYPE_CHECKING, Any, List, Union
 
-if typing.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from .feature_operations import FeatureOperation
 
 
