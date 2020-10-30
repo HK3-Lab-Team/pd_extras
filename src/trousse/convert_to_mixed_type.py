@@ -1,4 +1,6 @@
+import copy
 import logging
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -24,11 +26,21 @@ class _StrColumnToConvert:
         Value that will be set as new dtype of the column. If the value is not None,
         the new column dtype will be forced to this value and the incompatible
         values will be set to None. If None, the dtype will be updated each time
-        new converted values are provided and the last value will be used to convert
-        the column. Default set to None
+        new converted values are provided after. The inferred value will be used
+        to convert the column. Default set to None
 
     Private Attributes
-    ----------
+    ------------------
+    _coerce_dtype_conversion : bool
+        If True the dtype has been selected by the user. If False, the dtype must
+        be inferred by the original values and the new converted values that
+        are provided after.
+    _dtype : DtypeObj
+        Value that will be set as new dtype of the column. If the value is not None,
+        the new column dtype will be forced to this value and the incompatible
+        values will be set to None. If None, the dtype will be updated each time
+        new converted values are provided after. The inferred value will be used
+        to convert the column.
     _original_values : pd.Series
         Column values with the original values that will be replaced with
         converted values if possible.
@@ -40,7 +52,7 @@ class _StrColumnToConvert:
 
     def __init__(self, values: pd.Series, dtype: DtypeObj = None):
 
-        self._coerce_dtype_conversion = not (dtype is None)
+        self._coerce_dtype_conversion = dtype is not None
         self._dtype = dtype
         self._original_values = values.copy()
         # Initialize the _converted_values attribute with NaN
@@ -245,10 +257,9 @@ class _StrColumnToConvert:
         is_column_fully_convertible = self._is_single_typed_column(new_converted)
 
         if is_column_fully_convertible and self._dtype is None:
-
-            self._dtype = new_converted.dtype
-
-        return self._dtype
+            return new_converted.dtype
+        else:
+            return self._dtype
 
     def add_converted_values(
         self, new_converted: pd.Series, inplace: bool = False
