@@ -1,6 +1,8 @@
+import logging
+
 import numpy as np
 import pandas as pd
-from pandas.core.arrays.sparse.dtype import DtypeObj
+from pandas.core.dtypes.dtypes import DtypeObj
 
 
 class _StrColumnToConvert:
@@ -19,8 +21,11 @@ class _StrColumnToConvert:
         Pandas Series that contains the original values of the column that needs
         to be converted to mixed typed values.
     dtype : DtypeObj, optional
-        Value that will be set as dtype of the column. If None, the dtype will be
-        updated each time new converted values are provided. Default set to None
+        Value that will be set as new dtype of the column. If the value is not None,
+        the new column dtype will be forced to this value and the incompatible
+        values will be set to None. If None, the dtype will be updated each time
+        new converted values are provided and the last value will be used to convert
+        the column. Default set to None
 
     Private Attributes
     ----------
@@ -35,6 +40,7 @@ class _StrColumnToConvert:
 
     def __init__(self, values: pd.Series, dtype: DtypeObj = None):
 
+        self._coerce_dtype_conversion = not (dtype is None)
         self._dtype = dtype
         self._original_values = values.copy()
         # Initialize the _converted_values attribute with NaN
@@ -107,7 +113,7 @@ class _StrColumnToConvert:
         Then the method converts the column to the appropriate dtype (based on
         the converted values that could be converted), replaces the NaNs with
         the appropriate NaN format (for datetime column, it will be replaced
-        by NaT value) and returns the resulting pandas Series
+        by NaT value) and returns the resulting pandas Series.
 
         Returns
         -------
@@ -125,9 +131,56 @@ class _StrColumnToConvert:
         # None. These will then be converted to appropriate value with "astype"
         # conversion
         orig_with_conv_values.loc[orig_with_conv_values.isna()] = None
-        orig_with_conv_values = orig_with_conv_values.astype(self.dtype)
+
+        if self._coerce_dtype_conversion:
+            # The dtype was explictly requested in the constructor, so if some
+            # value cannot be converted, we inform the user and use dtype='object'
+            orig_with_conv_values = self._safe_convert_to_dtype(orig_with_conv_values)
+        else:
+            # The dtype was inferred, so if some value cannot be converted, it
+            # should raise an error because something went wrong in computation
+            orig_with_conv_values = orig_with_conv_values.astype(
+                self.dtype,
+                errors="raise",
+            )
 
         return orig_with_conv_values
+
+    def _safe_convert_to_dtype(self, col_serie: pd.Series) -> pd.Series:
+        """
+        Convert ``col_serie`` to the instance dtype, if possible
+
+        If the conversion of some ``col_serie`` values is not possible, the user
+        will be informed and the column will be converted to dtype='object'.
+
+        Parameters
+        ----------
+        col_serie : pd.Series
+            Pandas series that will be converted to the new dtype
+
+        Returns
+        -------
+        pd.Series
+            Pandas Series converted to the new dtype
+        """
+        try:
+            converted_col_serie = col_serie.astype(
+                self.dtype,
+                errors="raise",
+            )
+        except ValueError as e:
+            # The column dtype cannot be changed to dtype.
+            # 1. If the dtype was inferred, something went wrong in computation
+            # 2. If the dtype was explictly requested, we inform the user
+            logging.warning(
+                f"{e}\nThe requested column dtype cannot be used on the column"
+                "and 'object' dtype will be used instead."
+            )
+            converted_col_serie = col_serie.astype(
+                self.dtype,
+                errors="ignore",
+            )
+        return converted_col_serie
 
     def _is_single_typed_column(
         self,
@@ -193,7 +246,7 @@ class _StrColumnToConvert:
 
         if is_column_fully_convertible and self._dtype is None:
 
-                self._dtype = new_converted.dtype
+            self._dtype = new_converted.dtype
 
         return self._dtype
 
