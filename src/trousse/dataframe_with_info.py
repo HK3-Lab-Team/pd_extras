@@ -19,7 +19,12 @@ from .exceptions import (
 )
 from .feature_enum import OperationTypeEnum
 from .feature_operation import FeatureOperation
-from .settings import CATEG_COL_THRESHOLD
+
+# Ratio R used to select which columns are categorical. Column is categorical when:
+# ("Number of column unique values" < 7 ) or
+#       "Number of column unique values" < "Not-NaN values count in column" / R
+# R = How many times a unique value is repeated in column (in average)
+CATEG_COL_THRESHOLD = 300
 
 logger = logging.getLogger(__name__)
 
