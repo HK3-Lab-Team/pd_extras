@@ -1,60 +1,13 @@
 import copy
 import logging
-from typing import Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
 
 from .dataframe_with_info import DataFrameWithInfo, copy_df_info_with_new_df
-from .settings import (
-    CHAR_REPLACE_DICT, NAN_VALUE, NOT_NA_STRING_COL_THRESHOLD, PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
-    WHOLE_WORD_REPLACE_DICT)
 
 logger = logging.getLogger(__name__)
-
-
-def _check_numeric_cols(df_info: DataFrameWithInfo, col_list: Tuple):
-    """
-    This is to correct those columns that have mixed/string-only types containing numerical values.
-    It will check if the ratio between numeric values (or convertible to ones) and the total count of
-    not-NaN values is more than NOT_NA_STRING_COL_THRESHOLD (defined in feature_enum.py)
-    Parameters
-    ----------
-    df_info: DataFrameWithInfo
-
-    Returns
-    -------
-    df_info: DataFrameWithInfo
-    """
-    numeric_cols = []
-    for col in col_list:
-        numeric_col_serie = pd.to_numeric(df_info.df[col], errors="coerce")
-        notna_num_count = numeric_col_serie.count()
-        num_valuecount_ratio = notna_num_count / df_info.df[col].count()
-        if num_valuecount_ratio > NOT_NA_STRING_COL_THRESHOLD:
-            # Find values that are NaN after conversion (and that were not NaN before)
-            lost_values = set(
-                df_info.df[col][df_info.df[col].notna() & numeric_col_serie.isna()]
-            )
-            logger.info(
-                f"{col} can be converted from String to Numeric. "
-                f"Lost values would be {1- num_valuecount_ratio}: \n{lost_values}"
-            )
-            numeric_cols.append(col)
-
-    return numeric_cols
-
-
-def _convert_to_float_or_int(float_n):
-    """ Chooses the appropriate conversion format 'float' or 'int' for a numerical value """
-    try:
-        int_n = int(float_n)
-        if float_n == int_n:
-            return int_n
-        else:
-            return float_n
-    except ValueError:
-        return NAN_VALUE
 
 
 class RowFix:
@@ -65,9 +18,11 @@ class RowFix:
 
     def __init__(
         self,
-        char_replace_dict: Dict[str, str] = CHAR_REPLACE_DICT,
-        whole_word_replace_dict: Dict[str, str] = WHOLE_WORD_REPLACE_DICT,
-        percentage_to_add_out_of_scale: float = PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
+        nan_value: Any,
+        not_na_string_col_threshold: int,
+        char_replace_dict: Dict[str, str],
+        whole_word_replace_dict: Dict[str, str],
+        percentage_to_add_out_of_scale: float,
     ):
         """
         This class is to fix common errors like mixed types, or little typos defined as argument,
@@ -78,6 +33,8 @@ class RowFix:
         :param char_replace_dict: This char-to-char dict is used to replace characters inside the strings,
         so they can be converted to numerical
         """
+        self.nan_value = nan_value
+        self.not_na_string_col_threshold = not_na_string_col_threshold
         self.percentage_to_add_out_of_scale = percentage_to_add_out_of_scale
         self.whole_word_replace_dict = whole_word_replace_dict
         self.char_replace_dict = char_replace_dict
@@ -85,6 +42,52 @@ class RowFix:
         self.errors_after_correction_dict = {}
         self.ids_rows_with_remaining_mistakes = set()
         self.ids_rows_with_initial_mistakes = set()
+
+    def _convert_to_float_or_int(self, float_n) -> Any:
+        """Choose the appropriate conversion format for a numeric value"""
+        try:
+            int_n = int(float_n)
+            if float_n == int_n:
+                return int_n
+            else:
+                return float_n
+        except ValueError:
+            return self.nan_value
+
+    def _check_numeric_cols(
+        self, df_info: DataFrameWithInfo, col_list: Tuple
+    ) -> List[int]:
+        """
+        Find the columns that have mixed/string-only values interpretable as numbers.
+        It will check if the ratio between numeric values (or convertible to ones)
+        and the total count of not-NaN values is more than
+        the ``not_na_string_col_threshold`` defined in the constructor.
+
+        Parameters
+        ----------
+        df_info : DataFrameWithInfo
+
+        Returns
+        -------
+        List[int]
+        """
+        numeric_cols = []
+        for col in col_list:
+            numeric_col_serie = pd.to_numeric(df_info.df[col], errors="coerce")
+            notna_num_count = numeric_col_serie.count()
+            num_valuecount_ratio = notna_num_count / df_info.df[col].count()
+            if num_valuecount_ratio > self.not_na_string_col_threshold:
+                # Find values that are NaN after conversion (and that were not NaN before)
+                lost_values = set(
+                    df_info.df[col][df_info.df[col].notna() & numeric_col_serie.isna()]
+                )
+                logger.info(
+                    f"{col} can be converted from String to Numeric. "
+                    f"Lost values would be {1- num_valuecount_ratio}: \n{lost_values}"
+                )
+                numeric_cols.append(col)
+
+        return numeric_cols
 
     def _populate_non_float_convertible_errors_dict(
         self, full_row: pd.Series, column: str
@@ -108,11 +111,11 @@ class RowFix:
         try:
             result = float(result)
             if symbol == ">":
-                return _convert_to_float_or_int(
+                return self._convert_to_float_or_int(
                     result + self.percentage_to_add_out_of_scale * result
                 )
             elif symbol == "<":
-                return _convert_to_float_or_int(
+                return self._convert_to_float_or_int(
                     result - self.percentage_to_add_out_of_scale * result
                 )
             else:
@@ -132,7 +135,7 @@ class RowFix:
         elem = full_row[column]
         try:
             str_to_float = float(elem)
-            return _convert_to_float_or_int(str_to_float)
+            return self._convert_to_float_or_int(str_to_float)
         except ValueError:
             try:
                 # Retry replacing some common mistakes in small parts of the values --> if the only thing
@@ -141,11 +144,11 @@ class RowFix:
                     self.char_replace_dict.get(char, char) for char in str(elem)
                 )
                 str_to_float = float(elem)
-                return _convert_to_float_or_int(str_to_float)
+                return self._convert_to_float_or_int(str_to_float)
             except ValueError:
                 if "%" in str(elem):
                     # If the value is a percentage, it means that no absolute value can be measured -> None
-                    return NAN_VALUE
+                    return self.nan_value
                 elif ">" in str(elem):
                     # Check if the value was out of scale
                     return self._convert_out_of_scale_values(elem, symbol=">")
@@ -157,9 +160,9 @@ class RowFix:
                     result = self.whole_word_replace_dict[str(elem).strip()]
                     # If None value should be returned, return NAN_VALUE
                     return (
-                        NAN_VALUE
+                        self.nan_value
                         if result in [None, ""]
-                        else _convert_to_float_or_int(result)
+                        else self._convert_to_float_or_int(result)
                     )
                 except KeyError:
                     # The whole word could not be replaced by the dict and nothing else worked
@@ -168,12 +171,12 @@ class RowFix:
                     return elem
         except TypeError:
             # NaN value was found, so return NaN
-            return NAN_VALUE
+            return self.nan_value
 
     def fix_typos(
         self, df_info: DataFrameWithInfo, column_list: Tuple = (), verbose: int = 0
     ) -> DataFrameWithInfo:
-        """ This function is to fix the common errors in the columns "column_list"
+        """This function is to fix the common errors in the columns "column_list"
         of the pd.DataFrame 'df'
 
         @param df_info: DataFrameWithInfo
@@ -253,7 +256,7 @@ class RowFix:
         set_to_correct_dtype: bool = True,
         verbose: int = 0,
     ) -> DataFrameWithInfo:
-        """ This function is to fix the common errors in the columns "column_list"
+        """This function is to fix the common errors in the columns "column_list"
         of the pd.DataFrame 'df'.
         We try to fix:
         1. Mixed columns -> by converting to numbers if possible by using feature_enum.py mappers
@@ -273,7 +276,7 @@ class RowFix:
         """
         cols_by_type = df_info.column_list_by_type
         # Get the columns that contain strings, but are actually numerical
-        num_cols = _check_numeric_cols(df_info, col_list=cols_by_type.str_cols)
+        num_cols = self._check_numeric_cols(df_info, col_list=cols_by_type.str_cols)
         # Fix the convertible values
         df_output = self.fix_typos(
             df_info,
