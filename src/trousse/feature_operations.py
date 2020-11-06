@@ -187,6 +187,13 @@ class FillNA(FeatureOperation):
 
         return False
 
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__ + f"(\n\tcolumns={self.columns},"
+            f"\n\tvalue={self.value},"
+            f"\n\tderived_columns={self.derived_columns},\n)"
+        )
+
     def __str__(self) -> str:
         return (
             self.__class__.__name__ + f"(\n\tcolumns={self.columns},"
@@ -325,6 +332,13 @@ class ReplaceSubstrings(FeatureOperation):
 
         return False
 
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__ + f"(\n\tcolumns={self.columns},"
+            f"\n\treplacement_map={self.replacement_map},"
+            f"\n\tderived_columns={self.derived_columns},\n)"
+        )
+
     def __str__(self) -> str:
         return (
             self.__class__.__name__ + f"(\n\tcolumns={self.columns},"
@@ -428,6 +442,13 @@ class ReplaceStrings(ReplaceSubstrings):
             return True
 
         return False
+
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__ + f"(\n\tcolumns={self.columns},"
+            f"\n\treplacement_map={self.replacement_map},"
+            f"\n\tderived_columns={self.derived_columns},\n)"
+        )
 
     def __str__(self) -> str:
         return (
