@@ -562,3 +562,18 @@ class DescribeReplaceSubstrings:
 
         assert type(equal) == bool
         assert equal == expected_equal
+
+    def it_knows_its_str(self):
+        feat_op = fop.ReplaceSubstrings(
+            columns=["exam_num_col_0"],
+            derived_columns=["replaced_exam_num_col_0"],
+            replacement_map={"a": "b", "c": "d"},
+        )
+
+        _str = str(feat_op)
+
+        assert type(_str) == str
+        assert _str == (
+            "ReplaceSubstrings(\n\tcolumns=['exam_num_col_0'],\n\treplacement_map="
+            "{'a': 'b', 'c': 'd'},\n\tderived_columns=['replaced_exam_num_col_0'],\n)"
+        )

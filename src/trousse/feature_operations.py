@@ -428,3 +428,10 @@ class ReplaceStrings(ReplaceSubstrings):
             return True
 
         return False
+
+    def __str__(self) -> str:
+        return (
+            self.__class__.__name__ + f"(\n\tcolumns={self.columns},"
+            f"\n\treplacement_map={self.replacement_map},"
+            f"\n\tderived_columns={self.derived_columns},\n)"
+        )
