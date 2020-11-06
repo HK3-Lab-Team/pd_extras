@@ -37,18 +37,15 @@ The traced data path can be inspected through `operation_history` attribute.
 >>> dataset.operations_history
 ```
 ```bash
-[
-    FillNA(
-        columns=["column_with_nan"],
-        derived_columns=["column_filled"],
-        value=0,
-    ),
-    ReplaceSubstrings(
-        columns=["column_invalid_values"],
-        derived_columns=["column_valid_values"],
-        replacement_map={",": ".", "°": ""},
-    ),
-]
+[FillNA(
+    columns=["column_with_nan"],
+    value=0,
+    derived_columns=["column_filled"],
+), ReplaceSubstrings(
+    columns=["column_invalid_values"],
+    replacement_map={",": ".", "°": ""},
+    derived_columns=["column_valid_values"],
+)]
 ```
 
 ### Automatic column data type detection
@@ -93,13 +90,13 @@ Along with the common preprocessing utilities (for encoding, binning, scaling, e
 ...     [
 ...         FillNA(
 ...             columns=["column_with_nan"],
-...             derived_columns=["column_filled"],
 ...             value=0,
+...             derived_columns=["column_filled"],
 ...         ),
 ...         ReplaceSubstrings(
 ...             columns=["column_invalid_values"],
-...             derived_columns=["column_valid_values"],
 ...             replacement_map={",": ".", "°": ""},
+...             derived_columns=["column_valid_values"],
 ...         ),
 ...     ]
 ... )
