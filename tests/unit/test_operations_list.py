@@ -260,3 +260,15 @@ class DescribeOperationsList:
 
         assert type(equal) == bool
         assert equal is False
+
+    def it_knows_its_str(self, fillna_col0_col1, fillna_col1_col4):
+        op_list = OperationsList()
+        op_list._operations_list = [fillna_col0_col1, fillna_col1_col4]
+
+        _str = str(op_list)
+
+        assert type(_str) == str
+        assert _str == (
+            "[FillNA(\n\tcolumns=['col0'],\n\tvalue=0,\n\tderived_columns=['col1'],\n)"
+            ", FillNA(\n\tcolumns=['col1'],\n\tvalue=0,\n\tderived_columns=['col4'],\n)]"
+        )
