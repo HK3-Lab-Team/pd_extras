@@ -187,6 +187,13 @@ class FillNA(FeatureOperation):
 
         return False
 
+    def __str__(self) -> str:
+        return (
+            self.__class__.__name__ + f"(\n\tcolumns={self.columns},"
+            f"\n\tderived_columns={self.derived_columns},"
+            f"\n\tvalue={self.value},\n)"
+        )
+
     def is_similar(self, other: FeatureOperation):
         raise NotImplementedError
 

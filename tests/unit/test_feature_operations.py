@@ -197,6 +197,16 @@ class DescribeFillNa:
         assert type(equal) == bool
         assert equal == expected_equal
 
+    def it_knows_its_str(self):
+        feat_op = fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
+
+        _str = str(feat_op)
+
+        assert type(_str) == str
+        assert _str == (
+            "FillNA(\n\tcolumns=['col0'],\n\tderived_columns=['col1'],\n\tvalue=0,\n)"
+        )
+
 
 class DescribeReplaceStrings:
     def it_construct_from_args(self, request):
