@@ -18,20 +18,36 @@ class RowFix:
 
     def __init__(
         self,
-        nan_value: Any,
-        not_na_string_col_threshold: int,
         char_replace_dict: Dict[str, str],
         whole_word_replace_dict: Dict[str, str],
-        percentage_to_add_out_of_scale: float,
+        nan_value: Any = np.nan,
+        not_na_string_col_threshold: int = 0.4,
+        percentage_to_add_out_of_scale: float = 0.02,
     ):
         """
-        This class is to fix common errors like mixed types, or little typos defined as argument,
-        that prevent the column conversion to float.
-        :param whole_word_replace_dict: This string-to-string dict is used to replace
-        the whole value of a row with another string/float, or None, so it can be converted
-        to float or NaN
-        :param char_replace_dict: This char-to-char dict is used to replace characters inside the strings,
-        so they can be converted to numerical
+        Class that fixes common errors like mixed types, or little typos.
+
+        The performed data cleaning should help for column conversion to numeric dtypes.
+
+        Parameters
+        ----------
+        whole_word_replace_dict : Dict[str, str]
+            This string-to-string dict is used to replace the whole value of a
+            row with another string/float, or None, so it can be converted
+            to float or NaN. The mapped values will be inserted only when the datum
+            is exactly identical to the related key.
+        char_replace_dict : Dict[str, str]
+            This char-to-char dict is used to replace characters inside the strings,
+            so they can be converted to numerical
+        not_na_string_col_threshold : int
+            When we check a column with only string values in order to see if the
+            strings are actually numeric values, we try to cast string to numeric and
+            we will get NaN if the values are not castable to numeric.  If the ratio
+            of "not-NaN values after conversion" / "not-NaN values before conversion
+            to numeric" > ``not_na_string_col_threshold``, then the column is
+            considered to be numeric and later the script will try to fix some typos
+            in remaining NaN. Otherwise the column will be considered as "String" type
+        nan_value : Any
         """
         self.nan_value = nan_value
         self.not_na_string_col_threshold = not_na_string_col_threshold
