@@ -5,6 +5,7 @@ from typing import Any, List, Mapping
 
 from .dataset import Dataset
 from .util import is_sequence_and_not_str
+import sklearn.preprocessing as sk_preproc
 
 
 class FeatureOperation(ABC):
@@ -456,3 +457,95 @@ class ReplaceStrings(ReplaceSubstrings):
             f"\n\treplacement_map={self.replacement_map},"
             f"\n\tderived_columns={self.derived_columns},\n)"
         )
+
+
+class OrdinalEncoder(FeatureOperation):
+    """Encode ``columns`` with a ordinal encoder.
+
+    By default, the column is encoded in place. To store the result of the encoding in
+    another column, ``derived_columns`` parameter has to be set with
+    the name of the corresponding column name.
+
+    Parameters
+    ----------
+    columns : List[str]
+        Name of the column to encode. It must be a single-element list.
+    derived_columns : List[str], optional
+        Name of the column where to store the encoding result. Default is None,
+        meaning that the original column is encoded in place. If not None, it
+        must be a single-element list.
+
+    Returns
+    -------
+    Dataset
+        The new Dataset with the column encoded.
+
+    Raises
+    ------
+    ValueError
+        If ``columns`` or ``derived_columns`` are not a single-element list.
+    TypeError
+            If ``columns`` is not a list
+    TypeError
+        If ``derived_columns`` is not None and it is not a list
+    """
+
+    def __init__(self, columns: List[str], derived_columns: List[str] = None) -> None:
+        self._validate_single_element_columns(columns)
+        self._validate_single_element_derived_columns(derived_columns)
+
+        self.columns = columns
+        self.derived_columns = derived_columns
+
+    def _apply(self, dataset: Dataset) -> Dataset:
+        """Apply OrdinalEncoder operation on a new Dataset instance and return it.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to apply the operation on
+
+        Returns
+        -------
+        Dataset
+            New Dataset instance with the operation applied on
+        """
+        dataset = copy.deepcopy(dataset)
+        series = dataset.data[self.columns[0]]
+
+        self.encoder = sk_preproc.OrdinalEncoder()
+        series_enc = self.encoder.fit_transform(series)
+
+        if self.derived_columns is not None:
+            dataset.data[self.derived_columns[0]] = series_enc
+        else:
+            dataset.data[self.columns[0]] = series_enc
+
+        return dataset
+
+    def __eq__(self, other: Any) -> bool:
+        """Return True if ``other`` is a OrdinalEncoder instance and it has the same fields value.
+
+        Parameters
+        ----------
+        other : Any
+            The instance to compare
+
+        Returns
+        -------
+        bool
+            True if ``other`` is a OrdinalEncoder instance and it has the same fields
+            value, False otherwise
+        """
+        if not isinstance(other, OrdinalEncoder):
+            return False
+        if (
+            self.columns == other.columns
+            and self.derived_columns == other.derived_columns
+        ):
+            return True
+
+        return False
+
+    def is_similar(self, other: FeatureOperation):
+        raise NotImplementedError

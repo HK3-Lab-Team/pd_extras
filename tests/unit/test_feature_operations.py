@@ -5,6 +5,8 @@ from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 
 from ..dataset_util import DataFrameMock
+import sklearn.preprocessing as sk_preproc
+
 from ..unitutil import ANY, function_mock, initializer_mock, method_mock
 
 
@@ -563,6 +565,7 @@ class DescribeReplaceSubstrings:
         assert type(equal) == bool
         assert equal == expected_equal
 
+<<<<<<< dcbcdc592790178f40630aeb908d7dc8da4f20df
     def it_knows_its_str(self):
         feat_op = fop.ReplaceSubstrings(
             columns=["exam_num_col_0"],
@@ -577,3 +580,144 @@ class DescribeReplaceSubstrings:
             "ReplaceSubstrings(\n\tcolumns=['exam_num_col_0'],\n\treplacement_map="
             "{'a': 'b', 'c': 'd'},\n\tderived_columns=['replaced_exam_num_col_0'],\n)"
         )
+=======
+
+class DescribeOrdinalEncoder:
+    def it_construct_from_args(self, request):
+        _init_ = initializer_mock(request, fop.OrdinalEncoder)
+
+        ordinal_encoder = fop.OrdinalEncoder(columns=["col0"], derived_columns=["col1"])
+
+        _init_.assert_called_once_with(
+            ANY,
+            columns=["col0"],
+            derived_columns=["col1"],
+        )
+        assert isinstance(ordinal_encoder, fop.OrdinalEncoder)
+
+    def and_it_validates_its_arguments(self, request):
+        validate_columns_ = method_mock(
+            request, fop.OrdinalEncoder, "_validate_single_element_columns"
+        )
+        validate_derived_columns_ = method_mock(
+            request, fop.OrdinalEncoder, "_validate_single_element_derived_columns"
+        )
+
+        ordinal_encoder = fop.OrdinalEncoder(columns=["col0"], derived_columns=["col1"])
+
+        validate_columns_.assert_called_once_with(ordinal_encoder, ["col0"])
+        validate_derived_columns_.assert_called_once_with(ordinal_encoder, ["col1"])
+
+    @pytest.mark.parametrize(
+        "columns, derived_columns, expected_new_columns",
+        [
+            (
+                ["exam_str_col_0"],
+                ["col1"],
+                ["col1"],
+            ),
+            (
+                ["exam_str_col_0"],
+                None,
+                [],
+            ),
+        ],
+    )
+    def it_can_apply_ordinal_encoder(
+        self,
+        request,
+        columns,
+        derived_columns,
+        expected_new_columns,
+    ):
+        df = DataFrameMock.df_generic(sample_size=100)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = df
+        dataset = Dataset(data_file="fake/path0")
+        sk_fit_transform_ = method_mock(
+            request, sk_preproc.OrdinalEncoder, "fit_transform"
+        )
+        sk_fit_transform_.return_value = pd.Series(range(100))
+        ordinal_encoder = fop.OrdinalEncoder(
+            columns=columns,
+            derived_columns=derived_columns,
+        )
+
+        encoded_dataset = ordinal_encoder._apply(dataset)
+
+        assert encoded_dataset is not None
+        assert encoded_dataset is not dataset
+        assert isinstance(encoded_dataset, Dataset)
+        for col in expected_new_columns:
+            assert col in encoded_dataset.data.columns
+        get_df_from_csv_.assert_called_once_with("fake/path0")
+        assert len(sk_fit_transform_.call_args_list) == len(columns)
+        pd.testing.assert_series_equal(
+            sk_fit_transform_.call_args_list[0][0][1], df[columns[0]]
+        )
+
+    def it_can_encode_with_template_call(self, request):
+        _apply_ = method_mock(request, fop.OrdinalEncoder, "_apply")
+        track_history_ = method_mock(request, Dataset, "track_history")
+        df = DataFrameMock.df_generic(sample_size=100)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = df
+        dataset_in = Dataset(data_file="fake/path0")
+        dataset_out = Dataset(data_file="fake/path0")
+        _apply_.return_value = dataset_out
+        ordinal_encoder = fop.OrdinalEncoder(
+            columns=["exam_num_col_0"],
+            derived_columns=["exam_str_col_0"],
+        )
+
+        replaced_dataset = ordinal_encoder(dataset_in)
+
+        _apply_.assert_called_once_with(ordinal_encoder, dataset_in)
+        track_history_.assert_called_once_with(replaced_dataset, ordinal_encoder)
+        assert replaced_dataset is dataset_out
+
+    @pytest.mark.parametrize(
+        "other, expected_equal",
+        [
+            (
+                fop.OrdinalEncoder(
+                    columns=["exam_num_col_0"],
+                    derived_columns=["encoded_exam_num_col_0"],
+                ),
+                True,
+            ),
+            (
+                fop.OrdinalEncoder(
+                    columns=["exam_num_col_1"],
+                    derived_columns=["encoded_exam_num_col_0"],
+                ),
+                False,
+            ),
+            (
+                fop.OrdinalEncoder(
+                    columns=["exam_num_col_0"],
+                    derived_columns=["encoded_exam_num_col_1"],
+                ),
+                False,
+            ),
+            (
+                fop.OrdinalEncoder(
+                    columns=["exam_num_col_1"],
+                    derived_columns=["encoded_exam_num_col_1"],
+                ),
+                False,
+            ),
+            (dict(), False),
+        ],
+    )
+    def it_knows_if_equal(self, other, expected_equal):
+        feat_op = fop.OrdinalEncoder(
+            columns=["exam_num_col_0"],
+            derived_columns=["encoded_exam_num_col_0"],
+        )
+
+        equal = feat_op == other
+
+        assert type(equal) == bool
+        assert equal == expected_equal
+>>>>>>> Add OrdinalEncoder FeatureOperation + its unit tests
