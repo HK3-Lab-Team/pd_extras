@@ -204,7 +204,7 @@ class DescribeFillNa:
 
         assert type(_str) == str
         assert _str == (
-            "FillNA(\n\tcolumns=['col0'],\n\tderived_columns=['col1'],\n\tvalue=0,\n)"
+            "FillNA(\n\tcolumns=['col0'],\n\tvalue=0,\n\tderived_columns=['col1'],\n)"
         )
 
 
