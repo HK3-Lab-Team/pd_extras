@@ -511,10 +511,10 @@ class OrdinalEncoder(FeatureOperation):
             New Dataset instance with the operation applied on
         """
         dataset = copy.deepcopy(dataset)
-        series = dataset.data[self.columns[0]]
+        data = dataset.data[[self.columns[0]]]
 
         self.encoder = sk_preproc.OrdinalEncoder()
-        series_enc = self.encoder.fit_transform(series)
+        series_enc = self.encoder.fit_transform(data).astype("int64")
 
         if self.derived_columns is not None:
             dataset.data[self.derived_columns[0]] = series_enc
