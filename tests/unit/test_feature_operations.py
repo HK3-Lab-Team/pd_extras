@@ -652,8 +652,8 @@ class DescribeOrdinalEncoder:
             assert col in encoded_dataset.data.columns
         get_df_from_csv_.assert_called_once_with("fake/path0")
         assert len(sk_fit_transform_.call_args_list) == len(columns)
-        pd.testing.assert_series_equal(
-            sk_fit_transform_.call_args_list[0][0][1], df[columns[0]]
+        pd.testing.assert_frame_equal(
+            sk_fit_transform_.call_args_list[0][0][1], df[[columns[0]]]
         )
 
     def it_can_encode_with_template_call(self, request):
