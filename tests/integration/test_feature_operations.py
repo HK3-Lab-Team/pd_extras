@@ -89,3 +89,32 @@ def test_replace_substrings(csv, columns, derived_columns, expected_csv):
     replaced_dataset = replace_substrings(dataset)
 
     pd.testing.assert_frame_equal(replaced_dataset.data, expected_df)
+
+
+@pytest.mark.parametrize(
+    "csv, columns, derived_columns, expected_csv",
+    (
+        (
+            CSV.generic,
+            ["col3"],
+            None,
+            "csv/generic-ordinal-encoded-col3-inplace",
+        ),
+        (
+            CSV.generic,
+            ["col3"],
+            ["col4"],
+            "csv/generic-ordinal-encoded-col3-col4",
+        ),
+    ),
+)
+def test_ordinal_encoder(csv, columns, derived_columns, expected_csv):
+    dataset = Dataset(data_file=csv)
+    expected_df = load_expectation(expected_csv, type_="csv")
+    ordinal_encoder = fop.OrdinalEncoder(
+        columns=columns, derived_columns=derived_columns
+    )
+
+    encoded_dataset = ordinal_encoder(dataset)
+
+    pd.testing.assert_frame_equal(encoded_dataset.data, expected_df)
