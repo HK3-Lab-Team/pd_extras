@@ -1,13 +1,13 @@
 import itertools
 import logging
-from typing import Tuple
+from typing import Any, Tuple
 
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-from .dataset import Dataset, FeatureOperation, copy_dataset_with_new_df
-from .feature_enum import ENCODED_COLUMN_SUFFIX, EncodingFunctions, OperationTypeEnum
+from .dataset import Dataset, copy_dataset_with_new_df
+from .feature_operations import FeatureOperation
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ def split_continuous_column_into_bins(dataset: Dataset, col_name, bin_threshold)
     dataset.track_history(
         FeatureOperation(
             original_columns=col_name,
-            operation_type=OperationTypeEnum.BIN_SPLITTING,
+            operation_type="BIN_SPLITTING",
             encoded_values_map=bin_id_range_map,
             derived_columns=new_col_name,
         )
@@ -117,7 +117,7 @@ def combine_categorical_columns_to_one(
         Name of the new column
     """
     # Define the name of the new column containing the combination of 'column_list' values
-    new_column_name = f"{'-'.join([c for c in columns_list])}{ENCODED_COLUMN_SUFFIX}"
+    new_column_name = f"{'-'.join([c for c in columns_list])}_enc"
 
     # If the column has already been created, return the dataset
     if new_column_name in dataset.data.columns:
@@ -168,7 +168,7 @@ def combine_categorical_columns_to_one(
     dataset.track_history(
         FeatureOperation(
             original_columns=columns_list,
-            operation_type=OperationTypeEnum.FEAT_COMBOS_ENCODING,
+            operation_type="FEAT_COMBOS_ENCODING",
             encoded_values_map=new_columns_encoding_maps,
             derived_columns=new_column_name,
         )
@@ -213,9 +213,7 @@ def _one_hot_encode_column(
     except ValueError:
         logger.debug(f"No NaN values were found in column {column}")
     # Name the new columns after the categories (adding a suffix). Exclude the first which was dropped
-    new_column_names = [
-        f"{column}_{col}{ENCODED_COLUMN_SUFFIX}" for col in encoded_categories[1:]
-    ]
+    new_column_names = [f"{column}_{col}_enc" for col in encoded_categories[1:]]
     # Add the new encoded columns to the df_new
     for i, col in enumerate(new_column_names):
         df_new[col] = transformed_cols[:, i]
@@ -248,10 +246,10 @@ def _ordinal_encode_column(df, column, drop_old_column: bool = False):
     encoder = OrdinalEncoder()
     encoder_fitted = encoder.fit(series)  # Encoder object (for reverse transformation)
     series_enc = encoder_fitted.transform(series)
-    new_column = f"{column}{ENCODED_COLUMN_SUFFIX}"
+    new_column = f"{column}_enc"
     # Convert the encoded columns to Integer type (this pandas Dtype is for handling NaN values)
     df_new[new_column] = series_enc
-    df_new[new_column] = df_new[new_column].astype(pd.Int16Dtype())
+    df_new[new_column] = df_new[new_column].astype("int64")
 
     if drop_old_column:
         df_new = df_new.drop(column, axis=1)
@@ -261,7 +259,7 @@ def _ordinal_encode_column(df, column, drop_old_column: bool = False):
 def encode_single_categorical_column(
     dataset: Dataset,
     col_name: str,
-    encoding: EncodingFunctions = EncodingFunctions.ORDINAL,
+    encoding: Any = "EncodingFunctions.ORDINAL",
     drop_one_new_column: bool = True,
     drop_old_column: bool = False,
     force: bool = False,
@@ -321,11 +319,11 @@ def encode_single_categorical_column(
         df_to_encode.loc[:, col_name] = df_to_encode[col_name].astype(str).str.title()
 
     # Encoding using the selected function
-    if encoding == EncodingFunctions.ORDINAL:
+    if encoding == "ORDINAL":
         df_encoded, encoder, new_columns = _ordinal_encode_column(
             df_to_encode, column=col_name, drop_old_column=drop_old_column
         )
-    elif encoding == EncodingFunctions.ONEHOT:
+    elif encoding == "ONEHOT":
         df_encoded, encoder, new_columns = _one_hot_encode_column(
             df_to_encode,
             column=col_name,
@@ -335,7 +333,7 @@ def encode_single_categorical_column(
     else:
         logging.error(
             f"No valid encoding_func argument. Possible "
-            f"values are: {[e.name for e in EncodingFunctions]}"
+            f"values are: {[e.name for e in ['Ordinal', 'Categorical']]}"
         )
         return None
 
@@ -353,7 +351,7 @@ def encode_single_categorical_column(
     dataset_encoded.track_history(
         FeatureOperation(
             original_columns=col_name,
-            operation_type=OperationTypeEnum.CATEGORICAL_ENCODING,
+            operation_type="CATEGORICAL_ENCODING",
             encoder=encoder,
             encoded_values_map=encoded_values_map,
             derived_columns=tuple(new_columns),
@@ -366,7 +364,7 @@ def encode_single_categorical_column(
 def encode_multi_categorical_columns(
     dataset: Dataset,
     columns: Tuple = None,
-    encoding: EncodingFunctions = EncodingFunctions.ORDINAL,
+    encoding: Any = "ORDINAL",
     drop_one_new_column: bool = True,
     drop_old_column: bool = False,
 ):
