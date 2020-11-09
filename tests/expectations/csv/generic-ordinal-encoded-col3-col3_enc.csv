@@ -1,0 +1,5 @@
+col0,col1,col2,col3,col3_enc
+a,b,e,abc,0
+a,b,c,abc,0
+d,b,c,abr,1
+a,b,c,abc,0
