@@ -4,10 +4,10 @@ from typing import Any, Tuple
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from sklearn.preprocessing import OneHotEncoder
 
 from .dataset import Dataset, copy_dataset_with_new_df
-from .feature_operations import FeatureOperation
+from .feature_operations import FeatureOperation, OrdinalEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -239,21 +239,13 @@ def _ordinal_encode_column(df, column, drop_old_column: bool = False):
     -------
 
     """
-    df_new = df.copy()
-    series = df_new[column].values
-    # Adding a new dimension for use with OrdinalEncoder (1D array to column vector shape=(5,1))
-    series = series[..., np.newaxis]
-    encoder = OrdinalEncoder()
-    encoder_fitted = encoder.fit(series)  # Encoder object (for reverse transformation)
-    series_enc = encoder_fitted.transform(series)
-    new_column = f"{column}_enc"
-    # Convert the encoded columns to Integer type (this pandas Dtype is for handling NaN values)
-    df_new[new_column] = series_enc
-    df_new[new_column] = df_new[new_column].astype("int64")
 
-    if drop_old_column:
-        df_new = df_new.drop(column, axis=1)
-    return df_new, encoder_fitted, [new_column]
+    dataset = Dataset(df_object=df)
+    derived_column = f"{column}_enc"
+    ordinal_encoder = OrdinalEncoder(columns=[column], derived_columns=[derived_column])
+
+    encoded_dataset = ordinal_encoder(dataset)
+    return encoded_dataset.data, ordinal_encoder.encoder, [derived_column]
 
 
 def encode_single_categorical_column(
