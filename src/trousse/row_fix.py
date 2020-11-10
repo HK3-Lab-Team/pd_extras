@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -226,7 +226,7 @@ class RowFix:
         print()
 
         if verbose:
-            logging.info(self.count_errors())
+            logger.info(self.count_errors())
 
         return copy_df_info_with_new_df(df_info=df_info, new_pandas_df=df_converted)
 
@@ -310,9 +310,72 @@ class RowFix:
         print("The errors per feature are:")
         for c in self.errors_before_correction_dict.keys():
             print(
-                f"{c}: {len(self.errors_before_correction_dict[c])} : {set(self.errors_before_correction_dict[c])}"
-                f" ---> {len(self.errors_after_correction_dict[c])} : {set(self.errors_after_correction_dict[c])}"
+                f"{c}: {len(self.errors_before_correction_dict[c])} :"
+                f" {set(self.errors_before_correction_dict[c])}"
+                f" ---> {len(self.errors_after_correction_dict[c])} :"
+                f" {set(self.errors_after_correction_dict[c])}"
             )
+
+    @staticmethod
+    def set_non_numeric_values_to_nan(
+        df_info: DataFrameWithInfo,
+        columns: Iterable,
+        nan_value: Any = np.nan,
+        dry_run: bool = False,
+        verbose: bool = True,
+    ) -> DataFrameWithInfo:
+        """
+        Convert to NaN all the values that cannot be converted to numbers.
+
+        This method also logs the number of values that are converted to NaN because
+        non number-convertible.
+
+        Parameters
+        ----------
+        df_info : DataFrameWithInfo
+            Instance with the data that will be analyzed and set to NaN
+        columns : Iterable
+            List of columns of ``df_info`` that will be analyzed and modified.
+            Usually it can be set to "mixed-type" columns.
+        nan_value : Any
+            Value that will replace all the non number convertible values.
+        dry_run : bool, optional
+            If True, a dry run will be performed. Usually this is to check which
+            and how many values are not numeric. If False, the non numeric
+            values will be converted to Nan. Default set to False.
+        verbose : bool, optional
+            If True,the function will log the non numeric values per column that will
+            be set to NaN. If False, it will only log the total count of values
+            converted to NaN. Default set to True.
+
+        Returns
+        -------
+        DataFrameWithInfo
+            Instance containing the new data where the non number-convertible values
+            in ``columns`` have been set to the value ``nan_value``
+        """
+        non_num_convertible_values = 0
+        if verbose:
+            logger.info("The count of values non convertible to numbers per column is:")
+        for col in columns:
+            non_numeric_in_column = pd.to_numeric(
+                df_info.df[col], errors="coerce"
+            ).isna()
+            non_num_convertible_values += (
+                len(non_numeric_in_column) - df_info.df[col].isna().sum()
+            )
+            if verbose:
+                logger.info(
+                    f"{col} -> "
+                    f"{df_info.df[col][non_numeric_in_column.isna()].value_counts()}"
+                )
+            if not dry_run:
+                df_info.df.loc[non_numeric_in_column, col] = nan_value
+
+        logger.info(
+            "The total count of values non convertible to numbers"
+            f" is: {non_num_convertible_values}"
+        )
 
     def count_errors(self):
         """ This is to count errors before and after fixes"""
