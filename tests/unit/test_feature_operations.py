@@ -565,7 +565,6 @@ class DescribeReplaceSubstrings:
         assert type(equal) == bool
         assert equal == expected_equal
 
-<<<<<<< dcbcdc592790178f40630aeb908d7dc8da4f20df
     def it_knows_its_str(self):
         feat_op = fop.ReplaceSubstrings(
             columns=["exam_num_col_0"],
@@ -580,7 +579,7 @@ class DescribeReplaceSubstrings:
             "ReplaceSubstrings(\n\tcolumns=['exam_num_col_0'],\n\treplacement_map="
             "{'a': 'b', 'c': 'd'},\n\tderived_columns=['replaced_exam_num_col_0'],\n)"
         )
-=======
+
 
 class DescribeOrdinalEncoder:
     def it_construct_from_args(self, request):
@@ -720,4 +719,3 @@ class DescribeOrdinalEncoder:
 
         assert type(equal) == bool
         assert equal == expected_equal
->>>>>>> Add OrdinalEncoder FeatureOperation + its unit tests
