@@ -607,6 +607,13 @@ class DescribeOrdinalEncoder:
         validate_columns_.assert_called_once_with(ordinal_encoder, ["col0"])
         validate_derived_columns_.assert_called_once_with(ordinal_encoder, ["col1"])
 
+    def it_knows_its_encoder(self):
+        ordinal_encoder = fop.OrdinalEncoder(columns=["col0"], derived_columns=["col1"])
+
+        encoder_attr = ordinal_encoder.encoder
+
+        assert isinstance(encoder_attr, sk_preproc.OrdinalEncoder)
+
     @pytest.mark.parametrize(
         "columns, derived_columns, expected_new_columns",
         [

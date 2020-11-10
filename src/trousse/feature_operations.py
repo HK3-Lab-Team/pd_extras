@@ -496,6 +496,11 @@ class OrdinalEncoder(FeatureOperation):
 
         self.columns = columns
         self.derived_columns = derived_columns
+        self._encoder = sk_preproc.OrdinalEncoder()
+
+    @property
+    def encoder(self) -> sk_preproc.OrdinalEncoder:
+        return self._encoder
 
     def _apply(self, dataset: Dataset) -> Dataset:
         """Apply OrdinalEncoder operation on a new Dataset instance and return it.
@@ -513,8 +518,7 @@ class OrdinalEncoder(FeatureOperation):
         dataset = copy.deepcopy(dataset)
         data = dataset.data[[self.columns[0]]]
 
-        self.encoder = sk_preproc.OrdinalEncoder()
-        series_enc = self.encoder.fit_transform(data).astype("int64")
+        series_enc = self._encoder.fit_transform(data).astype("int64")
 
         if self.derived_columns is not None:
             dataset.data[self.derived_columns[0]] = series_enc
