@@ -1,7 +1,7 @@
 import copy
 from abc import ABC
 from abc import abstractmethod
-from typing import Any, List, Mapping
+from typing import Any, List, Mapping, Tuple
 
 from .dataset import Dataset
 from .util import is_sequence_and_not_str
@@ -92,6 +92,46 @@ class FeatureOperation(ABC):
     @abstractmethod
     def is_similar(self, other: "FeatureOperation"):
         raise NotImplementedError
+
+
+class Trousse:
+    """Composes several FeatureOperations together.
+
+    Parameters
+    ----------
+    *operations : Tuple[FeatureOperations]
+        Tuple of FeatureOperations to compose
+    """
+
+    def __init__(self, *operations: FeatureOperation) -> None:
+        self._operations = operations
+
+    @property
+    def operations(self) -> Tuple[FeatureOperation]:
+        return self._operations
+
+    def __call__(self, dataset: Dataset) -> Dataset:
+        """Apply the composed FeatureOperations to the ``dataset`` one after the other.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            Dataset to apply the operations on
+
+        Returns
+        -------
+        Dataset
+            New Dataset instance with the operations applied on
+        """
+        for op in self._operations:
+            dataset = op(dataset)
+        return dataset
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__ + f": {str(self._operations)}"
+
+    def __str__(self) -> str:
+        return self.__class__.__name__ + f": {str(self._operations)}"
 
 
 class FillNA(FeatureOperation):

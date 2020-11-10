@@ -1,13 +1,12 @@
 import pandas as pd
 import pytest
+import sklearn.preprocessing as sk_preproc
 
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 
 from ..dataset_util import DataFrameMock
-import sklearn.preprocessing as sk_preproc
-
-from ..unitutil import ANY, function_mock, initializer_mock, method_mock
+from ..unitutil import ANY, function_mock, initializer_mock, instance_mock, method_mock
 
 
 class DescribeFeatureOperation:
@@ -104,6 +103,91 @@ class DescribeFeatureOperation:
     def is_sequence_and_not_str_(self, request):
         return function_mock(
             request, "trousse.feature_operations.is_sequence_and_not_str"
+        )
+
+
+class DescribeTrousse:
+    @pytest.mark.parametrize(
+        "operations",
+        [
+            (),
+            (
+                fop.FillNA(
+                    columns=["nan"],
+                    value=0,
+                ),
+            ),
+            (
+                fop.ReplaceStrings(
+                    columns=["exam_num_col_0"],
+                    derived_columns=["replaced_exam_num_col_0"],
+                    replacement_map={"a": "b"},
+                ),
+                fop.FillNA(columns=["nan"], value=0),
+            ),
+        ],
+    )
+    def it_contructs_from_args(self, request, operations):
+        _init_ = initializer_mock(request, fop.Trousse)
+
+        trousse = fop.Trousse(*operations)
+
+        _init_.assert_called_once_with(ANY, *operations)
+        assert isinstance(trousse, fop.Trousse)
+
+    def it_knows_its_operations(
+        self,
+        replacestrings_exam_num_col_0_replaced_exam_num_col_0_a_b,
+        fillna_col0_col1,
+    ):
+        trousse = fop.Trousse(
+            replacestrings_exam_num_col_0_replaced_exam_num_col_0_a_b, fillna_col0_col1
+        )
+
+        operations = trousse.operations
+
+        assert type(operations) == tuple
+        assert operations == (
+            replacestrings_exam_num_col_0_replaced_exam_num_col_0_a_b,
+            fillna_col0_col1,
+        )
+
+    def it_knows_how_to_call(
+        self,
+        request,
+        replacestrings_exam_num_col_0_replaced_exam_num_col_0_a_b,
+        fillna_col0_col1,
+    ):
+        dataset_in = instance_mock(request, Dataset, "in")
+        dataset_out_1 = instance_mock(request, Dataset, "1")
+        dataset_out_2 = instance_mock(request, Dataset, "2")
+        _call_replacestrings = method_mock(request, fop.ReplaceStrings, "__call__")
+        _call_replacestrings.return_value = dataset_out_1
+        _call_fillna = method_mock(request, fop.FillNA, "__call__")
+        _call_fillna.return_value = dataset_out_2
+        trousse = fop.Trousse(
+            replacestrings_exam_num_col_0_replaced_exam_num_col_0_a_b, fillna_col0_col1
+        )
+
+        new_dataset = trousse(dataset_in)
+
+        _call_replacestrings.assert_called_once_with(
+            replacestrings_exam_num_col_0_replaced_exam_num_col_0_a_b, dataset_in
+        )
+        _call_fillna.assert_called_once_with(fillna_col0_col1, dataset_out_1)
+        assert isinstance(new_dataset, Dataset)
+        assert new_dataset == dataset_out_2
+
+    def it_knows_its_str(self, fillna_col0_col1, fillna_col1_col4):
+        trousse = fop.Trousse(fillna_col0_col1, fillna_col1_col4)
+
+        _str = str(trousse)
+
+        assert type(_str) == str
+        assert _str == (
+            "Trousse: (FillNA(\n\tcolumns=['col0'],\n\tvalue=0,\n\t"
+            "derived_columns=['col1'],\n), FillNA(\n\tcolumns=['col1']"
+            ",\n\tvalue=0,\n\tderived_columns=['col4'],\n))"
         )
 
 

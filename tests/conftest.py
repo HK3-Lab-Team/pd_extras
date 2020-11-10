@@ -39,20 +39,29 @@ def temporary_data_dir(request) -> Path:
 
 
 @pytest.fixture
-def fillna_col0_col1(request):
+def fillna_col0_col1():
     return fop.FillNA(columns=["col0"], derived_columns=["col1"], value=0)
 
 
 @pytest.fixture
-def fillna_col1_col4(request):
+def fillna_col1_col4():
     return fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0)
 
 
 @pytest.fixture
-def fillna_col4_none(request):
+def fillna_col4_none():
     return fop.FillNA(columns=["col4"], derived_columns=None, value=0)
 
 
 @pytest.fixture
-def fillna_col1_col2(request):
+def fillna_col1_col2():
     return fop.FillNA(columns=["col1"], derived_columns=["col2"], value=0)
+
+
+@pytest.fixture
+def replacestrings_exam_num_col_0_replaced_exam_num_col_0_a_b():
+    return fop.ReplaceStrings(
+        columns=["exam_num_col_0"],
+        derived_columns=["replaced_exam_num_col_0"],
+        replacement_map={"a": "b"},
+    )
