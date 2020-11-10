@@ -325,7 +325,7 @@ def encode_single_categorical_column(
     else:
         logging.error(
             f"No valid encoding_func argument. Possible "
-            f"values are: {[e.name for e in ['Ordinal', 'Categorical']]}"
+            f"values are: {[e.name for e in ['ORDINAL', 'ONEHOT']]}"
         )
         return None
 
