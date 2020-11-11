@@ -354,6 +354,7 @@ class RowFix:
             Instance containing the new data where the non number-convertible values
             in ``columns`` have been set to the value ``nan_value``
         """
+        df_num_only = copy_df_info_with_new_df(df_info, df_info.df)
         non_num_convertible_values = 0
         if verbose:
             logger.info("The count of values non convertible to numbers per column is:")
@@ -367,15 +368,17 @@ class RowFix:
             if verbose:
                 logger.info(
                     f"{col} -> "
-                    f"{df_info.df[col][non_numeric_in_column.isna()].value_counts()}"
+                    f"{df_info.df[col][non_numeric_in_column.isna()].value_counts().values}"
                 )
             if not dry_run:
-                df_info.df.loc[non_numeric_in_column, col] = nan_value
+                df_num_only.df.loc[non_numeric_in_column, col] = nan_value
 
         logger.info(
             "The total count of values non convertible to numbers"
             f" is: {non_num_convertible_values}"
         )
+
+        return df_num_only
 
     def count_errors(self):
         """ This is to count errors before and after fixes"""
