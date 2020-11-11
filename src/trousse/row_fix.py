@@ -98,8 +98,9 @@ class RowFix:
                     df_info.df[col][df_info.df[col].notna() & numeric_col_serie.isna()]
                 )
                 logger.info(
-                    f"{col} can be converted from String to Numeric. "
-                    f"Lost values would be {1- num_valuecount_ratio}: \n{lost_values}"
+                    f"{col} can be converted from String to Mixed. The percentage of "
+                    f"non numeric values is {1- num_valuecount_ratio}.\n"
+                    f"Values: {lost_values}"
                 )
                 numeric_cols.append(col)
 
@@ -135,9 +136,17 @@ class RowFix:
                     result - self.percentage_to_add_out_of_scale * result
                 )
             else:
-                logger.error(f"You end up using the wrong function to convert {elem}")
+                logger.error(
+                    f"You end up using the wrong function to convert {elem}."
+                    " It will be replaced with NaN."
+                )
+                return self.nan_value
         except (ValueError, TypeError):
-            logger.error(f"You end up using the wrong function to convert {elem}")
+            logger.error(
+                f"You end up using the wrong function to convert {elem}"
+                " It will be replaced with NaN."
+            )
+            return self.nan_value
 
     def _convert_to_float_value(self, full_row, column):
         """
@@ -272,23 +281,27 @@ class RowFix:
         set_to_correct_dtype: bool = True,
         verbose: int = 0,
     ) -> DataFrameWithInfo:
-        """This function is to fix the common errors in the columns "column_list"
-        of the pd.DataFrame 'df'.
-        We try to fix:
+        """
+        Fix the common errors in the ``df_info`` columns ``column_list``.
+
+        The function is meant to fix:
         1. Mixed columns -> by converting to numbers if possible by using feature_enum.py mappers
         2. String Columns ->
             a. check if they can be treated as numerical columns (by checking how many
         convertible values they contain)
             b. convert the numerical columns as for mixed columns
 
-        @param df_info: DataFrameWithInfo
-        @param set_to_correct_dtype: Bool -> Option to choose whether to format every feature
+        Parameters
+        ----------
+        df_info: DataFrameWithInfo
+        set_to_correct_dtype: Bool -> Option to choose whether to format every feature
             (int, float, bool columns) to appropriate dtype
-        @param verbose: 0 -> No message displayed 1 -> to show performance,
+        verbose: 0 -> No message displayed 1 -> to show performance,
             2 -> to show actual unique errors per column. Default set to 0
-        @return: df : pd.DataFrame  with corrections
-                 errors_before_correction_dict: Dict with the error list per column before applying the function
-                 errors_after_correction_dict: Dict with the error list per column after applying the function
+
+        Returns
+        -------
+        DataFrameWithInfo
         """
         cols_by_type = df_info.column_list_by_type
         # Get the columns that contain strings, but are actually numerical
@@ -317,18 +330,17 @@ class RowFix:
             )
 
     @staticmethod
-    def set_non_numeric_values_to_nan(
+    def forced_conversion_to_numeric(
         df_info: DataFrameWithInfo,
         columns: Iterable,
-        nan_value: Any = np.nan,
         dry_run: bool = False,
         verbose: bool = True,
     ) -> DataFrameWithInfo:
         """
-        Convert to NaN all the values that cannot be converted to numbers.
+        Convert ``columns`` to a numeric type. When not possible set values to NaN.
 
-        This method also logs the number of values that are converted to NaN because
-        non number-convertible.
+        This method also logs the number of values that are not number-convertible,
+        before setting them to NaN.
 
         Parameters
         ----------
@@ -337,8 +349,6 @@ class RowFix:
         columns : Iterable
             List of columns of ``df_info`` that will be analyzed and modified.
             Usually it can be set to "mixed-type" columns.
-        nan_value : Any
-            Value that will replace all the non number convertible values.
         dry_run : bool, optional
             If True, a dry run will be performed. Usually this is to check which
             and how many values are not numeric. If False, the non numeric
@@ -355,27 +365,31 @@ class RowFix:
             in ``columns`` have been set to the value ``nan_value``
         """
         df_num_only = copy_df_info_with_new_df(df_info, df_info.df)
-        non_num_convertible_values = 0
+        non_num_convertible_count = 0
         if verbose:
-            logger.info("The count of values non convertible to numbers per column is:")
+            logger.info("The values non convertible to numbers are:")
         for col in columns:
-            non_numeric_in_column = pd.to_numeric(
-                df_info.df[col], errors="coerce"
-            ).isna()
-            non_num_convertible_values += (
-                len(non_numeric_in_column) - df_info.df[col].isna().sum()
+            # Convert every value to number if possible, the other will be NaN
+            forced_converted_to_num = pd.to_numeric(df_info.df[col], errors="coerce")
+            # Check which values could not be converted and are NaNs (but they were
+            # not NaN before)
+            non_numeric_in_column = np.logical_and(
+                forced_converted_to_num.isna(),
+                df_info.df[col].notna(),
             )
+            non_num_convertible_count += non_numeric_in_column.sum()
             if verbose:
                 logger.info(
-                    f"{col} -> "
-                    f"{df_info.df[col][non_numeric_in_column.isna()].value_counts().values}"
+                    f"{col} -> \n"
+                    f"{df_info.df[col][non_numeric_in_column].value_counts()}"
                 )
+            # Set to NaN all the non convertible values
             if not dry_run:
-                df_num_only.df.loc[non_numeric_in_column, col] = nan_value
+                df_num_only.df.loc[:, col] = forced_converted_to_num
 
         logger.info(
             "The total count of values non convertible to numbers"
-            f" is: {non_num_convertible_values}"
+            f" is: {non_num_convertible_count}"
         )
 
         return df_num_only
