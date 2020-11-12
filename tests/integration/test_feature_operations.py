@@ -5,8 +5,8 @@ from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 
 from ..dataset_util import DataFrameMock
-from ..unitutil import function_mock
 from ..fixtures import CSV
+from ..unitutil import function_mock
 from ..util import load_expectation
 
 
@@ -116,5 +116,68 @@ def test_ordinal_encoder(csv, columns, derived_columns, expected_csv):
     )
 
     encoded_dataset = ordinal_encoder(dataset)
+
+    pd.testing.assert_frame_equal(encoded_dataset.data, expected_df)
+
+
+@pytest.mark.parametrize(
+    "csv, columns, derived_column_suffix, drop_option, expected_csv",
+    (
+        (
+            CSV.generic,
+            ["col3"],
+            "_enc",
+            "first",
+            "csv/generic-one-hot-encoded-col3-enc-first",
+        ),
+        (
+            CSV.generic,
+            ["col3"],
+            "_encoded",
+            "first",
+            "csv/generic-one-hot-encoded-col3-encoded-first",
+        ),
+        (
+            CSV.generic,
+            ["col3"],
+            "_enc",
+            "if_binary",
+            "csv/generic-one-hot-encoded-col3-enc-ifbinary",
+        ),
+        (
+            CSV.generic,
+            ["col0"],
+            "_enc",
+            "first",
+            "csv/generic-one-hot-encoded-col0-enc-first",
+        ),
+        (
+            CSV.generic,
+            ["col0"],
+            "_enc",
+            "if_binary",
+            "csv/generic-one-hot-encoded-col0-enc-ifbinary",
+        ),
+        (
+            CSV.generic,
+            ["col0"],
+            "_enc",
+            None,
+            "csv/generic-one-hot-encoded-col0-enc-none",
+        ),
+    ),
+)
+def test_one_hot_encoder(
+    csv, columns, derived_column_suffix, drop_option, expected_csv
+):
+    dataset = Dataset(data_file=csv)
+    expected_df = load_expectation(expected_csv, type_="csv")
+    one_hot_encoder = fop.OneHotEncoder(
+        columns=columns,
+        derived_column_suffix=derived_column_suffix,
+        drop_option=drop_option,
+    )
+
+    encoded_dataset = one_hot_encoder(dataset)
 
     pd.testing.assert_frame_equal(encoded_dataset.data, expected_df)
