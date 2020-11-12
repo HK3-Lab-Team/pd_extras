@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 import sklearn.preprocessing as sk_preproc
@@ -6,7 +7,8 @@ from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 
 from ..dataset_util import DataFrameMock
-from ..unitutil import ANY, function_mock, initializer_mock, instance_mock, method_mock
+from ..unitutil import (ANY, function_mock, initializer_mock, instance_mock,
+                        method_mock)
 
 
 class DescribeFeatureOperation:
@@ -808,6 +810,303 @@ class DescribeOrdinalEncoder:
         feat_op = fop.OrdinalEncoder(
             columns=["exam_num_col_0"],
             derived_columns=["encoded_exam_num_col_0"],
+        )
+
+        equal = feat_op == other
+
+        assert type(equal) == bool
+        assert equal == expected_equal
+
+
+class DescribeOneHotEncoder:
+    def it_construct_from_args(self, request):
+        _init_ = initializer_mock(request, fop.OneHotEncoder)
+
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["col0"], derived_column_suffix="_enc", drop_option="first"
+        )
+
+        _init_.assert_called_once_with(
+            ANY, columns=["col0"], derived_column_suffix="_enc", drop_option="first"
+        )
+        assert isinstance(one_hot_encoder, fop.OneHotEncoder)
+
+    def and_it_validates_its_arguments(self, request):
+        validate_columns_ = method_mock(
+            request, fop.OneHotEncoder, "_validate_single_element_columns"
+        )
+        validate_drop_option_ = method_mock(
+            request, fop.OneHotEncoder, "_validate_drop_option"
+        )
+
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["col0"], derived_column_suffix="_enc", drop_option="first"
+        )
+
+        validate_columns_.assert_called_once_with(one_hot_encoder, ["col0"])
+        validate_drop_option_.assert_called_once_with(one_hot_encoder, "first")
+
+    def it_knows_its_encoder(self):
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["col0"], derived_column_suffix="_enc"
+        )
+
+        encoder_attr = one_hot_encoder.encoder
+
+        assert isinstance(encoder_attr, sk_preproc.OneHotEncoder)
+
+    @pytest.mark.parametrize(
+        "drop_option",
+        [("a"), ({}), ("")],
+    )
+    def it_knows_how_to_validate_drop_option(self, request, drop_option):
+        initializer_mock(request, fop.OneHotEncoder)
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["col0"], derived_column_suffix="_enc", drop_option=drop_option
+        )
+
+        with pytest.raises(ValueError) as err:
+            one_hot_encoder._validate_drop_option(drop_option)
+
+        assert isinstance(err.value, ValueError)
+        assert (
+            f"drop_option '{drop_option}' not valid. Please use 'first' or 'if_binary'"
+            == str(err.value)
+        )
+
+    @pytest.mark.parametrize(
+        "column, derived_column_suffix, drop_option, num_categories, categories, expected_new_columns",
+        [
+            (
+                "str_categorical_col",
+                "_enc",
+                "first",
+                4,
+                [
+                    np.array(
+                        [
+                            "category_0",
+                            "category_1",
+                            "category_2",
+                            "category_3",
+                            "category_4",
+                        ]
+                    )
+                ],
+                [
+                    "str_categorical_col_category_1_enc",
+                    "str_categorical_col_category_2_enc",
+                    "str_categorical_col_category_3_enc",
+                    "str_categorical_col_category_4_enc",
+                ],
+            ),
+            (
+                "str_categorical_col",
+                "_encoded",
+                "first",
+                4,
+                [
+                    np.array(
+                        [
+                            "category_0",
+                            "category_1",
+                            "category_2",
+                            "category_3",
+                            "category_4",
+                        ]
+                    )
+                ],
+                [
+                    "str_categorical_col_category_1_encoded",
+                    "str_categorical_col_category_2_encoded",
+                    "str_categorical_col_category_3_encoded",
+                    "str_categorical_col_category_4_encoded",
+                ],
+            ),
+            (
+                "str_categorical_col",
+                "_enc",
+                "if_binary",
+                5,
+                [
+                    np.array(
+                        [
+                            "category_0",
+                            "category_1",
+                            "category_2",
+                            "category_3",
+                            "category_4",
+                        ]
+                    )
+                ],
+                [
+                    "str_categorical_col_category_0_enc",
+                    "str_categorical_col_category_1_enc",
+                    "str_categorical_col_category_2_enc",
+                    "str_categorical_col_category_3_enc",
+                    "str_categorical_col_category_4_enc",
+                ],
+            ),
+            (
+                "str_categorical_col",
+                "_enc",
+                None,
+                5,
+                [
+                    np.array(
+                        [
+                            "category_0",
+                            "category_1",
+                            "category_2",
+                            "category_3",
+                            "category_4",
+                        ]
+                    )
+                ],
+                [
+                    "str_categorical_col_category_0_enc",
+                    "str_categorical_col_category_1_enc",
+                    "str_categorical_col_category_2_enc",
+                    "str_categorical_col_category_3_enc",
+                    "str_categorical_col_category_4_enc",
+                ],
+            ),
+            (
+                "bool_col",
+                "_encoded",
+                "first",
+                1,
+                [
+                    np.array(
+                        [
+                            "category_0",
+                            "category_1",
+                        ]
+                    )
+                ],
+                [
+                    "bool_col_category_1_encoded",
+                ],
+            ),
+            (
+                "bool_col",
+                "_encoded",
+                "if_binary",
+                1,
+                [
+                    np.array(
+                        [
+                            "category_0",
+                            "category_1",
+                        ]
+                    )
+                ],
+                [
+                    "bool_col_category_1_encoded",
+                ],
+            ),
+            (
+                "bool_col",
+                "_encoded",
+                None,
+                2,
+                [
+                    np.array(
+                        [
+                            "category_0",
+                            "category_1",
+                        ]
+                    )
+                ],
+                [
+                    "bool_col_category_0_encoded",
+                    "bool_col_category_1_encoded",
+                ],
+            ),
+        ],
+    )
+    def it_can_apply_one_hot_encoder(
+        self,
+        request,
+        column,
+        derived_column_suffix,
+        drop_option,
+        num_categories,
+        categories,
+        expected_new_columns,
+    ):
+        df = DataFrameMock.df_multi_type(sample_size=100)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = df
+        dataset = Dataset(data_file="fake/path0")
+        sk_fit_transform_ = method_mock(
+            request, sk_preproc.OneHotEncoder, "fit_transform"
+        )
+        sk_fit_transform_.return_value = np.zeros((100, num_categories))
+
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=[column],
+            derived_column_suffix=derived_column_suffix,
+            drop_option=drop_option,
+        )
+        one_hot_encoder._encoder.categories_ = categories
+
+        encoded_dataset = one_hot_encoder._apply(dataset)
+
+        assert encoded_dataset is not None
+        assert encoded_dataset is not dataset
+        assert isinstance(encoded_dataset, Dataset)
+        for col in expected_new_columns:
+            assert col in encoded_dataset.data.columns
+        assert one_hot_encoder.derived_columns == expected_new_columns
+        get_df_from_csv_.assert_called_once_with("fake/path0")
+        pd.testing.assert_frame_equal(
+            sk_fit_transform_.call_args_list[0][0][1], df[[column]]
+        )
+
+    @pytest.mark.parametrize(
+        "other, expected_equal",
+        [
+            (
+                fop.OneHotEncoder(
+                    columns=["str_categorical_col"],
+                    derived_column_suffix="_enc",
+                    drop_option="first",
+                ),
+                True,
+            ),
+            (
+                fop.OneHotEncoder(
+                    columns=["str_categorical_col1"],
+                    derived_column_suffix="_enc",
+                    drop_option="first",
+                ),
+                False,
+            ),
+            (
+                fop.OneHotEncoder(
+                    columns=["str_categorical_col"],
+                    derived_column_suffix="_encoded",
+                    drop_option="first",
+                ),
+                False,
+            ),
+            (
+                fop.OneHotEncoder(
+                    columns=["str_categorical_col"],
+                    derived_column_suffix="_enc",
+                    drop_option="if_binary",
+                ),
+                False,
+            ),
+            (dict(), False),
+        ],
+    )
+    def it_knows_if_equal(self, other, expected_equal):
+        feat_op = fop.OneHotEncoder(
+            columns=["str_categorical_col"],
+            derived_column_suffix="_enc",
+            drop_option="first",
         )
 
         equal = feat_op == other
