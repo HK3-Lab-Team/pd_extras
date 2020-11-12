@@ -6,7 +6,7 @@ from src.trousse.dataframe_with_info import DataFrameWithInfo
 from trousse.row_fix import RowFix
 
 
-class Describe_RowFix:
+class DescribeRowFix:
     @pytest.mark.parametrize(
         "column, input_df, expected_df, dry_run",
         [
@@ -32,8 +32,8 @@ class Describe_RowFix:
             ),
         ],
     )
-    def test_forced_conversion_to_numeric(self, column, input_df, expected_df, dry_run):
-        dfinfo_converted = RowFix({}, {}).forced_conversion_to_numeric(
+    def test_force_conversion_to_numeric(self, column, input_df, expected_df, dry_run):
+        dfinfo_converted = RowFix({}, {}).force_conversion_to_numeric(
             DataFrameWithInfo(df_object=input_df),
             columns=[
                 column,

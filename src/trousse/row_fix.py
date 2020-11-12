@@ -330,9 +330,9 @@ class RowFix:
             )
 
     @staticmethod
-    def forced_conversion_to_numeric(
+    def force_conversion_to_numeric(
         df_info: DataFrameWithInfo,
-        columns: Iterable,
+        columns: Iterable[str],
         dry_run: bool = False,
         verbose: bool = True,
     ) -> DataFrameWithInfo:
@@ -345,26 +345,27 @@ class RowFix:
         Parameters
         ----------
         df_info : DataFrameWithInfo
-            Instance with the data that will be analyzed and set to NaN
-        columns : Iterable
+            Instance with the data that will be converted to numeric.
+        columns : Iterable[str]
             List of columns of ``df_info`` that will be analyzed and modified.
-            Usually it can be set to "mixed-type" columns.
+            Usually it can be set to mixed-type columns.
         dry_run : bool, optional
             If True, a dry run will be performed. Usually this is to check which
             and how many values are not numeric. If False, the non numeric
-            values will be converted to Nan. Default set to False.
+            values will be converted to NaN. Default set to False.
         verbose : bool, optional
-            If True,the function will log the non numeric values per column that will
+            If True, the function will log the non numeric values per column that will
             be set to NaN. If False, it will only log the total count of values
             converted to NaN. Default set to True.
 
         Returns
         -------
         DataFrameWithInfo
-            Instance containing the new data where the non number-convertible values
-            in ``columns`` have been set to the value ``nan_value``
+            Instance containing the new data where the values are converted to
+            numbers, if possible. The non number-convertible values in ``columns``
+            are set to NaN.
         """
-        df_num_only = copy_df_info_with_new_df(df_info, df_info.df)
+        dfinfo_num_only = copy_df_info_with_new_df(df_info, df_info.df)
         non_num_convertible_count = 0
         if verbose:
             logger.info("The values non convertible to numbers are:")
@@ -385,14 +386,14 @@ class RowFix:
                 )
             # Set to NaN all the non convertible values
             if not dry_run:
-                df_num_only.df.loc[:, col] = forced_converted_to_num
+                dfinfo_num_only.df.loc[:, col] = forced_converted_to_num
 
         logger.info(
             "The total count of values non convertible to numbers"
             f" is: {non_num_convertible_count}"
         )
 
-        return df_num_only
+        return dfinfo_num_only
 
     def count_errors(self):
         """ This is to count errors before and after fixes"""
