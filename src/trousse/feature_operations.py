@@ -581,7 +581,7 @@ class OneHotEncoder(FeatureOperation):
         return dataset
 
     def _validate_drop_option(self, drop_option: Optional[str]) -> None:
-        """Validate ``drop_option``, as it should be either 'first' or 'if_binary'
+        """Validate ``drop_option``, as it should be either 'first' or 'if_binary'.
 
         Parameters
         ----------
@@ -596,7 +596,7 @@ class OneHotEncoder(FeatureOperation):
         if drop_option is not None and drop_option not in ["first", "if_binary"]:
             raise ValueError(
                 f"drop_option '{drop_option}' not valid. Please use 'first' or "
-                "'if_binary'"
+                "'if_binary'."
             )
 
     def __eq__(self, other: Any) -> bool:
