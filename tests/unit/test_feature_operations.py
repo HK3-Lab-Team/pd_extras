@@ -870,7 +870,7 @@ class DescribeOneHotEncoder:
 
         assert isinstance(err.value, ValueError)
         assert (
-            f"drop_option '{drop_option}' not valid. Please use 'first' or 'if_binary'"
+            f"drop_option '{drop_option}' not valid. Please use 'first' or 'if_binary'."
             == str(err.value)
         )
 
