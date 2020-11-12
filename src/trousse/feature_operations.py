@@ -2,7 +2,7 @@
 
 import copy
 from abc import ABC, abstractmethod
-from typing import Any, List, Mapping, Tuple
+from typing import Any, List, Mapping, Optional, Tuple
 
 import sklearn.preprocessing as sk_preproc
 
@@ -504,6 +504,128 @@ class ReplaceStrings(ReplaceSubstrings):
             f"\n\treplacement_map={self.replacement_map},"
             f"\n\tderived_columns={self.derived_columns},\n)"
         )
+
+
+class OneHotEncoder(FeatureOperation):
+    """Encode ``columns`` with a one-hot encoder.
+
+    The result of the encoding is stored in new columns with names following the pattern
+    `<column>_<category><derived_column_suffix>`.
+
+    Parameters
+    ----------
+    columns : List[str]
+        Name of the column to encode. It must be a single-element list.
+    derived_column_suffix : str, optional
+        Suffix to be added at the end of the new columns name. Default is "_enc"
+    drop_option : {"first", "if_binary", None}, optional
+        Specifies a methodology to use to drop one of the categories per feature.
+        - "first" : drop the first category in each feature. If only one category is
+          present, the feature will be dropped entirely (default).
+        - "if_binary" : drop the first category in each feature with two categories.
+          Features with 1 or more than 2 categories are left intact.
+        - None : retain all features.
+    """
+
+    def __init__(
+        self,
+        columns: List[str],
+        derived_column_suffix: str = "_enc",
+        drop_option: Optional[str] = "first",
+    ) -> None:
+        self._validate_single_element_columns(columns)
+        self._validate_drop_option(drop_option)
+
+        self.columns = columns
+        self.derived_column_suffix = derived_column_suffix
+        self._drop_option = drop_option
+        self._encoder = sk_preproc.OneHotEncoder(drop=drop_option, sparse=False)
+
+    @property
+    def encoder(self) -> sk_preproc.OneHotEncoder:
+        return self._encoder
+
+    def _apply(self, dataset: Dataset) -> Dataset:
+        """Apply OneHotEncoder operation on a new Dataset instance and return it.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to apply the operation on
+
+        Returns
+        -------
+        Dataset
+            New Dataset instance with the operation applied on
+        """
+        dataset = copy.deepcopy(dataset)
+        data = dataset.data[[self.columns[0]]]
+
+        columns_enc = self._encoder.fit_transform(data).astype("bool")
+        encoded_categories = self._encoder.categories_[0].tolist()
+
+        # nan category?
+        if self._drop_option == "first" or (
+            len(encoded_categories) == 2 and self._drop_option == "if_binary"
+        ):
+            encoded_categories = encoded_categories[1:]
+
+        derived_columns_names = [
+            f"{self.columns[0]}_{col}{self.derived_column_suffix}"
+            for col in encoded_categories
+        ]
+
+        self.derived_columns = derived_columns_names
+        dataset.data[derived_columns_names] = columns_enc
+
+        return dataset
+
+    def _validate_drop_option(self, drop_option: Optional[str]) -> None:
+        """Validate ``drop_option``, as it should be either 'first' or 'if_binary'
+
+        Parameters
+        ----------
+        drop_option : str
+            String to validate
+
+        Raises
+        ------
+        ValueError
+            If ``drop_option`` is not 'first' nor 'if_binary'
+        """
+        if drop_option is not None and drop_option not in ["first", "if_binary"]:
+            raise ValueError(
+                f"drop_option '{drop_option}' not valid. Please use 'first' or "
+                "'if_binary'"
+            )
+
+    def __eq__(self, other: Any) -> bool:
+        """Return True if ``other`` is a OneHotEncoder and it has the same fields value.
+
+        Parameters
+        ----------
+        other : Any
+            The instance to compare
+
+        Returns
+        -------
+        bool
+            True if ``other`` is a OneHotEncoder instance and it has the same fields
+            value, False otherwise
+        """
+        if not isinstance(other, OneHotEncoder):
+            return False
+        if (
+            self.columns == other.columns
+            and self.derived_column_suffix == other.derived_column_suffix
+            and self._drop_option == other._drop_option
+        ):
+            return True
+
+        return False
+
+    def is_similar(self, other: FeatureOperation):
+        raise NotImplementedError
 
 
 class OrdinalEncoder(FeatureOperation):
