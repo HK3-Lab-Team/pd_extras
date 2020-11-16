@@ -4,6 +4,7 @@ import copy
 from abc import ABC, abstractmethod
 from typing import Any, List, Mapping, Optional, Tuple
 
+import pandas as pd
 import sklearn.preprocessing as sk_preproc
 
 from .dataset import Dataset
@@ -527,6 +528,8 @@ class OneHotEncoder(FeatureOperation):
         - None : retain all features.
     """
 
+    _nan_value_placeholder = "NAN_VALUE"
+
     def __init__(
         self,
         columns: List[str],
@@ -579,6 +582,30 @@ class OneHotEncoder(FeatureOperation):
         dataset.data[derived_columns_names] = columns_enc
 
         return dataset
+
+    def _replace_nan_to_placeholder_value(
+        self, series: pd.Series
+    ) -> Tuple[pd.Series, pd.Series]:
+        """Replace NaNs in ``series`` with a placeholder value ("NAN_VALUE").
+
+        Parameters
+        ----------
+        series : pd.Series
+            Series in which NaNs are replaced with "NAN_VALUE"
+
+        Returns
+        -------
+        pd.Series
+            Series with NaNs replaced with "NAN_VALUE"
+        pd.Series
+            Mask of bool values for each element in ``series`` that indicates whether an
+            element was a NaN value and it has been replaced.
+        """
+        series = series.copy()
+        nan_map = series.isna()
+        series.loc[nan_map] = self._nan_value_placeholder
+
+        return series, nan_map
 
     def _validate_drop_option(self, drop_option: Optional[str]) -> None:
         """Validate ``drop_option``, as it should be either 'first' or 'if_binary'.

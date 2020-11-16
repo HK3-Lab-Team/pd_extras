@@ -6,9 +6,8 @@ import sklearn.preprocessing as sk_preproc
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 
-from ..dataset_util import DataFrameMock
-from ..unitutil import (ANY, function_mock, initializer_mock, instance_mock,
-                        method_mock)
+from ..dataset_util import DataFrameMock, SeriesMock
+from ..unitutil import ANY, function_mock, initializer_mock, instance_mock, method_mock
 
 
 class DescribeFeatureOperation:
@@ -1113,3 +1112,34 @@ class DescribeOneHotEncoder:
 
         assert type(equal) == bool
         assert equal == expected_equal
+
+    def it_knows_its_nan_value_placeholder(self):
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["col0"], derived_column_suffix="_enc"
+        )
+
+        nan_value_placeholder = one_hot_encoder._nan_value_placeholder
+
+        assert isinstance(nan_value_placeholder, str)
+        assert nan_value_placeholder == "NAN_VALUE"
+
+    def it_knows_how_to_replace_nan_to_placeholder_value(self, request):
+        series_ = SeriesMock.series_by_type("str")
+        series_copy_ = series_.copy()
+        copy_ = method_mock(request, pd.Series, "copy")
+        copy_.return_value = series_copy_
+        nan_map_ = pd.Series([False, False, False, True, False])
+        isna_ = method_mock(request, pd.Series, "isna")
+        isna_.return_value = nan_map_
+        expected_series = series_copy_
+        expected_series.loc[3] = "NAN_VALUE"
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["column_name"], derived_column_suffix="_enc"
+        )
+
+        series, nan_map = one_hot_encoder._replace_nan_to_placeholder_value(series_)
+
+        assert isinstance(series, pd.Series)
+        assert isinstance(nan_map, pd.Series)
+        pd.testing.assert_series_equal(series, expected_series)
+        pd.testing.assert_series_equal(nan_map, nan_map_)
