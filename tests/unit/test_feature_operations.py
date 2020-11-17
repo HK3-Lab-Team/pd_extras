@@ -6,7 +6,7 @@ import sklearn.preprocessing as sk_preproc
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 
-from ..dataset_util import DataFrameMock, SeriesMock
+from ..dataset_util import DataFrameMock
 from ..unitutil import ANY, function_mock, initializer_mock, instance_mock, method_mock
 
 
@@ -1034,15 +1034,36 @@ class DescribeOneHotEncoder:
         categories,
         expected_new_columns,
     ):
-        df = DataFrameMock.df_multi_type(sample_size=100)
+        sample_size = 100
+        df = DataFrameMock.df_multi_type(sample_size=sample_size)
         get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
         get_df_from_csv_.return_value = df
         dataset = Dataset(data_file="fake/path0")
+        _replace_nan_with_placeholder_ = method_mock(
+            request, fop.OneHotEncoder, "_replace_nan_with_placeholder_value"
+        )
+        nan_mask = np.array([False] * sample_size)
+        _replace_nan_with_placeholder_.return_value = (
+            df[[column]],
+            nan_mask,
+        )
         sk_fit_transform_ = method_mock(
             request, sk_preproc.OneHotEncoder, "fit_transform"
         )
-        sk_fit_transform_.return_value = np.zeros((100, num_categories))
-
+        columns_enc = np.zeros((sample_size, num_categories)).astype("bool")
+        columns_enc_df = pd.DataFrame(columns_enc)
+        sk_fit_transform_.return_value = columns_enc
+        _remove_nan_category_ = method_mock(
+            request, fop.OneHotEncoder, "_remove_nan_category"
+        )
+        _remove_nan_category_.return_value = (
+            categories[0].tolist(),
+            columns_enc_df,
+        )
+        _set_nan_via_mask_ = method_mock(
+            request, fop.OneHotEncoder, "_set_nan_via_mask"
+        )
+        _set_nan_via_mask_.return_value = columns_enc_df
         one_hot_encoder = fop.OneHotEncoder(
             columns=[column],
             derived_column_suffix=derived_column_suffix,
@@ -1057,10 +1078,26 @@ class DescribeOneHotEncoder:
         assert isinstance(encoded_dataset, Dataset)
         for col in expected_new_columns:
             assert col in encoded_dataset.data.columns
+
+        pd.testing.assert_frame_equal(
+            _replace_nan_with_placeholder_.call_args_list[0][0][1],
+            df[[column]],
+            check_names=False,
+        )
         assert one_hot_encoder.derived_columns == expected_new_columns
         get_df_from_csv_.assert_called_once_with("fake/path0")
         pd.testing.assert_frame_equal(
             sk_fit_transform_.call_args_list[0][0][1], df[[column]]
+        )
+        pd.testing.assert_frame_equal(
+            _remove_nan_category_.call_args_list[0][0][2], columns_enc_df
+        )
+        pd.testing.assert_frame_equal(
+            _set_nan_via_mask_.call_args_list[0][0][1], columns_enc_df
+        )
+        np.testing.assert_array_equal(
+            _set_nan_via_mask_.call_args_list[0][0][2],
+            nan_mask,
         )
 
     @pytest.mark.parametrize(
@@ -1123,23 +1160,106 @@ class DescribeOneHotEncoder:
         assert isinstance(nan_value_placeholder, str)
         assert nan_value_placeholder == "NAN_VALUE"
 
-    def it_knows_how_to_replace_nan_to_placeholder_value(self, request):
-        series_ = SeriesMock.series_by_type("str")
-        series_copy_ = series_.copy()
-        copy_ = method_mock(request, pd.Series, "copy")
-        copy_.return_value = series_copy_
-        nan_map_ = pd.Series([False, False, False, True, False])
-        isna_ = method_mock(request, pd.Series, "isna")
-        isna_.return_value = nan_map_
-        expected_series = series_copy_
-        expected_series.loc[3] = "NAN_VALUE"
+    @pytest.mark.parametrize("column", ["str_categorical_col", "bool_col"])
+    def it_knows_how_to_replace_nan_with_placeholder_value(self, request, column):
+        df_ = DataFrameMock.df_multi_type(10)[[column]]
+        df_copy_ = df_.copy()
+        copy_ = method_mock(request, pd.DataFrame, "copy")
+        copy_.return_value = df_copy_
+        nan_mask_ = pd.DataFrame(
+            [False, False, False, True, False, False, False, False, False, False]
+        )
+        isna_ = method_mock(request, pd.DataFrame, "isna")
+        isna_.return_value = nan_mask_
+        expected_df = df_copy_
+        expected_df[column].loc[3] = "NAN_VALUE"
         one_hot_encoder = fop.OneHotEncoder(
-            columns=["column_name"], derived_column_suffix="_enc"
+            columns=[column], derived_column_suffix="_enc"
         )
 
-        series, nan_map = one_hot_encoder._replace_nan_to_placeholder_value(series_)
+        df, nan_map = one_hot_encoder._replace_nan_with_placeholder_value(df_)
 
-        assert isinstance(series, pd.Series)
-        assert isinstance(nan_map, pd.Series)
-        pd.testing.assert_series_equal(series, expected_series)
-        pd.testing.assert_series_equal(nan_map, nan_map_)
+        assert isinstance(df, pd.DataFrame)
+        assert isinstance(nan_map, np.ndarray)
+        pd.testing.assert_frame_equal(df, expected_df)
+        np.testing.assert_array_equal(nan_map, nan_mask_.values.ravel())
+
+    @pytest.mark.parametrize(
+        "encoded_categories_, columns_enc_, expected_encoded_categories, expected_columns_enc",
+        [
+            (
+                ["NAN_VALUE", "b", "e"],
+                pd.DataFrame(
+                    [
+                        [False, False, True],
+                        [False, True, False],
+                        [True, False, False],
+                        [False, True, False],
+                    ],
+                    columns=["NAN_VALUE", "b", "e"],
+                ),
+                ["b", "e"],
+                pd.DataFrame(
+                    [[False, True], [True, False], [False, False], [True, False]],
+                    columns=["b", "e"],
+                ),
+            ),
+            (
+                ["a", "b", "e"],
+                pd.DataFrame(
+                    [
+                        [False, False, True],
+                        [False, True, False],
+                        [True, False, False],
+                        [False, True, False],
+                    ],
+                    columns=["a", "b", "e"],
+                ),
+                ["a", "b", "e"],
+                pd.DataFrame(
+                    [
+                        [False, False, True],
+                        [False, True, False],
+                        [True, False, False],
+                        [False, True, False],
+                    ],
+                    columns=["a", "b", "e"],
+                ),
+            ),
+        ],
+    )
+    def it_knows_how_to_remove_nan_category(
+        self,
+        encoded_categories_,
+        columns_enc_,
+        expected_encoded_categories,
+        expected_columns_enc,
+    ):
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["col"], derived_column_suffix="_enc"
+        )
+
+        encoded_categories, columns_enc = one_hot_encoder._remove_nan_category(
+            encoded_categories_, columns_enc_
+        )
+
+        assert isinstance(encoded_categories, list)
+        assert encoded_categories == expected_encoded_categories
+        assert isinstance(columns_enc, pd.DataFrame)
+        pd.testing.assert_frame_equal(columns_enc, expected_columns_enc)
+
+    def it_knows_how_to_set_nan_via_mask(self):
+        columns_enc = pd.DataFrame(np.zeros((10, 5))).astype("boolean")
+        nan_mask = np.array(
+            [False, False, False, True, False, False, False, False, False, False]
+        )
+        expected_columns_enc = columns_enc.copy()
+        expected_columns_enc.iloc[3] = pd.NA
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["column"], derived_column_suffix="_enc"
+        )
+
+        columns_enc_nan = one_hot_encoder._set_nan_via_mask(columns_enc, nan_mask)
+
+        assert isinstance(columns_enc_nan, pd.DataFrame)
+        pd.testing.assert_frame_equal(columns_enc_nan, expected_columns_enc)

@@ -180,4 +180,4 @@ def test_one_hot_encoder(
 
     encoded_dataset = one_hot_encoder(dataset)
 
-    pd.testing.assert_frame_equal(encoded_dataset.data, expected_df)
+    pd.testing.assert_frame_equal(encoded_dataset.data, expected_df, check_dtype=False)
