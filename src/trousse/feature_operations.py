@@ -543,7 +543,7 @@ class OneHotEncoder(FeatureOperation):
         self.columns = columns
         self.derived_column_suffix = derived_column_suffix
         self._drop_option = drop_option
-        self._encoder = sk_preproc.OneHotEncoder(drop=drop_option, sparse=False)
+        self._encoder = sk_preproc.OneHotEncoder(sparse=False)
 
     @property
     def encoder(self) -> sk_preproc.OneHotEncoder:
@@ -574,12 +574,11 @@ class OneHotEncoder(FeatureOperation):
             encoded_categories, columns_enc
         )
 
-        columns_enc = self._set_nan_via_mask(columns_enc, nan_map)
+        encoded_categories, columns_enc = self._handle_drop_option(
+            encoded_categories, columns_enc
+        )
 
-        if self._drop_option == "first" or (
-            len(encoded_categories) == 2 and self._drop_option == "if_binary"
-        ):
-            encoded_categories = encoded_categories[1:]
+        columns_enc = self._set_nan_via_mask(columns_enc, nan_map)
 
         derived_columns_names = [
             f"{self.columns[0]}_{col}{self.derived_column_suffix}"
@@ -590,6 +589,32 @@ class OneHotEncoder(FeatureOperation):
         dataset.data[derived_columns_names] = columns_enc
 
         return dataset
+
+    def _handle_drop_option(
+        self, encoded_categories: List[str], columns_enc: pd.DataFrame
+    ) -> Tuple[List[str], pd.DataFrame]:
+        """Drop one of the categories based on the drop option.
+
+        Parameters
+        ----------
+        encoded_categories : List[str]
+            List of the encoded categories from which to drop a category
+        columns_enc : pd.DataFrame
+            Encoded columns from which to drop a category
+
+        Returns
+        -------
+        List[str]
+            Encoded categories with a category removed (if any)
+        pd.DataFrame
+            Encoded columns with a column removed (if any)
+        """
+        if self._drop_option == "first" or (
+            len(encoded_categories) == 2 and self._drop_option == "if_binary"
+        ):
+            encoded_categories = encoded_categories[1:]
+            columns_enc = columns_enc.drop(columns_enc.columns[0], axis=1)
+        return encoded_categories, columns_enc
 
     def _remove_nan_category(
         self, encoded_categories: List[str], columns_enc: pd.DataFrame
@@ -620,7 +645,8 @@ class OneHotEncoder(FeatureOperation):
             pass
         else:
             del encoded_categories[nan_category_index]
-            columns_enc = columns_enc.drop(self._nan_value_placeholder, axis=1)
+            columns_enc = columns_enc.drop(nan_category_index, axis=1)
+            columns_enc.columns = range(columns_enc.shape[1])
 
         return encoded_categories, columns_enc
 
@@ -671,7 +697,7 @@ class OneHotEncoder(FeatureOperation):
         return df.astype("boolean")
 
     def _validate_drop_option(self, drop_option: Optional[str]) -> None:
-        """Validate ``drop_option``, as it should be either 'first' or 'if_binary'.
+        """Validate ``drop_option``, as it should be either 'first', 'if_binary' or None.
 
         Parameters
         ----------

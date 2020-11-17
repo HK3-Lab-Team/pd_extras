@@ -874,13 +874,13 @@ class DescribeOneHotEncoder:
         )
 
     @pytest.mark.parametrize(
-        "column, derived_column_suffix, drop_option, num_categories, categories, expected_new_columns",
+        "column, derived_column_suffix, drop_option, num_categories, categories, categories_after_drop, expected_new_columns",
         [
             (
                 "str_categorical_col",
                 "_enc",
                 "first",
-                4,
+                5,
                 [
                     np.array(
                         [
@@ -891,6 +891,12 @@ class DescribeOneHotEncoder:
                             "category_4",
                         ]
                     )
+                ],
+                [
+                    "category_1",
+                    "category_2",
+                    "category_3",
+                    "category_4",
                 ],
                 [
                     "str_categorical_col_category_1_enc",
@@ -903,7 +909,7 @@ class DescribeOneHotEncoder:
                 "str_categorical_col",
                 "_encoded",
                 "first",
-                4,
+                5,
                 [
                     np.array(
                         [
@@ -914,6 +920,12 @@ class DescribeOneHotEncoder:
                             "category_4",
                         ]
                     )
+                ],
+                [
+                    "category_1",
+                    "category_2",
+                    "category_3",
+                    "category_4",
                 ],
                 [
                     "str_categorical_col_category_1_encoded",
@@ -923,91 +935,9 @@ class DescribeOneHotEncoder:
                 ],
             ),
             (
-                "str_categorical_col",
-                "_enc",
-                "if_binary",
-                5,
-                [
-                    np.array(
-                        [
-                            "category_0",
-                            "category_1",
-                            "category_2",
-                            "category_3",
-                            "category_4",
-                        ]
-                    )
-                ],
-                [
-                    "str_categorical_col_category_0_enc",
-                    "str_categorical_col_category_1_enc",
-                    "str_categorical_col_category_2_enc",
-                    "str_categorical_col_category_3_enc",
-                    "str_categorical_col_category_4_enc",
-                ],
-            ),
-            (
-                "str_categorical_col",
-                "_enc",
-                None,
-                5,
-                [
-                    np.array(
-                        [
-                            "category_0",
-                            "category_1",
-                            "category_2",
-                            "category_3",
-                            "category_4",
-                        ]
-                    )
-                ],
-                [
-                    "str_categorical_col_category_0_enc",
-                    "str_categorical_col_category_1_enc",
-                    "str_categorical_col_category_2_enc",
-                    "str_categorical_col_category_3_enc",
-                    "str_categorical_col_category_4_enc",
-                ],
-            ),
-            (
                 "bool_col",
                 "_encoded",
                 "first",
-                1,
-                [
-                    np.array(
-                        [
-                            "category_0",
-                            "category_1",
-                        ]
-                    )
-                ],
-                [
-                    "bool_col_category_1_encoded",
-                ],
-            ),
-            (
-                "bool_col",
-                "_encoded",
-                "if_binary",
-                1,
-                [
-                    np.array(
-                        [
-                            "category_0",
-                            "category_1",
-                        ]
-                    )
-                ],
-                [
-                    "bool_col_category_1_encoded",
-                ],
-            ),
-            (
-                "bool_col",
-                "_encoded",
-                None,
                 2,
                 [
                     np.array(
@@ -1018,7 +948,9 @@ class DescribeOneHotEncoder:
                     )
                 ],
                 [
-                    "bool_col_category_0_encoded",
+                    "category_1",
+                ],
+                [
                     "bool_col_category_1_encoded",
                 ],
             ),
@@ -1032,6 +964,7 @@ class DescribeOneHotEncoder:
         drop_option,
         num_categories,
         categories,
+        categories_after_drop,
         expected_new_columns,
     ):
         sample_size = 100
@@ -1060,10 +993,17 @@ class DescribeOneHotEncoder:
             categories[0].tolist(),
             columns_enc_df,
         )
+        _handle_drop_option_ = method_mock(
+            request, fop.OneHotEncoder, "_handle_drop_option"
+        )
+        _handle_drop_option_.return_value = (
+            categories_after_drop,
+            columns_enc_df.drop(0, axis=1),
+        )
         _set_nan_via_mask_ = method_mock(
             request, fop.OneHotEncoder, "_set_nan_via_mask"
         )
-        _set_nan_via_mask_.return_value = columns_enc_df
+        _set_nan_via_mask_.return_value = columns_enc_df.drop(0, axis=1)
         one_hot_encoder = fop.OneHotEncoder(
             columns=[column],
             derived_column_suffix=derived_column_suffix,
@@ -1078,7 +1018,6 @@ class DescribeOneHotEncoder:
         assert isinstance(encoded_dataset, Dataset)
         for col in expected_new_columns:
             assert col in encoded_dataset.data.columns
-
         pd.testing.assert_frame_equal(
             _replace_nan_with_placeholder_.call_args_list[0][0][1],
             df[[column]],
@@ -1092,8 +1031,12 @@ class DescribeOneHotEncoder:
         pd.testing.assert_frame_equal(
             _remove_nan_category_.call_args_list[0][0][2], columns_enc_df
         )
+        assert _handle_drop_option_.call_args_list[0][0][1] == categories[0].tolist()
         pd.testing.assert_frame_equal(
-            _set_nan_via_mask_.call_args_list[0][0][1], columns_enc_df
+            _handle_drop_option_.call_args_list[0][0][2], columns_enc_df
+        )
+        pd.testing.assert_frame_equal(
+            _set_nan_via_mask_.call_args_list[0][0][1], columns_enc_df.drop(0, axis=1)
         )
         np.testing.assert_array_equal(
             _set_nan_via_mask_.call_args_list[0][0][2],
@@ -1196,12 +1139,10 @@ class DescribeOneHotEncoder:
                         [True, False, False],
                         [False, True, False],
                     ],
-                    columns=["NAN_VALUE", "b", "e"],
                 ),
                 ["b", "e"],
                 pd.DataFrame(
                     [[False, True], [True, False], [False, False], [True, False]],
-                    columns=["b", "e"],
                 ),
             ),
             (
@@ -1213,7 +1154,6 @@ class DescribeOneHotEncoder:
                         [True, False, False],
                         [False, True, False],
                     ],
-                    columns=["a", "b", "e"],
                 ),
                 ["a", "b", "e"],
                 pd.DataFrame(
@@ -1223,7 +1163,6 @@ class DescribeOneHotEncoder:
                         [True, False, False],
                         [False, True, False],
                     ],
-                    columns=["a", "b", "e"],
                 ),
             ),
         ],
@@ -1246,7 +1185,9 @@ class DescribeOneHotEncoder:
         assert isinstance(encoded_categories, list)
         assert encoded_categories == expected_encoded_categories
         assert isinstance(columns_enc, pd.DataFrame)
-        pd.testing.assert_frame_equal(columns_enc, expected_columns_enc)
+        pd.testing.assert_frame_equal(
+            columns_enc, expected_columns_enc, check_names=False
+        )
 
     def it_knows_how_to_set_nan_via_mask(self):
         columns_enc = pd.DataFrame(np.zeros((10, 5))).astype("boolean")
@@ -1263,3 +1204,106 @@ class DescribeOneHotEncoder:
 
         assert isinstance(columns_enc_nan, pd.DataFrame)
         pd.testing.assert_frame_equal(columns_enc_nan, expected_columns_enc)
+
+    @pytest.mark.parametrize(
+        "encoded_categories_, columns_enc_, drop_option, expected_encoded_categories, expected_columns_enc",
+        [
+            (
+                [
+                    "category_0",
+                    "category_1",
+                    "category_2",
+                    "category_3",
+                    "category_4",
+                ],
+                pd.DataFrame(np.zeros((100, 5)).astype("bool")),
+                "first",
+                [
+                    "category_1",
+                    "category_2",
+                    "category_3",
+                    "category_4",
+                ],
+                pd.DataFrame(np.zeros((100, 5)).astype("bool")).drop(0, axis=1),
+            ),
+            (
+                [
+                    "category_0",
+                    "category_1",
+                    "category_2",
+                    "category_3",
+                    "category_4",
+                ],
+                pd.DataFrame(np.zeros((100, 5)).astype("bool")),
+                "if_binary",
+                [
+                    "category_0",
+                    "category_1",
+                    "category_2",
+                    "category_3",
+                    "category_4",
+                ],
+                pd.DataFrame(np.zeros((100, 5)).astype("bool")),
+            ),
+            (
+                [
+                    "category_0",
+                    "category_1",
+                    "category_2",
+                    "category_3",
+                    "category_4",
+                ],
+                pd.DataFrame(np.zeros((100, 5)).astype("bool")),
+                None,
+                [
+                    "category_0",
+                    "category_1",
+                    "category_2",
+                    "category_3",
+                    "category_4",
+                ],
+                pd.DataFrame(np.zeros((100, 5)).astype("bool")),
+            ),
+            (
+                [
+                    "category_0",
+                    "category_1",
+                ],
+                pd.DataFrame(np.zeros((100, 2)).astype("bool")),
+                "if_binary",
+                [
+                    "category_1",
+                ],
+                pd.DataFrame(np.zeros((100, 2)).astype("bool")).drop(0, axis=1),
+            ),
+            (
+                [
+                    "category_0",
+                ],
+                pd.DataFrame(np.zeros((100, 1)).astype("bool")),
+                "first",
+                [],
+                pd.DataFrame(np.zeros((100, 1)).astype("bool")).drop(0, axis=1),
+            ),
+        ],
+    )
+    def it_knows_how_to_handle_drop_option(
+        self,
+        encoded_categories_,
+        columns_enc_,
+        drop_option,
+        expected_encoded_categories,
+        expected_columns_enc,
+    ):
+        one_hot_encoder = fop.OneHotEncoder(
+            columns=["column"], derived_column_suffix="_enc", drop_option=drop_option
+        )
+
+        encoded_categories, columns_enc = one_hot_encoder._handle_drop_option(
+            encoded_categories_, columns_enc_
+        )
+
+        assert isinstance(encoded_categories, list)
+        assert encoded_categories == expected_encoded_categories
+        assert isinstance(columns_enc, pd.DataFrame)
+        pd.testing.assert_frame_equal(columns_enc, expected_columns_enc)
