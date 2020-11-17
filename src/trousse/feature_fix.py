@@ -6,10 +6,9 @@ from typing import Any, Tuple
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
 
 from .dataset import Dataset, copy_dataset_with_new_df
-from .feature_operations import FeatureOperation, OrdinalEncoder
+from .feature_operations import FeatureOperation, OneHotEncoder, OrdinalEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -207,37 +206,18 @@ def _one_hot_encode_column(
     -------
 
     """
-    df_new = df.copy()
-    series = df_new[column].values
-    series = series.reshape(-1, 1)
-    # We choose to drop the first category of the feature (it can be deduced by the
-    # others -> it is just a combination of 0 of the other categories)
-    if drop_one_new_column:
-        encoder = OneHotEncoder(drop="first")
-    else:
-        encoder = OneHotEncoder()
-    encoder_fitted = encoder.fit(series)
-    transformed_cols = encoder_fitted.transform(series).toarray()
-    encoded_categories = encoder_fitted.categories_[0].tolist()
-    try:
-        encoded_categories.remove(NAN_CATEGORY.title())
-    except ValueError:
-        logger.debug(f"No NaN values were found in column {column}")
-    # Name the new columns after the categories (adding a suffix). Exclude the first which was dropped
-    if drop_one_new_column:
-        encoded_categories = encoded_categories[1:]
-    new_column_names = [f"{column}_{col}_enc" for col in encoded_categories]
-    # Add the new encoded columns to the df_new
-    for i, col in enumerate(new_column_names):
-        df_new[col] = transformed_cols[:, i]
-    # Drop the columns that has been encoded
-    if drop_old_column:
-        df_new = df_new.drop(column, axis=1)
+    dataset = Dataset(df_object=df)
+    drop_option = "first" if drop_one_new_column else None
+    one_hot_encoder = OneHotEncoder(
+        columns=[column], derived_column_suffix="_enc", drop_option=drop_option
+    )
 
-    # Convert the encoded columns to boolean type (this pandas Dtype is for handling
-    # NaN values)
-    df_new[new_column_names] = df_new[new_column_names].astype(pd.BooleanDtype())
-    return df_new, encoder_fitted, new_column_names
+    encoded_dataset = one_hot_encoder(dataset)
+
+    new_columns = sorted(
+        list(set(encoded_dataset.data.columns) - set(dataset.data.columns))
+    )
+    return encoded_dataset.data, one_hot_encoder.encoder, new_columns
 
 
 def _ordinal_encode_column(df, column, drop_old_column: bool = False):
