@@ -165,6 +165,34 @@ def test_ordinal_encoder(csv, columns, derived_columns, expected_csv):
             None,
             "csv/generic-one-hot-encoded-col0-enc-none",
         ),
+        (
+            CSV.generic_na,
+            ["col4"],
+            "_enc",
+            "first",
+            "csv/generic-na-one-hot-encoded-col4-enc-first",
+        ),
+        (
+            CSV.generic_na,
+            ["col4"],
+            "_enc",
+            "if_binary",
+            "csv/generic-na-one-hot-encoded-col4-enc-ifbinary",
+        ),
+        (
+            CSV.generic_na,
+            ["col4"],
+            "_enc",
+            None,
+            "csv/generic-na-one-hot-encoded-col4-enc-none",
+        ),
+        (
+            CSV.generic_na,
+            ["col5"],
+            "_enc",
+            "if_binary",
+            "csv/generic-na-one-hot-encoded-col5-enc-ifbinary",
+        ),
     ),
 )
 def test_one_hot_encoder(
