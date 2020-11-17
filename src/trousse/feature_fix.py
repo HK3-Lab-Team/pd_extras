@@ -223,9 +223,10 @@ def _one_hot_encode_column(
         encoded_categories.remove(NAN_CATEGORY.title())
     except ValueError:
         logger.debug(f"No NaN values were found in column {column}")
-    # Name the new columns after the categories (adding a suffix). Exclude the first
-    # which was dropped
-    new_column_names = [f"{column}_{col}_enc" for col in encoded_categories[1:]]
+    # Name the new columns after the categories (adding a suffix). Exclude the first which was dropped
+    if drop_one_new_column:
+        encoded_categories = encoded_categories[1:]
+    new_column_names = [f"{column}_{col}_enc" for col in encoded_categories]
     # Add the new encoded columns to the df_new
     for i, col in enumerate(new_column_names):
         df_new[col] = transformed_cols[:, i]
