@@ -4,6 +4,7 @@ import copy
 from abc import ABC, abstractmethod
 from typing import Any, List, Mapping, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import sklearn.preprocessing as sk_preproc
 
@@ -564,10 +565,17 @@ class OneHotEncoder(FeatureOperation):
         dataset = copy.deepcopy(dataset)
         data = dataset.data[[self.columns[0]]]
 
-        columns_enc = self._encoder.fit_transform(data).astype("bool")
+        data, nan_map = self._replace_nan_with_placeholder_value(data)
+
+        columns_enc = pd.DataFrame(self._encoder.fit_transform(data).astype("bool"))
         encoded_categories = self._encoder.categories_[0].tolist()
 
-        # nan category?
+        encoded_categories, columns_enc = self._remove_nan_category(
+            encoded_categories, columns_enc
+        )
+
+        columns_enc = self._set_nan_via_mask(columns_enc, nan_map)
+
         if self._drop_option == "first" or (
             len(encoded_categories) == 2 and self._drop_option == "if_binary"
         ):
@@ -583,29 +591,84 @@ class OneHotEncoder(FeatureOperation):
 
         return dataset
 
-    def _replace_nan_to_placeholder_value(
-        self, series: pd.Series
-    ) -> Tuple[pd.Series, pd.Series]:
-        """Replace NaNs in ``series`` with a placeholder value ("NAN_VALUE").
+    def _remove_nan_category(
+        self, encoded_categories: List[str], columns_enc: pd.DataFrame
+    ) -> Tuple[List[str], pd.DataFrame]:
+        """Remove the NaN category from the encoded categories and corresponding column.
+
+        If the NaN category is not present,``encoded_categories`` and
+        ``columns_enc`` will be returned without modification.
 
         Parameters
         ----------
-        series : pd.Series
-            Series in which NaNs are replaced with "NAN_VALUE"
+        encoded_categories : List[str]
+            List of the encoded categories from which to remove the NaN category
+        columns_enc : pd.DataFrame
+            Encoded columns from which to remove the NaN category column
 
         Returns
         -------
-        pd.Series
-            Series with NaNs replaced with "NAN_VALUE"
-        pd.Series
-            Mask of bool values for each element in ``series`` that indicates whether an
+        List[str]
+            List of the encoded categories name without the placeholder NaN category
+        pd.DataFrame
+            Encoded columns without the NaN category column
+
+        """
+        try:
+            nan_category_index = encoded_categories.index(self._nan_value_placeholder)
+        except ValueError:
+            pass
+        else:
+            del encoded_categories[nan_category_index]
+            columns_enc = columns_enc.drop(self._nan_value_placeholder, axis=1)
+
+        return encoded_categories, columns_enc
+
+    def _replace_nan_with_placeholder_value(
+        self, df: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, np.ndarray]:
+        """Replace NaNs in ``df`` with a placeholder value ("NAN_VALUE").
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            One-column DataFrame in which NaNs are replaced with "NAN_VALUE"
+
+        Returns
+        -------
+        pd.DataFrame
+            One-column DataFrame with NaNs replaced with "NAN_VALUE"
+        np.ndarray
+            Mask of bool values for each element in ``df`` that indicates whether an
             element was a NaN value and it has been replaced.
         """
-        series = series.copy()
-        nan_map = series.isna()
-        series.loc[nan_map] = self._nan_value_placeholder
+        df = df.copy()
+        nan_map = df.isna().values.ravel()
 
-        return series, nan_map
+        df[self.columns[0]][nan_map] = self._nan_value_placeholder
+
+        return df, nan_map
+
+    def _set_nan_via_mask(self, df: pd.DataFrame, nan_mask: np.ndarray) -> pd.DataFrame:
+        """Set encoded rows to NaN according to a boolean mask.
+
+        The returned DataFrame will be of dtype "boolean", the Pandas nullable boolean
+        data type.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Encoded rows
+        nan_mask : np.ndarray
+            Boolean mask, with True where to put the NaN.
+
+        Returns
+        -------
+        pd.DataFrame
+            Encoded rows with NaNs where ``nan_mask`` is True
+        """
+        df[nan_mask] = pd.NA
+        return df.astype("boolean")
 
     def _validate_drop_option(self, drop_option: Optional[str]) -> None:
         """Validate ``drop_option``, as it should be either 'first' or 'if_binary'.
