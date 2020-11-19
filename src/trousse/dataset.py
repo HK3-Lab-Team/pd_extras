@@ -14,6 +14,7 @@ from typing import DefaultDict, Dict, List, Set, Tuple, Union
 import pandas as pd
 from joblib import Parallel, delayed
 
+from . import feature_operations as fop
 from .exceptions import MultipleObjectsInFileError, NotShelveFileError
 from .operations_list import OperationsList
 from .settings import CATEG_COL_THRESHOLD
@@ -21,6 +22,7 @@ from .util import lazy_property
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from .feature_operations import FeatureOperation
+
 
 logger = logging.getLogger(__name__)
 
@@ -489,6 +491,33 @@ class Dataset:
             History of the operations
         """
         return self._operations_history
+
+    def encoded_columns_from_original(self, column: str) -> List[str]:
+        """Return the list of encoded columns name from ``column``.
+
+        Parameters
+        ----------
+        column : str
+            Column name
+
+        Returns
+        -------
+        List[str]
+            List of encoded columns name from ``column``
+        """
+        encoders_on_column = self._operations_history.operations_from_original_column(
+            column, [fop.OrdinalEncoder, fop.OneHotEncoder]
+        )
+
+        encoded_columns = []
+
+        for encoder in encoders_on_column:
+            if encoder.derived_columns is None:
+                encoded_columns.extend(encoder.columns)
+            else:
+                encoded_columns.extend(encoder.derived_columns)
+
+        return encoded_columns
 
     def _get_categorical_cols(self, col_list: Tuple[str]) -> Set[str]:
         """
