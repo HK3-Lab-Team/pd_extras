@@ -6,7 +6,7 @@ import sklearn.preprocessing as sk_preproc
 from trousse import feature_operations as fop
 from trousse.dataset import Dataset
 
-from ..dataset_util import DataFrameMock, SeriesMock
+from ..dataset_util import DataFrameMock
 from ..unitutil import ANY, function_mock, initializer_mock, instance_mock, method_mock
 
 

@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-import sklearn.preprocessing as sk_preproc
 
 import trousse.feature_fix as ffx
 from trousse.dataset import Dataset
@@ -24,9 +23,9 @@ def test_ordinal_encode_column(csv, column, derived_column, expected_csv):
     dataset = Dataset(data_file=csv)
     expected_df = load_expectation(expected_csv, type_="csv")
 
-    encoded_df, _, new_cols = ffx._ordinal_encode_column(dataset.data, column, False)
+    encoded_dataset, new_cols = ffx._ordinal_encode_column(dataset, column)
 
-    pd.testing.assert_frame_equal(encoded_df, expected_df)
+    pd.testing.assert_frame_equal(encoded_dataset.data, expected_df)
     assert derived_column == new_cols
 
 
@@ -55,10 +54,9 @@ def test_one_hot_encode_column(
     dataset = Dataset(data_file=csv)
     expected_df = load_expectation(expected_csv, type_="csv")
 
-    encoded_df, encoder, new_cols = ffx._one_hot_encode_column(
-        dataset.data, column, drop_one_new_column
+    encoded_dataset, new_cols = ffx._one_hot_encode_column(
+        dataset, column, drop_one_new_column
     )
 
     assert expected_new_cols == new_cols
-    pd.testing.assert_frame_equal(encoded_df, expected_df, check_dtype=False)
-    assert isinstance(encoder, sk_preproc.OneHotEncoder)
+    pd.testing.assert_frame_equal(encoded_dataset.data, expected_df, check_dtype=False)
