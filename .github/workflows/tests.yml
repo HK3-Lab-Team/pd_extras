@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+  pull_request:
+
+jobs:
+
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macOS-latest, ubuntu-latest]
+        python-version: [3.6, 3.7]
+        include:
+          - os: macOS-latest
+            python-version: 3.8
+          - os: ubuntu-latest
+            python-version: 3.8
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        id: python-dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[testing]
+          python -m pip install flake8
+      - name: Lint with flake8
+        id: flake8
+        run: |
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+      - name: Test with pytest
+        id: tests
+        run: |
+          python -m pytest
+      - name: Slack Notification
+        uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+        if: always()
+
+  coveralls:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[testing]
+          python -m pip install flake8
+      - name: Test with pytest
+        run: python -m pytest --cov=trousse
+      - name: Coveralls
+        run: coveralls
