@@ -441,7 +441,6 @@ class DataFrameWithInfo:
             if unique_val_nb < 7 or (
                 unique_val_nb < self.df[col].count() // CATEG_COL_THRESHOLD
             ):
-                self.df[col] = self.df[col].astype("category")
                 categorical_cols.add(col)
 
         return categorical_cols
