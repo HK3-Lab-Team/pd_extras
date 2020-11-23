@@ -4,7 +4,11 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from .dataframe_with_info import DataFrameWithInfo, FeatureOperation, copy_df_info_with_new_df
+from .dataframe_with_info import (
+    DataFrameWithInfo,
+    FeatureOperation,
+    copy_df_info_with_new_df,
+)
 from .feature_enum import OperationTypeEnum
 
 BREED_SPECIFIC_BIN_COLUMN_SUFFIX = "_bin_breed_specific"
@@ -178,9 +182,9 @@ def get_bin_list_per_single_breed(
     if df_breed.shape[0] < sample_count_threshold:
         if mongrels_age_bins == ():
             raise ValueError(
-                f"No mongrel_age_bins argument provided, but the breed "
-                f"{df_breed['BREED'].unique()[0]} has too few samples (<{sample_count_threshold})"
-                f" so the age range computed would not be reliable"
+                "No mongrel_age_bins argument provided, and the breed has too few"
+                f" samples (<{sample_count_threshold})"
+                " so the age range computed would not be reliable"
             )
         else:
             column_bin_to_range_map = {
@@ -293,6 +297,7 @@ def _apply_compute_age_bin_per_breed(
     df_breed: pd.DataFrame,
     column_to_split: str,
     new_column_name: str,
+    age_col: str,
     column_bin_to_range_map_per_breed: Dict,
     bin_thresh_increase: float = 1.1,
     bin_count: int = 20,
@@ -351,20 +356,20 @@ def _apply_compute_age_bin_per_breed(
     )
     breed = df_breed.name
     column_bin_to_range_map_per_breed[breed] = column_bin_to_range_map
-    before_count = df_breed["AGE"].count()
+    before_count = df_breed[age_col].count()
     df_breed = add_column_bins_to_single_breed(
         df_breed,
         column_to_split=column_to_split,
         bins_list=breed_age_bins,
         new_column_name=new_column_name,
     )
-    if df_breed["AGE"].count() != before_count:
-        print(f"Before: {before_count}\tAfter: {df_breed['AGE'].count()}")
+    if df_breed[age_col].count() != before_count:
+        print(f"Before: {before_count}\tAfter: {df_breed[age_col].count()}")
     return df_breed
 
 
 def _get_samples_with_breed_not_nan(
-    df: pd.DataFrame,
+    df: pd.DataFrame, breed_col
 ) -> Tuple[bool, pd.DataFrame, Tuple]:
     """
 
@@ -385,12 +390,12 @@ def _get_samples_with_breed_not_nan(
             List of ids of the samples with no breed in initial 'df' argument
             (in order to get reinserted after)
     """
-    breed_na_samples_bool_map = df["BREED"].isna()
+    breed_na_samples_bool_map = df[breed_col].isna()
     breed_na_count = np.sum(breed_na_samples_bool_map)
     if breed_na_count != 0:
         logging.warning(
-            f"There are {breed_na_count} samples with no Breed values. No computation is "
-            f"possible for these samples"
+            f"There are {breed_na_count} samples with no Breed values."
+            " No computation is possible for these samples"
         )
         contains_na_breed_samples = True
         not_na_df = df.loc[np.logical_not(breed_na_samples_bool_map)]
@@ -406,6 +411,9 @@ def add_breed_specific_bin_id_to_df(
     df_info: DataFrameWithInfo,
     column_to_split: str,
     new_column_name: str,
+    age_col: str,
+    breed_col: str,
+    breed_for_supplementary_data: str,
     bin_thresh_increase: float = 1.1,
     bin_count: int = 20,
     bin_thresholds: Tuple[float] = None,
@@ -454,11 +462,11 @@ def add_breed_specific_bin_id_to_df(
         contains_na_breed_samples,
         not_na_df,
         na_breed_samples_ids,
-    ) = _get_samples_with_breed_not_nan(df_info.df)
+    ) = _get_samples_with_breed_not_nan(df_info.df, breed_col)
     # Compute the bins from the most populated breed so that the least populated can use these
     # bins when lacking infos about the range
     mongrels_age_bins, _ = get_bin_list_per_single_breed(
-        df_breed=not_na_df[not_na_df["BREED"] == "MONGREL"],
+        df_breed=not_na_df[not_na_df[breed_col] == breed_for_supplementary_data],
         bin_thresh_increase=bin_thresh_increase,
         column_to_split=column_to_split,
         bin_count=bin_count,
@@ -469,10 +477,11 @@ def add_breed_specific_bin_id_to_df(
     column_bin_to_range_map_per_breed = {}
     # For each breed compute the appropriate age_bins and add the new column AGE_BIN_COLUMN_BREED
     # containing the age_bins that the row belongs to
-    df_with_bin_column = not_na_df.groupby("BREED").apply(
+    df_with_bin_column = not_na_df.groupby(breed_col).apply(
         _apply_compute_age_bin_per_breed,
         column_to_split=column_to_split,
         new_column_name=new_column_name,
+        age_col=age_col,
         column_bin_to_range_map_per_breed=column_bin_to_range_map_per_breed,
         mongrels_age_bins=mongrels_age_bins,
         bin_thresh_increase=bin_thresh_increase,
