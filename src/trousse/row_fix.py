@@ -229,8 +229,8 @@ class RowFix:
                 self._convert_to_float_value, column=c, axis=1
             )
             # Progress bar
-            print("=", end="")
-        print()
+            logging.info("=", end="")
+        logging.info()
 
         if verbose:
             logging.info(self.count_errors())
@@ -318,9 +318,9 @@ class RowFix:
 
     def print_errors_per_column(self):
         """ This is to print the actual error values, to check the fixes"""
-        print("The errors per feature are:")
+        logging.info("The errors per feature are:")
         for c in self.errors_before_correction_dict.keys():
-            print(
+            logging.info(
                 f"{c}: {len(self.errors_before_correction_dict[c])} :"
                 f" {set(self.errors_before_correction_dict[c])}"
                 f" ---> {len(self.errors_after_correction_dict[c])} :"
