@@ -34,48 +34,73 @@ def convert_maps_from_tuple_to_str(group_id_to_tuple_map):
 
 
 def split_continuous_column_into_bins(
-    df_info: DataFrameWithInfo, col_name, bin_threshold
+    df_info: DataFrameWithInfo,
+    col_name,
+    bin_thresholds,
+    extra_padding_ratio: float = 0.4,
 ):
     """
-    This function adds a column to DataFrame df_info called "[col_name]_bin_id" where we split the "col_name" into bins
-    :param df_info: DataFrameWithInfo -> DataFrameWithInfo instance containing the 'col_name' column to split
-    :param col_name: String -> Name of the column to be split into discrete intervals
-    :param bin_threshold: List -> It contains the thresholds used to separate different groups
-                                  (the threshold will be included in the bin with higher values)
-    :return: pd.DataFrame -> Same "df_info" passed with a new column with the bin_indices
-                             which the column value belongs to
-             Dict[List] -> Dictionary with the bin_indices as keys and bin_ranges as values
+    Split the continuous values from ``df_info`` column ``col_name`` into discrete bins.
+
+    called "[col_name]_bin_id" where we split the "col_name" into bins
+
+    Parameters
+    ----------
+    df_info : DataFrameWithInfo
+        DataFrameWithInfo instance containing the 'col_name' column to split
+    col_name : str
+        Name of the column to be split into discrete intervals
+    bin_thresholds : List
+        It contains the thresholds used to separate different groups
+        (the threshold will be included in the bin with higher values)
+    extra_bin_padding : float
+        This float number indicates the ratio of the total interval size that is
+        added to the lower and upper bound of the first and last bin respectively.
+        Its purpose is to include the values of the future/test set sample values
+        (where maximum and minimum value could exceed the ones found here).
+        Default set to 0.4.
+
+    Returns
+    -------
+    pd.DataFrame
+        Same "df_info" passed with a new column with the bin_indices
+        which the column value belongs to
+    Dict[List]
+        Dictionary with the bin_indices as keys and bin_ranges as values
     """
     new_col_name = f"{col_name}{BIN_SPLIT_COL_SUFFIX}"
     # Initialize the bin <--> id_range map  with the min and max value
     bin_id_range_map = {}
-    # For the BIN 0 choose the column minimum as the bin "lower_value",
-    # in the other case the "upper_value" of the previous loops is set as "lower_value"
-    lower_value = min(df_info.df[col_name].unique()) - 1
+
+    min_value = min(df_info.df[col_name].unique())
+    max_value = max(df_info.df[col_name].unique())
+    extra_padding = abs(max_value - min_value) * extra_padding_ratio
+    # Set the bin "0" lower bound with extra padding. In the other cases
+    # the "upper_value" of the previous loops is set as "lower_value"
+    lower_value = min_value - extra_padding
     # Loop over the bins (we need to increase by 1 because they are only the separating values)
-    for i in range(len(bin_threshold) + 1):
+    for i in range(len(bin_thresholds) + 1):
 
         bin_id_range_map[i] = []
-        # Append the bin upper and lower value to the "bin_id_range_map"
-        # For the first and last bin, we set some special values
         bin_id_range_map[i].append(lower_value)
 
         # Assign the bin upper value:
         # 1. Either to the higher threshold
         # 2. Or to the column maximum value (if there is not a higher threshold in list)
         try:
-            upper_value = bin_threshold[i]
+            upper_value = bin_thresholds[i]
         except IndexError:
-            upper_value = max(df_info.df[col_name].unique())
+            # if there is not a higher threshold, the following value is used as the
+            # highest bound of the last bin
+            upper_value = max_value + extra_padding
 
-        # Append the bin upper value to the "bin_id_range_map"
         bin_id_range_map[i].append(upper_value)
 
         # Identify the values in the range [lower_value, upper_value] in every row,
         # and assign them "i" as the value of the new column "_bin_id"
         df_info.df.loc[
             (df_info.df[col_name] >= lower_value)
-            & (df_info.df[col_name] <= upper_value),
+            & (df_info.df[col_name] < upper_value),
             new_col_name,
         ] = i
 
