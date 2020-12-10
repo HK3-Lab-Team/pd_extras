@@ -13,8 +13,6 @@ from .dataframe_with_info import (
 )
 from .feature_enum import ENCODED_COLUMN_SUFFIX, EncodingFunctions, OperationTypeEnum
 
-logger = logging.getLogger(__name__)
-
 NAN_CATEGORY = "Nan"
 BIN_SPLIT_COL_SUFFIX = "_bin_id"
 
@@ -240,7 +238,7 @@ def _one_hot_encode_column(
     try:
         encoded_categories.remove(NAN_CATEGORY.title())
     except ValueError:
-        logger.debug(f"No NaN values were found in column {column}")
+        logging.debug(f"No NaN values were found in column {column}")
     # Name the new columns after the categories (adding a suffix). Exclude the first which was dropped
     new_column_names = [
         f"{column}_{col}{ENCODED_COLUMN_SUFFIX}" for col in encoded_categories[1:]

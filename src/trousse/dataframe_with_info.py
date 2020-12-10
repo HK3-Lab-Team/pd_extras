@@ -26,8 +26,6 @@ from .feature_operation import FeatureOperation
 # R = How many times a unique value is repeated in column (in average)
 CATEG_COL_THRESHOLD = 300
 
-logger = logging.getLogger(__name__)
-
 
 def get_df_from_csv(df_filename: str) -> pd.DataFrame:
     """
@@ -46,10 +44,10 @@ def get_df_from_csv(df_filename: str) -> pd.DataFrame:
     """
     try:
         df = pd.read_csv(df_filename)
-        logger.info("Data imported from file successfully")
+        logging.info("Data imported from file successfully")
         return df
     except FileNotFoundError as e:
-        logger.error(e)
+        logging.error(e)
         return None
 
 
@@ -588,10 +586,10 @@ class DataFrameWithInfo:
         # TODO: Rename to "contains_duplicated_features"
         # TODO: In case there are columns with the same name, check if the
         #  values are the same too and inform the user appropriately
-        logger.info("Checking duplicated columns")
+        logging.info("Checking duplicated columns")
         # Check if there are duplicates in the df columns
         if len(self.df.columns) != len(set(self.df.columns)):
-            logger.error("There are duplicated columns")
+            logging.error("There are duplicated columns")
             return True
         else:
             return False

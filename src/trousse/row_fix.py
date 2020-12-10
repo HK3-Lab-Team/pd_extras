@@ -7,8 +7,6 @@ import pandas as pd
 
 from .dataframe_with_info import DataFrameWithInfo, copy_df_info_with_new_df
 
-logger = logging.getLogger(__name__)
-
 
 class RowFix:
     """
@@ -97,7 +95,7 @@ class RowFix:
                 lost_values = set(
                     df_info.df[col][df_info.df[col].notna() & numeric_col_serie.isna()]
                 )
-                logger.info(
+                logging.info(
                     f"{col} can be converted from String to Mixed. The percentage of "
                     f"non numeric values is {1- num_valuecount_ratio}.\n"
                     f"Values: {lost_values}"
@@ -136,14 +134,14 @@ class RowFix:
                     result - self.percentage_to_add_out_of_scale * result
                 )
             else:
-                logger.error(
-                    f"You end up using the wrong function to convert {elem}."
+                logging.error(
+                    f"You end up using the wrong function to convert `{elem}` ."
                     " It will be replaced with NaN."
                 )
                 return self.nan_value
         except (ValueError, TypeError):
-            logger.error(
-                f"You end up using the wrong function to convert {elem}"
+            logging.error(
+                f"You end up using the wrong function to convert `{elem}` ."
                 " It will be replaced with NaN."
             )
             return self.nan_value
@@ -235,7 +233,7 @@ class RowFix:
         print()
 
         if verbose:
-            logger.info(self.count_errors())
+            logging.info(self.count_errors())
 
         return copy_df_info_with_new_df(df_info=df_info, new_pandas_df=df_converted)
 
@@ -269,7 +267,7 @@ class RowFix:
         bool_cols = bool_cols.union(cols_by_type.bool_cols)
         df_info.df[list(bool_cols)] = df_info.df[list(bool_cols)].astype(np.bool)
         if verbose:
-            logger.info(
+            logging.info(
                 f"Casted to INT32: {int_cols}\n Casted to FLOAT64: {float_cols}\n"
                 f"Casted to BOOL: {bool_cols}"
             )
@@ -368,7 +366,7 @@ class RowFix:
         dfinfo_num_only = copy_df_info_with_new_df(df_info, df_info.df)
         non_num_convertible_count = 0
         if verbose:
-            logger.info("The values non convertible to numbers are:")
+            logging.info("The values non convertible to numbers are:")
         for col in columns:
             # Convert every value to number if possible, the other will be NaN
             forced_converted_to_num = pd.to_numeric(df_info.df[col], errors="coerce")
@@ -380,7 +378,7 @@ class RowFix:
             )
             non_num_convertible_count += non_numeric_in_column.sum()
             if verbose:
-                logger.info(
+                logging.info(
                     f"{col} -> \n"
                     f"{df_info.df[col][non_numeric_in_column].value_counts()}"
                 )
@@ -388,7 +386,7 @@ class RowFix:
             if not dry_run:
                 dfinfo_num_only.df.loc[:, col] = forced_converted_to_num
 
-        logger.info(
+        logging.info(
             "The total count of values non convertible to numbers"
             f" is: {non_num_convertible_count}"
         )
