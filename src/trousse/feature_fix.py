@@ -1,6 +1,6 @@
 import itertools
 import logging
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -33,14 +33,32 @@ def convert_maps_from_tuple_to_str(group_id_to_tuple_map):
 
 def split_continuous_column_into_bins(
     df_info: DataFrameWithInfo,
-    col_name,
-    bin_thresholds,
+    col_name: str,
+    bin_thresholds: List[float],
+    infer_upper_lower_bounds: bool = True,
     extra_padding_ratio: float = 0.4,
-):
+) -> DataFrameWithInfo:
     """
     Split the continuous values from ``df_info`` column ``col_name`` into discrete bins.
 
-    called "[col_name]_bin_id" where we split the "col_name" into bins
+    When ``infer_upper_lower_bounds`` is True, the lower
+    bound of the first bin is inferred based on the ``col_name`` minimum, and
+    the upper bound of the last bin is inferred based on the ``col_name``
+    maximum value. An ``extra_bin_padding`` is added to both values to include
+    the values of the future/test set sample values (where maximum and minimum
+    value could exceed the ones found in ``df_info``).
+    Therefore, when ``infer_upper_lower_bounds`` is True, the ``bin_thresholds`` values
+    are considered as intermediate thresholds.
+    When ``infer_upper_lower_bounds`` is False, the ``bin_thresholds`` first values
+    is considered as lower bound of the first bin and the last value is considered
+    as upper bound of the last bin.
+    In both cases the intermediate bin thresholds will be included in the bin that
+    uses them as lower bound. So the values associated to bin "i" are those that have
+    a ``col_name`` value "V" as follows:
+    bin_threshold[i] <= V < bin_threshold[i+1]
+
+    The new column with the computed bin IDs is added ``df_info`` with
+    the name "[``col_name``]_bin_id"
 
     Parameters
     ----------
@@ -48,36 +66,41 @@ def split_continuous_column_into_bins(
         DataFrameWithInfo instance containing the 'col_name' column to split
     col_name : str
         Name of the column to be split into discrete intervals
-    bin_thresholds : List
-        It contains the thresholds used to separate different groups
-        (the threshold will be included in the bin with higher values)
+    bin_thresholds : List[float]
+        List of the thresholds used to split the ``col_name`` column into bins.
+    infer_upper_lower_bounds : bool
+        Option to infer the lower bound of the first bin and the upper bound of the
+        last bin from the minimum and maximum value of the ``col_name`` column.
     extra_bin_padding : float
-        This float number indicates the ratio of the total interval size that is
-        added to the lower and upper bound of the first and last bin respectively.
-        Its purpose is to include the values of the future/test set sample values
-        (where maximum and minimum value could exceed the ones found here).
-        Default set to 0.4.
+        Ratio of the total interval size that is added to the lower and upper
+        bound of the first and last bin respectively. Default set to 0.4.
 
     Returns
     -------
-    pd.DataFrame
+    DataFrameWithInfo
         Same "df_info" passed with a new column with the bin_indices
         which the column value belongs to
-    Dict[List]
-        Dictionary with the bin_indices as keys and bin_ranges as values
     """
     new_col_name = f"{col_name}{BIN_SPLIT_COL_SUFFIX}"
     # Initialize the bin <--> id_range map  with the min and max value
     bin_id_range_map = {}
 
-    min_value = min(df_info.df[col_name].unique())
-    max_value = max(df_info.df[col_name].unique())
-    extra_padding = abs(max_value - min_value) * extra_padding_ratio
-    # Set the bin "0" lower bound with extra padding. In the other cases
-    # the "upper_value" of the previous loops is set as "lower_value"
-    lower_value = min_value - extra_padding
+    if infer_upper_lower_bounds:
+        min_value = min(df_info.df[col_name].unique())
+        max_value = max(df_info.df[col_name].unique())
+        extra_padding = abs(max_value - min_value) * extra_padding_ratio
+        # Set the bin "0" lower bound with extra padding. In the other cases
+        # the "upper_value" of the previous loops is set as "lower_value"
+        lower_bound = min_value - extra_padding
+        upper_bound = max_value + extra_padding
+        loop_count = len(bin_thresholds) + 1
+    else:
+        lower_bound = bin_thresholds[0]
+        loop_count = len(bin_thresholds) - 1
+
+    lower_value = lower_bound
     # Loop over the bins (we need to increase by 1 because they are only the separating values)
-    for i in range(len(bin_thresholds) + 1):
+    for i in range(loop_count):
 
         bin_id_range_map[i] = []
         bin_id_range_map[i].append(lower_value)
@@ -86,11 +109,15 @@ def split_continuous_column_into_bins(
         # 1. Either to the higher threshold
         # 2. Or to the column maximum value (if there is not a higher threshold in list)
         try:
-            upper_value = bin_thresholds[i]
+            if infer_upper_lower_bounds:
+                upper_value = bin_thresholds[i]
+            else:
+                upper_value = bin_thresholds[i + 1]
         except IndexError:
-            # if there is not a higher threshold, the following value is used as the
+            # In case where ```infer_upper_lower_bounds`` is True, there may be not a
+            # higher threshold, so the following value is used as the
             # highest bound of the last bin
-            upper_value = max_value + extra_padding
+            upper_value = upper_bound
 
         bin_id_range_map[i].append(upper_value)
 
