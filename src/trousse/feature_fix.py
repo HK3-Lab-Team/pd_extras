@@ -35,7 +35,7 @@ def _split_into_bins_infer_range_boundaries(
     column: pd.Series,
     bin_thresholds: List[float],
     extra_padding_ratio: float = 0.4,
-) -> Tuple[pd.Series, Dict[int, List[float, float]]]:
+) -> Tuple[pd.Series, Dict[int, List[float]]]:
     """
     Split the ``column`` values into discrete bins, inferring the range boundaries.
 
@@ -64,7 +64,7 @@ def _split_into_bins_infer_range_boundaries(
     -------
     pd.Series
         Column with the IDs of the computed bins
-    Dict[int, List[float, float]]
+    Dict[int, List[float]]
         Dictionary with the bin IDs as keys and bin lower and upper bounds as values
     """
     # Initialize the bin <--> id_range map
@@ -111,7 +111,7 @@ def _split_into_bins_infer_range_boundaries(
 def _split_into_bins_no_inference(
     column: pd.Series,
     bin_thresholds: List[float],
-) -> Tuple[pd.Series, Dict[int, List[float, float]]]:
+) -> Tuple[pd.Series, Dict[int, List[float]]]:
     """
     Split the ``column`` values into discrete bins, using the bin_thresholds.
 
@@ -133,7 +133,7 @@ def _split_into_bins_no_inference(
     -------
     pd.Series
         Column with the IDs of the computed bins
-    Dict[int, List[float, float]]
+    Dict[int, List[float]]
         Dictionary with the bin IDs as keys and bin lower and upper bounds as values
     """
     # Initialize the bin <--> id_range map

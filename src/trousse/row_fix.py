@@ -228,9 +228,6 @@ class RowFix:
             df_converted[c] = df_info.df.apply(
                 self._convert_to_float_value, column=c, axis=1
             )
-            # Progress bar
-            logging.info("=", end="")
-        logging.info()
 
         if verbose:
             logging.info(self.count_errors())
