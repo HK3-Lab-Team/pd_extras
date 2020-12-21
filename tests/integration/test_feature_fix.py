@@ -25,7 +25,7 @@ from trousse.feature_operation import FeatureOperation
                     "col_b": [0.01 * i for i in range(100)],
                     "col_a_bin_id": pd.Series(
                         [0] * 30 + [1] * 40 + [2] * 30, dtype="Int16"
-                    ),  # TODO
+                    ),
                 }
             ),
             FeatureOperation(
