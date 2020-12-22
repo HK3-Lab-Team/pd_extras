@@ -20,7 +20,8 @@ class DescribeFeatureOperation:
     def it_knows_how_to_validate_columns_valueerror(
         self, columns, expected_length, is_sequence_and_not_str_
     ):
-        # overriding __abstractmethods__ lets you instantiate an abstract class (PEP 3119)
+        # overriding __abstractmethods__ lets you instantiate an abstract class
+        # (PEP 3119)
         fop.FeatureOperation.__abstractmethods__ = set()
         feature_operation = fop.FeatureOperation()
         is_sequence_and_not_str_.return_value = True
@@ -38,7 +39,8 @@ class DescribeFeatureOperation:
     def it_knows_how_to_validate_columns_typeerror(
         self, columns, expected_type, is_sequence_and_not_str_
     ):
-        # overriding __abstractmethods__ lets you instantiate an abstract class (PEP 3119)
+        # overriding __abstractmethods__ lets you instantiate an abstract class
+        # (PEP 3119)
         fop.FeatureOperation.__abstractmethods__ = set()
         feature_operation = fop.FeatureOperation()
         is_sequence_and_not_str_.return_value = False
@@ -61,7 +63,8 @@ class DescribeFeatureOperation:
     def it_knows_how_to_validate_derived_columns_valueerror(
         self, derived_columns, expected_length, is_sequence_and_not_str_
     ):
-        # overriding __abstractmethods__ lets you instantiate an abstract class (PEP 3119)
+        # overriding __abstractmethods__ lets you instantiate an abstract class
+        # (PEP 3119)
         fop.FeatureOperation.__abstractmethods__ = set()
         feature_operation = fop.FeatureOperation()
         is_sequence_and_not_str_.return_value = True
@@ -81,7 +84,8 @@ class DescribeFeatureOperation:
     def it_knows_how_to_validate_derived_columns_typeerror(
         self, derived_columns, expected_type, is_sequence_and_not_str_
     ):
-        # overriding __abstractmethods__ lets you instantiate an abstract class (PEP 3119)
+        # overriding __abstractmethods__ lets you instantiate an abstract class
+        # (PEP 3119)
         fop.FeatureOperation.__abstractmethods__ = set()
         feature_operation = fop.FeatureOperation()
         is_sequence_and_not_str_.return_value = False
@@ -517,8 +521,8 @@ class DescribeReplaceSubstrings:
 
         assert isinstance(err.value, TypeError)
         assert (
-            "replacement_map must be a non-empty dict mapping string keys to string values"
-            == str(err.value)
+            "replacement_map must be a non-empty dict mapping string keys to string "
+            "values" == str(err.value)
         )
 
     @pytest.mark.parametrize(

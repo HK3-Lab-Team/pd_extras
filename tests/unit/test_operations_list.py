@@ -81,7 +81,8 @@ class DescribeOperationsList:
         assert "Cannot get FeatureOperation with a label of type set" == str(err.value)
 
     @pytest.mark.parametrize(
-        "column, operations_from_original_column_return_value, expected_derived_columns",
+        "column, operations_from_original_column_return_value, "
+        "expected_derived_columns",
         [
             (
                 "col0",
@@ -269,6 +270,6 @@ class DescribeOperationsList:
 
         assert type(_str) == str
         assert _str == (
-            "[FillNA(\n\tcolumns=['col0'],\n\tvalue=0,\n\tderived_columns=['col1'],\n)"
-            ", FillNA(\n\tcolumns=['col1'],\n\tvalue=0,\n\tderived_columns=['col4'],\n)]"
+            "[FillNA(\n\tcolumns=['col0'],\n\tvalue=0,\n\tderived_columns=['col1'],\n),"
+            " FillNA(\n\tcolumns=['col1'],\n\tvalue=0,\n\tderived_columns=['col4'],\n)]"
         )

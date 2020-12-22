@@ -506,9 +506,9 @@ class Describe_Dataset:
             "Columns with:\n\t1.\tMixed types: "
             "\t\t1\n\t2.\tNumerical types (float/int): \t8\n\t3.\tString types: "
             "\t\t3\n\t4.\tBool types: \t\t1\n\t5.\tOther types: \t\t1\nAmong these "
-            "categories:\n\t1.\tString categorical columns: 2\n\t2.\tNumeric categorical"
-            " columns: 3\n\t3.\tMedical Exam columns (numerical, no metadata): 8\n\t4."
-            "\tOne repeated value: 1\nColumns with many NaN: 0"
+            "categories:\n\t1.\tString categorical columns: 2\n\t2.\tNumeric "
+            "categorical columns: 3\n\t3.\tMedical Exam columns (numerical, no "
+            "metadata): 8\n\t4.\tOne repeated value: 1\nColumns with many NaN: 0"
         )
 
         str_ = str(dataset)
@@ -732,8 +732,9 @@ def export_dataset_with_operations_to_file_fixture(
     Export a Dataset instance to a file.
 
     The Dataset instance is created by the fixture ``dataset_with_operations``
-    and it is exported using "shelve" module to a file named ``exported_dataset_ops_fixture`` inside
-    the folder returned by the fixture ``tmpdir``.
+    and it is exported using "shelve" module to a file named
+    ``exported_dataset_ops_fixture`` inside the folder returned by the fixture
+    ``tmpdir``.
 
     Returns
     -------
