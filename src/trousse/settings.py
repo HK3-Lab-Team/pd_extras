@@ -14,7 +14,7 @@ CATEG_COL_THRESHOLD = 300
 # the script will try to fix some typos in remaining NaN. Otherwise the column will be
 # considered as "String" type
 NOT_NA_STRING_COL_THRESHOLD = 0.4
-PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES = 0.02
+PERCENTAGE_TO_ADD_OUT_OF_SCALE_VALUES = 0.02
 NAN_VALUE = np.nan
 
 # ===== Mappings to correct some typos in data =====

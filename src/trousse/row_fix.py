@@ -10,7 +10,7 @@ from .settings import (
     CHAR_REPLACE_DICT,
     NAN_VALUE,
     NOT_NA_STRING_COL_THRESHOLD,
-    PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
+    PERCENTAGE_TO_ADD_OUT_OF_SCALE_VALUES,
     WHOLE_WORD_REPLACE_DICT,
 )
 
@@ -77,7 +77,7 @@ class RowFix:
         self,
         char_replace_dict: Dict[str, str] = CHAR_REPLACE_DICT,
         whole_word_replace_dict: Dict[str, str] = WHOLE_WORD_REPLACE_DICT,
-        percentage_to_add_out_of_scale: float = PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
+        percentage_to_add_out_of_scale: float = PERCENTAGE_TO_ADD_OUT_OF_SCALE_VALUES,
     ):
         """
         This class is to fix common errors like mixed types, or little typos defined as
@@ -134,7 +134,7 @@ class RowFix:
         except (ValueError, TypeError):
             logger.error(f"You end up using the wrong function to convert {elem}")
 
-    def _convert_to_float_value(self, full_row, column):
+    def _convert_to_float_value(self, full_row, column):  # noqa: C901
         """
         1. It uses the dict 'char_replace_dict' to replace characters in the element
             "elem"
@@ -142,7 +142,8 @@ class RowFix:
         3. If it does not work, it tries to replace the whole string (without white
             spaces) using the dict 'self.whole_word_replace_dict'
         4. If nothing worked, it appends the value to the
-            'errors_after_correction_dict[column]' attribute and returns the element 'elem'
+            'errors_after_correction_dict[column]' attribute and returns the element
+            'elem'
         """
         elem = full_row[column]
         try:
