@@ -11,10 +11,11 @@ df_sani_dir = os.path.join(
 )
 
 metadata_cols = (
-    "GROUPS	TAG	DATA_SCHEDA	NOME	ID_SCHEDA	COMUNE	PROV	MONTH	YEAR	BREED	SEX	AGE	"
-    "SEXUAL STATUS	BODYWEIGHT	PULSE RATE	RESPIRATORY RATE	TEMP	BLOOD PRESS MAX	BLOOD "
-    "PRESS MIN	BLOOD PRESS MEAN	BODY CONDITION SCORE	HT	H	DEATH	TIME OF DEATH	"
-    "PROFILO_PAZIENTE	ANAMNESI_AMBIENTALE	ANAMNESI_ALIMENTARE	VACCINAZIONI	FILARIOSI	GC_SEQ"
+    "GROUPS	TAG	DATA_SCHEDA	NOME	ID_SCHEDA	COMUNE	PROV	MONTH	YEAR	BREED"
+    "	SEX	AGE SEXUAL STATUS	BODYWEIGHT	PULSE RATE	RESPIRATORY RATE	TEMP	"
+    "BLOOD PRESS MAX	BLOOD   PRESS MIN	BLOOD PRESS MEAN	BODY CONDITION SCORE	"
+    "HT	H	DEATH	TIME OF DEATH   PROFILO_PAZIENTE	ANAMNESI_AMBIENTALE"
+    "   ANAMNESI_ALIMENTARE	VACCINAZIONI	FILARIOSI	GC_SEQ"
 )
 metadata_cols = tuple(metadata_cols.replace("\t", ",").split(","))
 
@@ -35,7 +36,3 @@ whole_word_replace_dict = {
 }
 
 char_replace_dict = {"°": "", ",": "."}
-
-# df_feat_analysis = DfFeatureAnalysis(df_sani, metadata_cols=metadata_cols)
-# # mixed_type_cols, numerical_col_list, str_col_list, other_col_list = df_feat_analysis.get_column_list_by_type()
-# df_feat_analysis.show_column_type_infos()

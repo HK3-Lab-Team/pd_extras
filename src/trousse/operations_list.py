@@ -1,6 +1,6 @@
 import collections
 import typing
-from typing import List, Union, Any
+from typing import Any, List, Union
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from .feature_operations import FeatureOperation
@@ -79,7 +79,7 @@ class OperationsList:
         )
 
     def original_columns_from_derived_column(self, derived_column: str) -> List[str]:
-        """Return the name of the columns from which ``derived_column`` is generated from.
+        """Return the name of the columns from which ``derived_column`` is generated.
 
         Parameters
         ----------
@@ -89,7 +89,7 @@ class OperationsList:
         Returns
         -------
         List[str]
-            Name of the columns from which ``derived_column`` has been generated from.
+            Name of the columns from which ``derived_column`` has been generated.
 
         Raises
         ------
@@ -114,7 +114,7 @@ class OperationsList:
         return operations[0].columns
 
     def __eq__(self, other: Any) -> bool:
-        """Return True if ``other`` is a OperationsList and it contains the same operations.
+        """Return True if ``other`` is a OperationsList containing the same operations.
 
         Parameters
         ----------
@@ -141,9 +141,9 @@ class OperationsList:
         Parameters
         ----------
         label : Union[int, str]
-            Label used to retrieve the element. If int: get the label-th FeatureOperation.
-            If str: ``label`` will be treated as the name of a column and it will get all
-            the FeatureOperation associated with that column.
+            Label used to retrieve the element. If int: get the label-th
+            FeatureOperation. If str: ``label`` will be treated as the name of a column
+            and it will get all the FeatureOperation associated with that column.
 
         Returns
         -------
@@ -161,7 +161,8 @@ class OperationsList:
             return self._operations_by_column[label]
         else:
             raise TypeError(
-                f"Cannot get FeatureOperation with a label of type {type(label).__name__}"
+                "Cannot get FeatureOperation with a label of type "
+                f"{type(label).__name__}"
             )
 
     def __iadd__(self, feat_op: "FeatureOperation"):
