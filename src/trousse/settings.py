@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import numpy as np
 
 # Ratio R used to select which columns are categorical. Column is categorical when:

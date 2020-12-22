@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import itertools
 import random
 from datetime import date
@@ -451,8 +453,8 @@ class DataFrameMock:
 
 
 class SeriesMock:
-    @staticmethod
-    def series_by_type(series_type: str):  # noqa: C901
+    @staticmethod  # noqa: C901
+    def series_by_type(series_type: str):
         col_name = "column_name"
         if "bool" in series_type:
             return pd.Series([True, False, True, pd.NA, False], name=col_name)
