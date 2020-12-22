@@ -42,11 +42,11 @@ def add_id_owner_col(
     private_df: pd.DataFrame, cols_to_hash: Tuple[str]
 ) -> pd.DataFrame:
     """
-    This function uses the columns of the "private_df" database to generate an hash value
-    and it creates an "ID_OWNER" column with those values.
+    This function uses the columns of the "private_df" database to generate an hash
+    value and it creates an "ID_OWNER" column with those values.
     To generate hash values, the function adds nonces (random prefix and suffix)
-    to the column values and then we use "sha256".
-    See https://medium.com/luckspark/hashing-pandas-dataframe-column-with-nonce-763a8c23a833
+    to the column values and then we use "sha256". See
+    https://medium.com/luckspark/hashing-pandas-dataframe-column-with-nonce-763a8c23a833
     for more info.
 
     Parameters

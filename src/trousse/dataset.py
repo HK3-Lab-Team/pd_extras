@@ -127,7 +127,8 @@ class _ColumnListByType:
             f"\nAmong these categories:"
             f"\n\t1.\tString categorical columns: {len(self.str_categorical_cols)}"
             f"\n\t2.\tNumeric categorical columns: {len(self.num_categorical_cols)}"
-            f"\n\t3.\tMedical Exam columns (numerical, no metadata): {len(self.med_exam_col_list)}"
+            f"\n\t3.\tMedical Exam columns (numerical, no metadata): "
+            f"{len(self.med_exam_col_list)}"
             f"\n\t4.\tOne repeated value: {len(self.constant_cols)}"
         )
 
@@ -157,8 +158,8 @@ class Dataset:
             Default set to ()
         feature_cols: Tuple[str], optional
             Tuple with the name of the columns that contains sample features.
-            Default is None, meaning that all the columns but the ``metadata_cols`` will be
-            considered as features.
+            Default is None, meaning that all the columns but the ``metadata_cols`` will
+            be considered as features.
         data_file: str, optional
             Path to the csv file containing data. Either this or ``df_object`` must be
             provided. In case ``df_object`` is provided, this will not be considered.
@@ -236,8 +237,8 @@ class Dataset:
         ----------
         nan_ratio : float, optional
             Minimum ratio “nan samples”/”total samples” for the column to be considered
-            a “nan column”. Default is 1, meaning that only the columns entirely composed
-            by NaNs will be returned.
+            a “nan column”. Default is 1, meaning that only the columns entirely
+            composed by NaNs will be returned.
 
         Returns
         -------
@@ -632,7 +633,8 @@ class Dataset:
         )
         for i, col_type_dict in enumerate(column_type_dict_list):
             print(
-                f"{i}: {col_type_dict[_COL_NAME_COLUMN]} -> {col_type_dict[_COL_TYPE_COLUMN]}"
+                f"{i}: {col_type_dict[_COL_NAME_COLUMN]} -> "
+                f"{col_type_dict[_COL_TYPE_COLUMN]}"
             )
 
     def track_history(self, feature_operation: "FeatureOperation") -> None:
@@ -786,7 +788,8 @@ def read_file(filename: Union[Path, str]) -> Dataset:
         # Check how many objects have been stored
         if len(my_shelf.keys()) != 1:
             raise MultipleObjectsInFileError(
-                f"There are {len(my_shelf.keys())} objects in file {filename}. Expected 1."
+                f"There are {len(my_shelf.keys())} objects in file {filename}. "
+                "Expected 1."
             )
         # Retrieve the single object
         dataset = list(my_shelf.values())[0]

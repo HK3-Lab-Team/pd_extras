@@ -19,9 +19,11 @@ logger = logging.getLogger(__name__)
 
 def _check_numeric_cols(dataset: Dataset, col_list: Tuple):
     """
-    This is to correct those columns that have mixed/string-only types containing numerical values.
-    It will check if the ratio between numeric values (or convertible to ones) and the total count of
-    not-NaN values is more than NOT_NA_STRING_COL_THRESHOLD (defined in feature_enum.py)
+    This is to correct those columns that have mixed/string-only types containing
+    numerical values. It will check if the ratio between numeric values (or convertible
+    to ones) and the total count of not-NaN values is more than
+    NOT_NA_STRING_COL_THRESHOLD (defined in feature_enum.py)
+
     Parameters
     ----------
     dataset: Dataset
@@ -52,7 +54,9 @@ def _check_numeric_cols(dataset: Dataset, col_list: Tuple):
 
 
 def _convert_to_float_or_int(float_n):
-    """ Chooses the appropriate conversion format 'float' or 'int' for a numerical value """
+    """
+    Chooses the appropriate conversion format 'float' or 'int' for a numerical value
+    """
     try:
         int_n = int(float_n)
         if float_n == int_n:
@@ -76,13 +80,13 @@ class RowFix:
         percentage_to_add_out_of_scale: float = PERCENTAGE_TO_BE_ADDED_OUT_OF_SCALE_VALUES,
     ):
         """
-        This class is to fix common errors like mixed types, or little typos defined as argument,
-        that prevent the column conversion to float.
+        This class is to fix common errors like mixed types, or little typos defined as
+        argument, that prevent the column conversion to float.
         :param whole_word_replace_dict: This string-to-string dict is used to replace
-        the whole value of a row with another string/float, or None, so it can be converted
-        to float or NaN
-        :param char_replace_dict: This char-to-char dict is used to replace characters inside the strings,
-        so they can be converted to numerical
+            the whole value of a row with another string/float, or None, so it can be
+            converted to float or NaN
+        :param char_replace_dict: This char-to-char dict is used to replace characters
+            inside the strings, so they can be converted to numerical
         """
         self.percentage_to_add_out_of_scale = percentage_to_add_out_of_scale
         self.whole_word_replace_dict = whole_word_replace_dict
@@ -96,10 +100,12 @@ class RowFix:
         self, full_row: pd.Series, column: str
     ):
         """
-        This function is meant to be used with .apply(). So for each row it does the following.
-        It will fill up the two arguments:
-         "ids_rows_with_initial_mistakes" -> identify ID of the rows with errors (hoping the errors recur in the same)
-         "self.errors_before_correction_dict[column]" -> values that are not convertible to float in that column
+        This function is meant to be used with .apply(). So for each row it does the
+        following. It will fill up the two arguments:
+         "ids_rows_with_initial_mistakes" -> identify ID of the rows with errors
+         (hoping the errors recur in the same)
+         "self.errors_before_correction_dict[column]" -> values that are not convertible
+         to float in that column
         """
         try:
             # Try casting to float
@@ -109,7 +115,9 @@ class RowFix:
             self.errors_before_correction_dict[column].append(full_row[column])
 
     def _convert_out_of_scale_values(self, elem, symbol):
-        """ Converts '>' and '<' to appropriate value based on 'PERCENTAGE_TO_BE_ADDED' """
+        """
+        Converts '>' and '<' to appropriate value based on 'PERCENTAGE_TO_BE_ADDED'
+        """
         result = str(elem).replace(symbol, "")
         try:
             result = float(result)
@@ -128,12 +136,13 @@ class RowFix:
 
     def _convert_to_float_value(self, full_row, column):
         """
-        1. It uses the dict 'char_replace_dict' to replace characters in the element "elem"
+        1. It uses the dict 'char_replace_dict' to replace characters in the element
+            "elem"
         2. It tries to convert that str to float
-        3. If it does not work, it tries to replace the whole string (without white spaces)
-        using the dict 'self.whole_word_replace_dict'
-        4. If nothing worked, it appends the value to the 'errors_after_correction_dict[column]'
-        attribute and returns the element 'elem'
+        3. If it does not work, it tries to replace the whole string (without white
+            spaces) using the dict 'self.whole_word_replace_dict'
+        4. If nothing worked, it appends the value to the
+            'errors_after_correction_dict[column]' attribute and returns the element 'elem'
         """
         elem = full_row[column]
         try:
@@ -141,8 +150,9 @@ class RowFix:
             return _convert_to_float_or_int(str_to_float)
         except ValueError:
             try:
-                # Retry replacing some common mistakes in small parts of the values --> if the only thing
-                # remaining is '' or the string can still not be cast to float, ValueError will be raised
+                # Retry replacing some common mistakes in small parts of the values -->
+                # if the only thing remaining is '' or the string can still not be cast
+                # to float, ValueError will be raised
                 elem = "".join(
                     self.char_replace_dict.get(char, char) for char in str(elem)
                 )
@@ -150,7 +160,8 @@ class RowFix:
                 return _convert_to_float_or_int(str_to_float)
             except ValueError:
                 if "%" in str(elem):
-                    # If the value is a percentage, it means that no absolute value can be measured -> None
+                    # If the value is a percentage, it means that no absolute value can
+                    # be measured -> None
                     return NAN_VALUE
                 elif ">" in str(elem):
                     # Check if the value was out of scale
@@ -168,7 +179,8 @@ class RowFix:
                         else _convert_to_float_or_int(result)
                     )
                 except KeyError:
-                    # The whole word could not be replaced by the dict and nothing else worked
+                    # The whole word could not be replaced by the dict and nothing else
+                    # worked
                     self.ids_rows_with_remaining_mistakes.add(full_row.name)
                     self.errors_after_correction_dict[column].append(elem)
                     return elem
@@ -187,8 +199,10 @@ class RowFix:
         @param verbose: 0 -> No message displayed 1 -> to show performance,
             2 -> to show actual unique errors per column. Default set to 0
         @return: df : pd.DataFrame  with corrections
-                 errors_before_correction_dict: Dict with the error list per column before applying the function
-                 errors_after_correction_dict: Dict with the error list per column after applying the function
+                 errors_before_correction_dict: Dict with the error list per column
+                 before applying the function
+                 errors_after_correction_dict: Dict with the error list per column after
+                 applying the function
 
         """
         if column_list == ():
@@ -260,20 +274,23 @@ class RowFix:
         """This function is to fix the common errors in the columns "column_list"
         of the pd.DataFrame 'df'.
         We try to fix:
-        1. Mixed columns -> by converting to numbers if possible by using feature_enum.py mappers
+        1. Mixed columns -> by converting to numbers if possible by using
+            feature_enum.py mappers
         2. String Columns ->
             a. check if they can be treated as numerical columns (by checking how many
         convertible values they contain)
             b. convert the numerical columns as for mixed columns
 
         @param dataset: Dataset
-        @param set_to_correct_dtype: Bool -> Option to choose whether to format every feature
-            (int, float, bool columns) to appropriate dtype
+        @param set_to_correct_dtype: Bool -> Option to choose whether to format every
+            feature (int, float, bool columns) to appropriate dtype
         @param verbose: 0 -> No message displayed 1 -> to show performance,
             2 -> to show actual unique errors per column. Default set to 0
         @return: df : pd.DataFrame  with corrections
-                 errors_before_correction_dict: Dict with the error list per column before applying the function
-                 errors_after_correction_dict: Dict with the error list per column after applying the function
+                 errors_before_correction_dict: Dict with the error list per column
+                    before applying the function
+                 errors_after_correction_dict: Dict with the error list per column after
+                    applying the function
         """
         cols_by_type = dataset.column_list_by_type
         # Get the columns that contain strings, but are actually numerical
@@ -295,8 +312,10 @@ class RowFix:
         print("The errors per feature are:")
         for c in self.errors_before_correction_dict.keys():
             print(
-                f"{c}: {len(self.errors_before_correction_dict[c])} : {set(self.errors_before_correction_dict[c])}"
-                f" ---> {len(self.errors_after_correction_dict[c])} : {set(self.errors_after_correction_dict[c])}"
+                f"{c}: {len(self.errors_before_correction_dict[c])} : "
+                f"{set(self.errors_before_correction_dict[c])}"
+                f" ---> {len(self.errors_after_correction_dict[c])} : "
+                f"{set(self.errors_after_correction_dict[c])}"
             )
 
     def count_errors(self):
@@ -313,11 +332,12 @@ class RowFix:
         )
 
         print(
-            f"\n Total:  BEFORE: {before_errors} errors  -->  AFTER: {after_errors} errors"
+            f"\n Total:  BEFORE: {before_errors} errors  -->  "
+            "AFTER: {after_errors} errors"
         )
 
 
-# =============================================================================================
+# ======================================================================================
 
 # TODO: Still need to be fixed and implemented
 #     def _add_fixed_features():
@@ -345,9 +365,10 @@ class RowFix:
 #     def remove_wrong_rows(df):
 #
 #         # Create a boolean map for the rows with mistakes
-#         wrong_row_index_list = df.apply(lambda row: is_row_with_mistakes(row[problematic_cols], row['p'], ck, ch),
+#         wrong_row_index_list = df.apply(
+#           lambda row: is_row_with_mistakes(row[problematic_cols], row['p'], ck, ch),
 #                                         axis=1)
 #
 #         df = df.drop(df[wrong_row_index_list].index)
 
-# ==============================================================================================
+# ======================================================================================

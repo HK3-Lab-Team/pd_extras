@@ -31,14 +31,18 @@ def convert_maps_from_tuple_to_str(group_id_to_tuple_map):
 
 def split_continuous_column_into_bins(dataset: Dataset, col_name, bin_threshold):
     """
-    This function adds a column to DataFrame dataset called "[col_name]_bin_id" where we split the "col_name" into bins
-    :param dataset: Dataset -> Dataset instance containing the 'col_name' column to split
+    This function adds a column to DataFrame dataset called "[col_name]_bin_id" where we
+    split the "col_name" into bins
+    :param dataset: Dataset -> Dataset instance containing the 'col_name' column to
+        split
     :param col_name: String -> Name of the column to be split into discrete intervals
-    :param bin_threshold: List -> It contains the thresholds used to separate different groups
-                                  (the threshold will be included in the bin with higher values)
-    :return: pd.DataFrame -> Same "dataset" passed with a new column with the bin_indices
-                             which the column value belongs to
-             Dict[List] -> Dictionary with the bin_indices as keys and bin_ranges as values
+    :param bin_threshold: List -> It contains the thresholds used to separate different
+                                groups (the threshold will be included in the bin with
+                                higher values)
+    :return: pd.DataFrame -> Same "dataset" passed with a new column with the
+                            bin_indices which the column value belongs to
+             Dict[List] -> Dictionary with the bin_indices as keys and bin_ranges as
+                        values
     """
     new_col_name = f"{col_name}{BIN_SPLIT_COL_SUFFIX}"
     # Initialize the bin <--> id_range map  with the min and max value
@@ -46,7 +50,8 @@ def split_continuous_column_into_bins(dataset: Dataset, col_name, bin_threshold)
     # For the BIN 0 choose the column minimum as the bin "lower_value",
     # in the other case the "upper_value" of the previous loops is set as "lower_value"
     lower_value = min(dataset.data[col_name].unique()) - 1
-    # Loop over the bins (we need to increase by 1 because they are only the separating values)
+    # Loop over the bins (we need to increase by 1 because they are only the separating
+    # values)
     for i in range(len(bin_threshold) + 1):
 
         bin_id_range_map[i] = []
@@ -97,10 +102,10 @@ def combine_categorical_columns_to_one(
     """
     This function generates and indexes the possible permutations of the unique values
     of the column list "col_names".
-    Then it insert a new column into the df calculating for every row the ID corresponding
-    to the combination of those columns_list (i.e. which combination of values the row belongs to).
-    The map between the ID and the combination of values will be
-    stored in dataset as detail of the FeatureOperation.
+    Then it insert a new column into the df calculating for every row the ID
+    corresponding to the combination of those columns_list (i.e. which combination of
+    values the row belongs to). The map between the ID and the combination of values
+    will be stored in dataset as detail of the FeatureOperation.
 
     Parameters
     ----------
@@ -116,15 +121,16 @@ def combine_categorical_columns_to_one(
     new_column_name: str
         Name of the new column
     """
-    # Define the name of the new column containing the combination of 'column_list' values
+    # Define the name of the new column containing the combination of 'column_list'
+    # values
     new_column_name = f"{'-'.join([c for c in columns_list])}_enc"
 
     # If the column has already been created, return the dataset
     if new_column_name in dataset.data.columns:
         logging.warning(
-            f"The column {new_column_name} is already present in dataset argument. Maybe "
-            f"a similar operation has already been performed. No new column has been "
-            f"created to avoid overwriting."
+            f"The column {new_column_name} is already present in dataset argument. "
+            "Maybe a similar operation has already been performed. No new column has "
+            "been created to avoid overwriting."
         )
         return dataset, new_column_name
 
@@ -146,9 +152,11 @@ def combine_categorical_columns_to_one(
     # Set the new column to NaN (then we fill in the appropriate values)
     dataset._data.loc[:, new_column_name] = np.nan
     for partit_id, combo in enumerate(itertools.product(*col_unique_values)):
-        # Fill the encoding map to keep track of the link between the combination and the encoded value
+        # Fill the encoding map to keep track of the link between the combination and
+        # the encoded value
         new_columns_encoding_maps[partit_id] = combo
-        # Combine the boolean arrays to describe whether the row has the same values as the combination "combo"
+        # Combine the boolean arrays to describe whether the row has the same values as
+        # the combination "combo"
         is_row_in_group_combo = np.logical_and.reduce(
             (
                 [
@@ -157,7 +165,8 @@ def combine_categorical_columns_to_one(
                 ]
             )
         )
-        # Assign "i" to every row that has that specific combination of values in columns "col_names"
+        # Assign "i" to every row that has that specific combination of values in
+        # columns "col_names"
         dataset._data.loc[is_row_in_group_combo, new_column_name] = partit_id
 
     # Cast the ids from float64 to Int16 (capital 'I' to include NaN values)
@@ -199,8 +208,8 @@ def _one_hot_encode_column(
     df_new = df.copy()
     series = df_new[column].values
     series = series.reshape(-1, 1)
-    # We choose to drop the first category of the feature (it can be deduced by the others ->
-    #   it is just a combination of 0 of the other categories)
+    # We choose to drop the first category of the feature (it can be deduced by the
+    # others -> it is just a combination of 0 of the other categories)
     if drop_one_new_column:
         encoder = OneHotEncoder(drop="first")
     else:
@@ -212,7 +221,8 @@ def _one_hot_encode_column(
         encoded_categories.remove(NAN_CATEGORY.title())
     except ValueError:
         logger.debug(f"No NaN values were found in column {column}")
-    # Name the new columns after the categories (adding a suffix). Exclude the first which was dropped
+    # Name the new columns after the categories (adding a suffix). Exclude the first
+    # which was dropped
     new_column_names = [f"{column}_{col}_enc" for col in encoded_categories[1:]]
     # Add the new encoded columns to the df_new
     for i, col in enumerate(new_column_names):
@@ -221,7 +231,8 @@ def _one_hot_encode_column(
     if drop_old_column:
         df_new = df_new.drop(column, axis=1)
 
-    # Convert the encoded columns to boolean type (this pandas Dtype is for handling NaN values)
+    # Convert the encoded columns to boolean type (this pandas Dtype is for handling
+    # NaN values)
     df_new[new_column_names] = df_new[new_column_names].astype(pd.BooleanDtype())
     return df_new, encoder_fitted, new_column_names
 
@@ -258,15 +269,17 @@ def encode_single_categorical_column(
     case_sensitive: bool = False,
 ):
     """
-    This function will encode the categorical column with the specified 'encoding' technique.
-    If the column has already been encoded or it contains numerical values already,
-    no operations will be performed and the input 'dataset' is returned (see 'force' argument).
+    This function will encode the categorical column with the specified 'encoding'
+    technique. If the column has already been encoded or it contains numerical values
+    already, no operations will be performed and the input 'dataset' is returned (see
+    'force' argument).
 
     Notes
     -----
-    The NAN_CATEGORY is a generic value to identify NaN values. These will be encoded as a
-    category but the column (in OneHotEncoding) is automatically dropped inside the encoding function.
-    The NaN values are restored as NaN after encoding for each values that was NaN originally.
+    The NAN_CATEGORY is a generic value to identify NaN values. These will be encoded as
+    a category but the column (in OneHotEncoding) is automatically dropped inside the
+    encoding function. The NaN values are restored as NaN after encoding for each values
+    that was NaN originally.
 
     Parameters
     ----------
@@ -276,15 +289,16 @@ def encode_single_categorical_column(
     drop_one_new_column
     drop_old_column
     force: bool
-        This is to choose whether to force the encoding operation even if the column is numerical
-        or it has already been encoded.
+        This is to choose whether to force the encoding operation even if the column is
+        numerical or it has already been encoded.
     case_sensitive
 
     Returns
     -------
 
     """
-    # If the column has already been encoded and the new column has already been created, return dataset
+    # If the column has already been encoded and the new column has already been
+    # created, return dataset
     enc_column = dataset.get_enc_column_from_original(column_name=col_name)
 
     # Check if encoding operation is required
@@ -297,12 +311,14 @@ def encode_single_categorical_column(
             return dataset
         elif dataset[col_name].dtype.kind in "biufc":
             logging.warning(
-                f"The column {col_name} is already numeric. No further operations are performed "
+                f"The column {col_name} is already numeric. No further operations "
+                "are performed "
             )
             return dataset
 
     df_to_encode = dataset.data.copy()
-    # Find index of rows with NaN and convert it to a fixed value so the corresponding encoded col will be dropped
+    # Find index of rows with NaN and convert it to a fixed value so the corresponding
+    # encoded col will be dropped
     nan_serie_map = df_to_encode[col_name].isna()
     nan_serie_map = nan_serie_map.index[nan_serie_map].tolist()
     df_to_encode.loc[nan_serie_map][col_name] = NAN_CATEGORY.title()
@@ -417,8 +433,8 @@ def convert_features_from_bool_to_binary(dataset: Dataset, col_names: Tuple = No
         df_bool_cols = dataset.column_list_by_type.bool_cols
         if col_names.intersection(df_bool_cols) != col_names:
             logging.error(
-                f'The columns from "col_names" argument are not all bool. Non-bool columns are:'
-                f"{col_names - df_bool_cols}"
+                'The columns from "col_names" argument are not all bool. Non-bool '
+                f"columns are: {col_names - df_bool_cols}"
             )
     # Converting from bool to binary
     for col in col_names:
@@ -432,16 +448,18 @@ def make_categorical_columns_multiple_combinations(dataset: Dataset, col_names):
     Then it combines the unique values of the first N columns from col_names in order to
     index the possible permutations of the unique values of those columns.
     - First element/column of partition cols is Level 1 (SEX -> M/F -> 0/1)
-    - Second element/column combines its unique values with the ones from the first column to generate
-        more possible combinations (e.g. SEXUAL STATUS -> I/NI * M/F -> (I,M)(NI,M)(I,F)(NI,F) ->
-        values in new_column: 0,1,2,3  )
+    - Second element/column combines its unique values with the ones from the first
+        column to generate more possible combinations
+        (e.g. SEXUAL STATUS -> I/NI * M/F -> (I,M)(NI,M)(I,F)(NI,F) -> values in
+        new_column: 0,1,2,3  )
     - ....
-    So each level will define many different groups (defined by a different combination of the
-    possible values of one or more partition cols)
+    So each level will define many different groups (defined by a different combination
+    of the possible values of one or more partition cols)
 
     @param df_input: Dataset containing the df
     @param col_names: List of columns that will be combined to each other
-    :return: pd.DataFrame -> DataFrame with new columns with group IDs for different partitioning levels
+    :return: pd.DataFrame -> DataFrame with new columns with group IDs for different
+        partitioning levels
              Dict[Dict[Tuple]] -> This contains:
                  - 1st level keys: name of col_names used to partition data
                  - 2nd level keys: ID of the combination

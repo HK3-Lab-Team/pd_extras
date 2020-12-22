@@ -1,11 +1,11 @@
 import copy
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, List, Mapping, Tuple
+
+import sklearn.preprocessing as sk_preproc
 
 from .dataset import Dataset
 from .util import is_sequence_and_not_str
-import sklearn.preprocessing as sk_preproc
 
 
 class FeatureOperation(ABC):
@@ -204,7 +204,7 @@ class FillNA(FeatureOperation):
         return dataset
 
     def __eq__(self, other: Any) -> bool:
-        """Return True if ``other`` is a FillNA instance and it has the same fields value.
+        """Return True if ``other`` is a FillNA instance with the same fields value.
 
         Parameters
         ----------
@@ -250,13 +250,14 @@ class ReplaceSubstrings(FeatureOperation):
     """Replace substrings with strings in ``columns`` (single-element list)
 
     By default the substrings are replaced in the original columns. To store the result
-    of the replacement in other columns, ``derived_columns`` parameter has to be set with
-    the name of the corresponding column names.
+    of the replacement in other columns, ``derived_columns`` parameter has to be set
+    with the name of the corresponding column names.
 
     Parameters
     ----------
     columns : List[str]
-        Name of the column with substrings to be replaced. It must be a single-element list.
+        Name of the column with substrings to be replaced. It must be a single-element
+        list.
     replacement_map : Mapping[str, str]
         Substrings replacement map. Must have string keys and string values.
     derived_columns : List[str], optional
@@ -345,11 +346,13 @@ class ReplaceSubstrings(FeatureOperation):
             )
         ):
             raise TypeError(
-                "replacement_map must be a non-empty dict mapping string keys to string values"
+                "replacement_map must be a non-empty dict mapping string keys to string "
+                "values"
             )
 
     def __eq__(self, other: Any) -> bool:
-        """Return True if ``other`` is a ReplaceSubstrings instance and it has the same fields value.
+        """Return True if ``other`` is a ReplaceSubstrings instance with the same fields
+        value.
 
         Parameters
         ----------
@@ -395,13 +398,14 @@ class ReplaceStrings(ReplaceSubstrings):
     """Replace strings with strings in ``columns`` (single-element list)
 
     By default the strings are replaced in the original columns. To store the result
-    of the replacement in other columns, ``derived_columns`` parameter has to be set with
-    the name of the corresponding column names.
+    of the replacement in other columns, ``derived_columns`` parameter has to be set
+    with the name of the corresponding column names.
 
     Parameters
     ----------
     columns : List[str]
-        Name of the column with strings to be replaced. It must be a single-element list.
+        Name of the column with strings to be replaced. It must be a single-element
+        list.
     replacement_map : Mapping[str, str]
         Strings replacement map. Must have string keys and string values.
     derived_columns : List[str], optional
@@ -460,7 +464,8 @@ class ReplaceStrings(ReplaceSubstrings):
         return dataset
 
     def __eq__(self, other: Any) -> bool:
-        """Return True if ``other`` is a ReplaceStrings instance and it has the same fields value.
+        """Return True if ``other`` is a ReplaceStrings instance with the same fields
+        value.
 
         Parameters
         ----------
@@ -568,7 +573,8 @@ class OrdinalEncoder(FeatureOperation):
         return dataset
 
     def __eq__(self, other: Any) -> bool:
-        """Return True if ``other`` is a OrdinalEncoder instance and it has the same fields value.
+        """Return True if ``other`` is a OrdinalEncoder instance with the same fields
+        value.
 
         Parameters
         ----------
