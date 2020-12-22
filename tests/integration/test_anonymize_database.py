@@ -106,12 +106,14 @@ def but_it_raises_filenotfounderror_with_wrong_dest_path():
             file_name="test_original_db_anonymize",
             private_cols_to_remove=["private_col_a"],
             private_cols_to_map=["private_col_a"],
-            dest_path="path/fake",
+            dest_path=os.path.join("path", "fake"),
             random_seed=42,
         )
     assert isinstance(err.value, FileNotFoundError)
     assert (
         "[Errno 2] No such file or directory: '"
-        + os.path.join("path", "fake", "test_original_db_anonymize_private_info.csv")
+        + repr(
+            os.path.join("path", "fake", "test_original_db_anonymize_private_info.csv")
+        )
         + "'"
     ) == str(err.value)
