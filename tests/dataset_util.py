@@ -452,7 +452,7 @@ class DataFrameMock:
 
 class SeriesMock:
     @staticmethod
-    def series_by_type(series_type: str):
+    def series_by_type(series_type: str):  # noqa: C901
         col_name = "column_name"
         if "bool" in series_type:
             return pd.Series([True, False, True, pd.NA, False], name=col_name)

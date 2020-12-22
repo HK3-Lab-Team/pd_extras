@@ -405,8 +405,8 @@ def _get_samples_with_breed_not_nan(
     breed_na_count = np.sum(breed_na_samples_bool_map)
     if breed_na_count != 0:
         logging.warning(
-            f"There are {breed_na_count} samples with no Breed values. No computation is"
-            " possible for these samples"
+            f"There are {breed_na_count} samples with no Breed values. No computation"
+            "is possible for these samples"
         )
         contains_na_breed_samples = True
         not_na_df = df.loc[np.logical_not(breed_na_samples_bool_map)]

@@ -346,8 +346,8 @@ class ReplaceSubstrings(FeatureOperation):
             )
         ):
             raise TypeError(
-                "replacement_map must be a non-empty dict mapping string keys to string "
-                "values"
+                "replacement_map must be a non-empty dict mapping string keys to string"
+                " values"
             )
 
     def __eq__(self, other: Any) -> bool:
