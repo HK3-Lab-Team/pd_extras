@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import pytest
 
@@ -109,6 +111,7 @@ def but_it_raises_filenotfounderror_with_wrong_dest_path():
         )
     assert isinstance(err.value, FileNotFoundError)
     assert (
-        "[Errno 2] No such file or directory: "
-        "'path/fake/test_original_db_anonymize_private_info.csv'"
+        "[Errno 2] No such file or directory: '"
+        + os.path.join("path", "fake", "test_original_db_anonymize_private_info.csv")
+        + "'"
     ) == str(err.value)
