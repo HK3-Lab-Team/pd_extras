@@ -1,8 +1,12 @@
+# encoding: utf-8
+
 import os
 import shutil
 from pathlib import Path
-from trousse import feature_operations as fop
+
 import pytest
+
+from trousse import feature_operations as fop
 
 
 @pytest.fixture(scope="module")

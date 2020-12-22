@@ -1,3 +1,6 @@
+# encoding: utf-8
+
+
 class MultipleOperationsFoundError(Exception):
     """
     Exception raised when multiple operations are found when looking for a specific one.

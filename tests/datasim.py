@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
