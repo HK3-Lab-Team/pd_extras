@@ -194,10 +194,11 @@ class DescribeDataset:
         )
         expected_str = (
             "Columns with:\n\t1.\tMixed types: \t\t2\n\t2.\tNumerical types"
-            " (float/int): \t2\n\t3.\tString types: \t\t2\n\t4.\tBool types: \t\t2\n\t5."
-            "\tOther types: \t\t2\nAmong these categories:\n\t1.\tString categorical "
-            "columns: 2\n\t2.\tNumeric categorical columns: 2\n\t3.\tMedical Exam columns "
-            "(numerical, no metadata): 3\n\t4.\tOne repeated value: 1"
+            " (float/int): \t2\n\t3.\tString types: \t\t2\n\t4.\tBool types: "
+            "\t\t2\n\t5.\tOther types: \t\t2\nAmong these categories:\n\t1.\tString "
+            "categorical columns: 2\n\t2.\tNumeric categorical columns: 2\n\t3."
+            "\tMedical Exam columns (numerical, no metadata): 3\n\t4.\tOne repeated "
+            "value: 1"
         )
 
         str_ = str(column_list_by_type)
@@ -261,10 +262,11 @@ class DescribeColumnListByType:
     def it_knows_its_str(self, request):
         column_list_by_type_str = (
             "Columns with:\n\t1.\tMixed types: \t\t2\n\t2.\tNumerical types"
-            " (float/int): \t2\n\t3.\tString types: \t\t2\n\t4.\tBool types: \t\t2\n\t5."
-            "\tOther types: \t\t2\nAmong these categories:\n\t1.\tString categorical "
-            "columns: 2\n\t2.\tNumeric categorical columns: 2\n\t3.\tMedical Exam columns "
-            "(numerical, no metadata): 3\n\t4.\tOne repeated value: 1"
+            " (float/int): \t2\n\t3.\tString types: \t\t2\n\t4.\tBool types: "
+            "\t\t2\n\t5. \tOther types: \t\t2\nAmong these categories:\n\t1.\t"
+            "String categorical columns: 2\n\t2.\tNumeric categorical columns: "
+            "2\n\t3.\tMedical Exam columns (numerical, no metadata): 3\n\t4.\tOne "
+            "repeated value: 1"
         )
         _column_list_by_type_str = method_mock(request, _ColumnListByType, "__str__")
         _column_list_by_type_str.return_value = column_list_by_type_str

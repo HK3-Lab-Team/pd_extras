@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union, Sequence, Optional
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -493,8 +493,8 @@ class ReverseFeatureOperation(ABC):
 
         Its subclasses apply operations to simulated synthetic data that revert
         the behaviour of the FeatureOperation classes.
-        This is an abstract class so the abstract method "apply" needs to be reimplemented
-        in subclasses in order to work.
+        This is an abstract class so the abstract method "apply" needs to be
+        reimplemented in subclasses in order to work.
 
         Parameters
         ----------
@@ -778,7 +778,8 @@ class InsertInvalidSubStrings(ReverseFeatureOperation):
 
     def __call__(self, dataset: TestDataSet) -> TestDataSet:
         """
-        Insert invalid substrings into the ``column`` and store the related correct values.
+        Insert invalid substrings into the ``column`` and store the related correct
+        values.
 
         If the correct substring is an empty string (i.e. the substring
         should not be present), the invalid substring is placed at
@@ -826,9 +827,9 @@ class InsertInvalidSubStrings(ReverseFeatureOperation):
                         correct_substring, substring_to_insert
                     )
 
-                # No need to change column.values_after_fix, because after the correction
-                # the dataset should be fully corrected (as if this operation was
-                # not performed)
+                # No need to change column.values_after_fix, because after the
+                # correction the dataset should be fully corrected (as if this operation
+                # was not performed)
                 column.update_sample(
                     sample_id,
                     value_to_fix=new_value,

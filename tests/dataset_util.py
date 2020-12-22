@@ -39,7 +39,8 @@ class DataFrameMock:
     @staticmethod
     def df_many_nans(nan_ratio: float, n_columns: int) -> pd.DataFrame:
         """
-        Create pandas DataFrame with ``n_columns`` containing ``nan_ratio`` ratio of NaNs.
+        Create pandas DataFrame with ``n_columns`` containing ``nan_ratio`` ratio of
+        NaNs.
 
         DataFrame has 100 rows and ``n_columns``+5 columns. The additional 5 columns
         contain less than ``nan_ratio`` ratio of NaNs.
@@ -256,11 +257,12 @@ class DataFrameMock:
     @staticmethod
     def df_column_names_by_type() -> pd.DataFrame:
         """
-        Create DataFrame sample that contains column name and types of a generic DataFrame.
+        Create DataFrame sample that contains column name and types of a generic
+        DataFrame.
 
         DataFrame has 11 rows and 2 columns. One column called "col_name" contains
-        some strings (that represent the column names of another DataFrame sample "df2").
-        Another column called "col_type" contains some possible outputs from
+        some strings (that represent the column names of another DataFrame sample
+        "df2"). Another column called "col_type" contains some possible outputs from
         ``trousse.dataset._find_single_column_type`` function
         that describe the type of values contained in the column of "df2".
 
