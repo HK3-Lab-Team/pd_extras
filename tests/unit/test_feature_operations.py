@@ -874,7 +874,8 @@ class DescribeOneHotEncoder:
         )
 
     @pytest.mark.parametrize(
-        "column, derived_column_suffix, drop_option, num_categories, categories, categories_after_drop, expected_new_columns",
+        "column, derived_column_suffix, drop_option, num_categories, categories, "
+        "categories_after_drop, expected_new_columns",
         [
             (
                 "str_categorical_col",
@@ -1128,7 +1129,8 @@ class DescribeOneHotEncoder:
         np.testing.assert_array_equal(nan_map, nan_mask_.values.ravel())
 
     @pytest.mark.parametrize(
-        "encoded_categories_, columns_enc_, expected_encoded_categories, expected_columns_enc",
+        "encoded_categories_, columns_enc_, expected_encoded_categories, "
+        "expected_columns_enc",
         [
             (
                 ["NAN_VALUE", "b", "e"],
@@ -1206,7 +1208,8 @@ class DescribeOneHotEncoder:
         pd.testing.assert_frame_equal(columns_enc_nan, expected_columns_enc)
 
     @pytest.mark.parametrize(
-        "encoded_categories_, columns_enc_, drop_option, expected_encoded_categories, expected_columns_enc",
+        "encoded_categories_, columns_enc_, drop_option, expected_encoded_categories,"
+        " expected_columns_enc",
         [
             (
                 [
