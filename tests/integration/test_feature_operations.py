@@ -121,91 +121,43 @@ def test_ordinal_encoder(csv, columns, derived_columns, expected_csv):
 
 
 @pytest.mark.parametrize(
-    "csv, columns, derived_column_suffix, drop_option, expected_csv",
+    "csv, columns, derived_column_suffix, expected_csv",
     (
         (
             CSV.generic,
             ["col3"],
             "_enc",
-            "first",
-            "csv/generic-one-hot-encoded-col3-enc-first",
+            "csv/generic-one-hot-encoded-col3-enc",
         ),
         (
             CSV.generic,
             ["col3"],
             "_encoded",
-            "first",
-            "csv/generic-one-hot-encoded-col3-encoded-first",
-        ),
-        (
-            CSV.generic,
-            ["col3"],
-            "_enc",
-            "if_binary",
-            "csv/generic-one-hot-encoded-col3-enc-ifbinary",
+            "csv/generic-one-hot-encoded-col3-encoded",
         ),
         (
             CSV.generic,
             ["col0"],
             "_enc",
-            "first",
-            "csv/generic-one-hot-encoded-col0-enc-first",
-        ),
-        (
-            CSV.generic,
-            ["col0"],
-            "_enc",
-            "if_binary",
-            "csv/generic-one-hot-encoded-col0-enc-ifbinary",
-        ),
-        (
-            CSV.generic,
-            ["col0"],
-            "_enc",
-            None,
-            "csv/generic-one-hot-encoded-col0-enc-none",
+            "csv/generic-one-hot-encoded-col0-enc",
         ),
         (
             CSV.generic_na,
             ["col4"],
             "_enc",
-            "first",
-            "csv/generic-na-one-hot-encoded-col4-enc-first",
-        ),
-        (
-            CSV.generic_na,
-            ["col4"],
-            "_enc",
-            "if_binary",
-            "csv/generic-na-one-hot-encoded-col4-enc-ifbinary",
-        ),
-        (
-            CSV.generic_na,
-            ["col4"],
-            "_enc",
-            None,
-            "csv/generic-na-one-hot-encoded-col4-enc-none",
-        ),
-        (
-            CSV.generic_na,
-            ["col5"],
-            "_enc",
-            "if_binary",
-            "csv/generic-na-one-hot-encoded-col5-enc-ifbinary",
+            "csv/generic-na-one-hot-encoded-col4-enc",
         ),
     ),
 )
-def test_one_hot_encoder(
-    csv, columns, derived_column_suffix, drop_option, expected_csv
-):
+def test_one_hot_encoder(csv, columns, derived_column_suffix, expected_csv):
     dataset = Dataset(data_file=csv)
     expected_df = load_expectation(expected_csv, type_="csv")
     one_hot_encoder = fop.OneHotEncoder(
         columns=columns,
         derived_column_suffix=derived_column_suffix,
-        drop_option=drop_option,
     )
 
     encoded_dataset = one_hot_encoder(dataset)
+    print(encoded_dataset.data)
 
     pd.testing.assert_frame_equal(encoded_dataset.data, expected_df, check_dtype=False)
