@@ -207,10 +207,7 @@ def _one_hot_encode_column(
 
     """
     dataset = Dataset(df_object=df)
-    drop_option = "first" if drop_one_new_column else None
-    one_hot_encoder = OneHotEncoder(
-        columns=[column], derived_column_suffix="_enc", drop_option=drop_option
-    )
+    one_hot_encoder = OneHotEncoder(columns=[column], derived_column_suffix="_enc")
 
     encoded_dataset = one_hot_encoder(dataset)
 

@@ -37,15 +37,15 @@ def test_ordinal_encode_column(csv, column, derived_column, expected_csv):
             CSV.generic,
             "col3",
             True,
-            ["col3_abr_enc"],
-            "csv/generic-one-hot-encoded-col3-enc-first",
+            ["col3_abc_enc", "col3_abr_enc"],
+            "csv/generic-one-hot-encoded-col3-enc",
         ),
         (
             CSV.generic,
             "col0",
             False,
             ["col0_a_enc", "col0_c_enc", "col0_d_enc"],
-            "csv/generic-one-hot-encoded-col0-enc-none",
+            "csv/generic-one-hot-encoded-col0-enc",
         ),
     ),
 )

@@ -2,7 +2,7 @@
 
 import copy
 from abc import ABC, abstractmethod
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, List, Mapping, Tuple
 
 import numpy as np
 import pandas as pd
@@ -520,13 +520,6 @@ class OneHotEncoder(FeatureOperation):
         Name of the column to encode. It must be a single-element list.
     derived_column_suffix : str, optional
         Suffix to be added at the end of the new columns name. Default is "_enc"
-    drop_option : {"first", "if_binary", None}, optional
-        Specifies a methodology to use to drop one of the categories per feature.
-        - "first" : drop the first category in each feature. If only one category is
-          present, the feature will be dropped entirely (default).
-        - "if_binary" : drop the first category in each feature with two categories.
-          Features with 1 or more than 2 categories are left intact.
-        - None : retain all features.
     """
 
     _nan_value_placeholder = "NAN_VALUE"
@@ -535,14 +528,11 @@ class OneHotEncoder(FeatureOperation):
         self,
         columns: List[str],
         derived_column_suffix: str = "_enc",
-        drop_option: Optional[str] = "first",
     ) -> None:
         self._validate_single_element_columns(columns)
-        self._validate_drop_option(drop_option)
 
         self.columns = columns
         self.derived_column_suffix = derived_column_suffix
-        self._drop_option = drop_option
         self._encoder = sk_preproc.OneHotEncoder(sparse=False)
 
     @property
@@ -574,10 +564,6 @@ class OneHotEncoder(FeatureOperation):
             encoded_categories, columns_enc
         )
 
-        encoded_categories, columns_enc = self._handle_drop_option(
-            encoded_categories, columns_enc
-        )
-
         columns_enc = self._set_nan_via_mask(columns_enc, nan_map)
 
         derived_columns_names = [
@@ -589,32 +575,6 @@ class OneHotEncoder(FeatureOperation):
         dataset.data[derived_columns_names] = columns_enc
 
         return dataset
-
-    def _handle_drop_option(
-        self, encoded_categories: List[str], columns_enc: pd.DataFrame
-    ) -> Tuple[List[str], pd.DataFrame]:
-        """Drop one of the categories based on the drop option.
-
-        Parameters
-        ----------
-        encoded_categories : List[str]
-            List of the encoded categories from which to drop a category
-        columns_enc : pd.DataFrame
-            Encoded columns from which to drop a category
-
-        Returns
-        -------
-        List[str]
-            Encoded categories with a category removed (if any)
-        pd.DataFrame
-            Encoded columns with a column removed (if any)
-        """
-        if self._drop_option == "first" or (
-            len(encoded_categories) == 2 and self._drop_option == "if_binary"
-        ):
-            encoded_categories = encoded_categories[1:]
-            columns_enc = columns_enc.drop(columns_enc.columns[0], axis=1)
-        return encoded_categories, columns_enc
 
     def _remove_nan_category(
         self, encoded_categories: List[str], columns_enc: pd.DataFrame
@@ -637,7 +597,6 @@ class OneHotEncoder(FeatureOperation):
             List of the encoded categories name without the placeholder NaN category
         pd.DataFrame
             Encoded columns without the NaN category column
-
         """
         try:
             nan_category_index = encoded_categories.index(self._nan_value_placeholder)
@@ -696,25 +655,6 @@ class OneHotEncoder(FeatureOperation):
         df[nan_mask] = pd.NA
         return df.astype("boolean")
 
-    def _validate_drop_option(self, drop_option: Optional[str]) -> None:
-        """Validate ``drop_option``, as it should be either 'first', 'if_binary' or None.
-
-        Parameters
-        ----------
-        drop_option : str
-            String to validate
-
-        Raises
-        ------
-        ValueError
-            If ``drop_option`` is not 'first' nor 'if_binary'
-        """
-        if drop_option is not None and drop_option not in ["first", "if_binary"]:
-            raise ValueError(
-                f"drop_option '{drop_option}' not valid. Please use 'first' or "
-                "'if_binary'."
-            )
-
     def __eq__(self, other: Any) -> bool:
         """Return True if ``other`` is a OneHotEncoder and it has the same fields value.
 
@@ -734,7 +674,6 @@ class OneHotEncoder(FeatureOperation):
         if (
             self.columns == other.columns
             and self.derived_column_suffix == other.derived_column_suffix
-            and self._drop_option == other._drop_option
         ):
             return True
 

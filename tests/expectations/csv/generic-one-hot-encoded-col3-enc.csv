@@ -1,0 +1,5 @@
+col0,col1,col2,col3,col3_abc_enc,col3_abr_enc
+c,b,e,abc,True,False
+d,b,c,abc,True,False
+d,b,c,abr,False,True
+a,b,c,abc,True,False
