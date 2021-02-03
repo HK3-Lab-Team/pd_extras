@@ -243,7 +243,6 @@ class DescribeDataset:
         self, request, metadata_cols, derived_columns, expected_metadata_cols
     ):
         operations_list_iadd_ = method_mock(request, OperationsList, "__iadd__")
-
         expected_df = DataFrameMock.df_generic(10)
         get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
         get_df_from_csv_.return_value = expected_df
@@ -256,6 +255,58 @@ class DescribeDataset:
 
         assert dataset.metadata_cols == expected_metadata_cols
         operations_list_iadd_.assert_called_once_with(ANY, feat_op)
+
+    @pytest.mark.parametrize(
+        "op_from_original_column_ret_value, expected_columns",
+        [
+            (
+                [
+                    fop.OrdinalEncoder(
+                        columns=["col"], derived_columns=["encoded_col"]
+                    ),
+                    fop.OrdinalEncoder(columns=["col"], derived_columns=None),
+                ],
+                ["encoded_col", "col"],
+            ),
+            (
+                [
+                    fop.OrdinalEncoder(
+                        columns=["col"], derived_columns=["encoded_col"]
+                    ),
+                    fop.OrdinalEncoder(columns=["col"], derived_columns=None),
+                    fop.OrdinalEncoder(
+                        columns=["col"], derived_columns=["encoded_col2"]
+                    ),
+                ],
+                ["encoded_col", "col", "encoded_col2"],
+            ),
+            (
+                [],
+                [],
+            ),
+        ],
+    )
+    def it_knows_how_to_get_encoded_columns_from_original(
+        self, request, op_from_original_column_ret_value, expected_columns
+    ):
+        op_list__op_from_original_column_ = method_mock(
+            request, OperationsList, "operations_from_original_column"
+        )
+        op_list__op_from_original_column_.return_value = (
+            op_from_original_column_ret_value
+        )
+        expected_df = DataFrameMock.df_generic(10)
+        get_df_from_csv_ = function_mock(request, "trousse.dataset.get_df_from_csv")
+        get_df_from_csv_.return_value = expected_df
+        dataset = Dataset(data_file="fake/path")
+
+        columns = dataset.encoded_columns_from_original("col")
+
+        assert type(columns) == list
+        assert columns == expected_columns
+        op_list__op_from_original_column_.assert_called_once_with(
+            dataset.operations_history, "col", [fop.OrdinalEncoder, fop.OneHotEncoder]
+        )
 
 
 class DescribeColumnListByType:

@@ -580,7 +580,6 @@ class OneHotEncoder(FeatureOperation):
         self, encoded_categories: List[str], columns_enc: pd.DataFrame
     ) -> Tuple[List[str], pd.DataFrame]:
         """Remove the NaN category from the encoded categories and corresponding column.
-
         If the NaN category is not present,``encoded_categories`` and
         ``columns_enc`` will be returned without modification.
 

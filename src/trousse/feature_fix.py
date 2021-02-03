@@ -5,9 +5,8 @@ import logging
 from typing import Any, Tuple
 
 import numpy as np
-import pandas as pd
 
-from .dataset import Dataset, copy_dataset_with_new_df
+from .dataset import Dataset
 from .feature_operations import FeatureOperation, OneHotEncoder, OrdinalEncoder
 
 logger = logging.getLogger(__name__)
@@ -187,10 +186,9 @@ def combine_categorical_columns_to_one(
 
 
 def _one_hot_encode_column(
-    df: pd.DataFrame,
+    dataset: Dataset,
     column: str,
     drop_one_new_column: bool = True,
-    drop_old_column: bool = False,
 ):
     """
     OneHotEncoding of 'column' in df
@@ -200,43 +198,42 @@ def _one_hot_encode_column(
     df
     column
     drop_one_new_column
-    drop_old_column
 
     Returns
     -------
 
     """
-    dataset = Dataset(df_object=df)
     one_hot_encoder = OneHotEncoder(columns=[column], derived_column_suffix="_enc")
 
     encoded_dataset = one_hot_encoder(dataset)
 
-    new_columns = sorted(
+    derived_columns = sorted(
         list(set(encoded_dataset.data.columns) - set(dataset.data.columns))
     )
-    return encoded_dataset.data, one_hot_encoder.encoder, new_columns
+    return encoded_dataset, derived_columns
 
 
-def _ordinal_encode_column(df, column, drop_old_column: bool = False):
+def _ordinal_encode_column(
+    dataset: Dataset,
+    column: str,
+):
     """
 
     Parameters
     ----------
     df
     column
-    drop_old_column
 
     Returns
     -------
 
     """
 
-    dataset = Dataset(df_object=df)
     derived_column = f"{column}_enc"
     ordinal_encoder = OrdinalEncoder(columns=[column], derived_columns=[derived_column])
 
     encoded_dataset = ordinal_encoder(dataset)
-    return encoded_dataset.data, ordinal_encoder.encoder, [derived_column]
+    return encoded_dataset, [derived_column]
 
 
 def encode_single_categorical_column(
@@ -244,7 +241,6 @@ def encode_single_categorical_column(
     col_name: str,
     encoding: Any = "EncodingFunctions.ORDINAL",
     drop_one_new_column: bool = True,
-    drop_old_column: bool = False,
     force: bool = False,
     case_sensitive: bool = False,
 ):
@@ -279,44 +275,42 @@ def encode_single_categorical_column(
     """
     # If the column has already been encoded and the new column has already been
     # created, return dataset
-    enc_column = dataset.get_enc_column_from_original(column_name=col_name)
+    enc_column = dataset.encoded_columns_from_original(column=col_name)
 
     # Check if encoding operation is required
     if not force:
-        if enc_column is not None:
+        if len(enc_column) > 0:
             logging.warning(
                 f"The column {col_name} has already been encoded "
-                f'as "{enc_column}". No further operations are performed '
+                f'as "{enc_column}". No further operations are performed.'
             )
             return dataset
-        elif dataset[col_name].dtype.kind in "biufc":
-            logging.warning(
-                f"The column {col_name} is already numeric. No further operations "
-                "are performed "
-            )
-            return dataset
+        # elif dataset[col_name].dtype.kind in "biufc":
+        #     logging.warning(
+        #         f"The column {col_name} is already numeric. No further operations
+        # are performed "
+        #     )
+        #     return dataset
 
-    df_to_encode = dataset.data.copy()
-    # Find index of rows with NaN and convert it to a fixed value so the corresponding
-    # encoded col will be dropped
-    nan_serie_map = df_to_encode[col_name].isna()
-    nan_serie_map = nan_serie_map.index[nan_serie_map].tolist()
-    df_to_encode.loc[nan_serie_map][col_name] = NAN_CATEGORY.title()
+    dataset_to_encode = dataset.copy()
+
     # Set to 'title' case so str with different capitalization are interpreted as equal
     if not case_sensitive:
-        df_to_encode.loc[:, col_name] = df_to_encode[col_name].astype(str).str.title()
+        dataset_to_encode.data.loc[:, col_name] = (
+            dataset_to_encode.data[col_name].astype(str).str.title()
+        )
 
     # Encoding using the selected function
     if encoding == "ORDINAL":
-        df_encoded, encoder, new_columns = _ordinal_encode_column(
-            df_to_encode, column=col_name, drop_old_column=drop_old_column
+        dataset_encoded, _ = _ordinal_encode_column(
+            dataset_to_encode,
+            column=col_name,
         )
     elif encoding == "ONEHOT":
-        df_encoded, encoder, new_columns = _one_hot_encode_column(
-            df_to_encode,
+        dataset_encoded, _ = _one_hot_encode_column(
+            dataset_to_encode,
             column=col_name,
             drop_one_new_column=drop_one_new_column,
-            drop_old_column=drop_old_column,
         )
     else:
         logging.error(
@@ -324,27 +318,6 @@ def encode_single_categorical_column(
             f"values are: {[e.name for e in ['ORDINAL', 'ONEHOT']]}"
         )
         return None
-
-    # Set the rows with missing values originally to NaN
-    df_encoded.loc[nan_serie_map, col_name] = pd.NA
-    df_encoded.loc[nan_serie_map, new_columns] = np.nan
-
-    # Generate encoded values map
-    encoded_values_map = {}
-    for val_id, val in enumerate(encoder.categories_[0]):
-        encoded_values_map[val_id] = val
-
-    dataset_encoded = copy_dataset_with_new_df(dataset, df_encoded)
-
-    dataset_encoded.track_history(
-        FeatureOperation(
-            original_columns=col_name,
-            operation_type="CATEGORICAL_ENCODING",
-            encoder=encoder,
-            encoded_values_map=encoded_values_map,
-            derived_columns=tuple(new_columns),
-        )
-    )
 
     return dataset_encoded
 

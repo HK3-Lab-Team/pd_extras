@@ -139,18 +139,118 @@ class DescribeOperationsList:
         assert type(operations) == list
         assert operations == [fop1]
 
-    def it_can_get_operations_from_original_column(self, request):
+    @pytest.mark.parametrize(
+        "getitem_return, operations_types, expected_operations",
+        [
+            (
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                ],
+                None,
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                ],
+            ),
+            (
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                    fop.ReplaceSubstrings(
+                        columns=["col4"],
+                        derived_columns=["replaced_col4"],
+                        replacement_map={"a": "b", "c": "d"},
+                    ),
+                ],
+                None,
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                    fop.ReplaceSubstrings(
+                        columns=["col4"],
+                        derived_columns=["replaced_col4"],
+                        replacement_map={"a": "b", "c": "d"},
+                    ),
+                ],
+            ),
+            (
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                    fop.ReplaceSubstrings(
+                        columns=["col4"],
+                        derived_columns=["replaced_col4"],
+                        replacement_map={"a": "b", "c": "d"},
+                    ),
+                ],
+                [fop.FillNA],
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                ],
+            ),
+            (
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                    fop.ReplaceSubstrings(
+                        columns=["col4"],
+                        derived_columns=["replaced_col4"],
+                        replacement_map={"a": "b", "c": "d"},
+                    ),
+                ],
+                [fop.ReplaceSubstrings],
+                [
+                    fop.ReplaceSubstrings(
+                        columns=["col4"],
+                        derived_columns=["replaced_col4"],
+                        replacement_map={"a": "b", "c": "d"},
+                    ),
+                ],
+            ),
+            (
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                    fop.ReplaceSubstrings(
+                        columns=["col4"],
+                        derived_columns=["replaced_col4"],
+                        replacement_map={"a": "b", "c": "d"},
+                    ),
+                ],
+                [fop.ReplaceSubstrings, fop.FillNA],
+                [
+                    fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0),
+                    fop.FillNA(columns=["col4"], derived_columns=None, value=0),
+                    fop.ReplaceSubstrings(
+                        columns=["col4"],
+                        derived_columns=["replaced_col4"],
+                        replacement_map={"a": "b", "c": "d"},
+                    ),
+                ],
+            ),
+        ],
+    )
+    def it_can_get_operations_from_original_column(
+        self, request, getitem_return, operations_types, expected_operations
+    ):
         op_list = OperationsList()
         getitem_ = method_mock(request, OperationsList, "__getitem__")
-        fop0 = fop.FillNA(columns=["col4"], derived_columns=["col1"], value=0)
-        fop1 = fop.FillNA(columns=["col1"], derived_columns=["col4"], value=0)
-        fop2 = fop.FillNA(columns=["col4"], derived_columns=None, value=0)
-        getitem_.return_value = [fop0, fop1, fop2]
 
-        operations = op_list.operations_from_original_column("col4")
+        getitem_.return_value = getitem_return
+
+        operations = op_list.operations_from_original_column(
+            "col4", operation_types=operations_types
+        )
 
         assert type(operations) == list
-        assert operations == [fop0, fop2]
+        assert operations == expected_operations
 
     def it_can_get_original_columns_from_derived_column(self, request):
         op_list = OperationsList()

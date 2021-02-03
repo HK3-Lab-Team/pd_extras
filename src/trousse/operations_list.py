@@ -2,7 +2,7 @@
 
 import collections
 import typing
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from .feature_operations import FeatureOperation
@@ -59,26 +59,42 @@ class OperationsList:
         )
 
     def operations_from_original_column(
-        self, original_column: str
+        self, original_column: str, operation_types: Optional[List[type]] = None
     ) -> List["FeatureOperation"]:
-        """Return the FeatureOperations applied on ``original_column``
+        """Return the FeatureOperations applied on ``original_column``.
+
+        If ``operation_types`` is not None, return only the ``FeatureOperations`` with
+        corresponding types.
 
         Parameters
         ----------
         original_column : str
             The column on which the FeatureOperation has been applied on.
+        operation_types : List[type], optional
+            List of types (i.e. FeatureOperation subclasses name) to filter the
+            FeatureOperations to return. Default is None, meaning that all types of
+            operations will be returned.
 
         Returns
         -------
         List[FeatureOperation]
-            FeatureOperations applied on ``original_column``
+            FeatureOperations applied on ``original_column`` of type compatible with
+            ``operation_types``
         """
-        return list(
+        operations = list(
             filter(
                 lambda op: original_column in op.columns,
                 self[original_column],
             )
         )
+        if operation_types is not None:
+            operations = list(
+                filter(
+                    lambda op: any([isinstance(op, t) for t in operation_types]),
+                    operations,
+                )
+            )
+        return operations
 
     def original_columns_from_derived_column(self, derived_column: str) -> List[str]:
         """Return the name of the columns from which ``derived_column`` is generated.
